@@ -26,7 +26,7 @@ defmodule CaptainHook.MixProject do
       {:mox, "~> 0.4", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:ex_machina, "~> 2.3", only: :test},
-      {:myxql, "~> 0.4.0", override: true},
+      {:myxql, "~> 0.4.0"},
       {:ecto_sql, "~> 3.0"},
       {:antl_utils, "~> 0.4.1"},
       {:antl_datetime_utils, "~> 0.1.0"},
@@ -45,7 +45,7 @@ defmodule CaptainHook.MixProject do
   end
 
   defp description() do
-    "Associate models with permissions and roles."
+    "Ordered webhook notifications"
   end
 
   defp package() do
