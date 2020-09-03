@@ -11,7 +11,9 @@ defmodule CaptainHook.Supervisor do
 
   @impl true
   def init(_args) do
-    children = [CaptainHook.Queue]
+    children = [
+      {CaptainHook.Queue, [repoll_after_job_performed?: true]}
+    ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
