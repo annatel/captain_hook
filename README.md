@@ -15,19 +15,29 @@ def deps do
 end
 ```
 
-After the packages are installed you must create a database migration to add the captain_hook tables to your database:
+After the packages are installed you must create a database migration for each versionto add the captain_hook tables to your database:
 
 ```elixir
-defmodule MyApp.Repo.Migrations.AddCaptainHookTables do
+defmodule MyApp.Repo.Migrations.AddCaptainHookV1Tables do
   use Ecto.Migration
 
   def up do
     CaptainHook.Migrations.V1.up()
-    CaptainHook.Migrations.V2.up()
   end
 
   def down do
     CaptainHook.Migrations.V1.down()
+  end
+end
+
+defmodule MyApp.Repo.Migrations.AddCaptainHookV2Tables do
+  use Ecto.Migration
+
+  def up do
+    CaptainHook.Migrations.V2.up()
+  end
+
+  def down do
     CaptainHook.Migrations.V2.down()
   end
 end
