@@ -23,6 +23,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       assert :started_at in changes_keys
       assert :url in changes_keys
       assert :metadata in changes_keys
+      assert :headers in changes_keys
       refute :ended_at in changes_keys
       refute :new_key in changes_keys
     end
@@ -46,6 +47,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       assert get_field(changeset, :started_at) == @datetime_1
       assert get_field(changeset, :url) == webhook_endpoint_params.url
       assert get_field(changeset, :metadata) == webhook_endpoint_params.metadata
+      assert get_field(changeset, :headers) == webhook_endpoint_params.headers
     end
   end
 
@@ -57,7 +59,8 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
         params_for(:webhook_endpoint,
           started_at: @datetime_1,
           ended_at: @datetime_2,
-          metadata: %{key: "value"}
+          metadata: %{key: "value"},
+          headers: %{"Authorization" => "Basic bG9naW46cGFzc3dvcmQ="}
         )
 
       changeset =
@@ -72,6 +75,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       refute :started_at in changes_keys
       refute :url in changes_keys
       assert :metadata in changes_keys
+      assert :headers in changes_keys
       refute :ended_at in changes_keys
       refute :new_key in changes_keys
     end
@@ -80,10 +84,17 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       webhook_endpoint = insert(:webhook_endpoint)
 
       new_metadata = %{key: "value"}
-      changeset = WebhookEndpoint.update_changeset(webhook_endpoint, %{metadata: new_metadata})
+      new_headers = %{"Authorization" => "Basic bG9naW46cGFzc3dvcmQ="}
+
+      changeset =
+        WebhookEndpoint.update_changeset(webhook_endpoint, %{
+          metadata: new_metadata,
+          headers: new_headers
+        })
 
       assert changeset.valid?
       assert get_field(changeset, :metadata) == new_metadata
+      assert get_field(changeset, :headers) == new_headers
     end
   end
 
@@ -110,6 +121,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       refute :started_at in changes_keys
       refute :url in changes_keys
       refute :metadata in changes_keys
+      refute :headers in changes_keys
       assert :ended_at in changes_keys
       refute :new_key in changes_keys
     end

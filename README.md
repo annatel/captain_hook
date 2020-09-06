@@ -23,10 +23,12 @@ defmodule MyApp.Repo.Migrations.AddCaptainHookTables do
 
   def up do
     CaptainHook.Migrations.V1.up()
+    CaptainHook.Migrations.V2.up()
   end
 
   def down do
     CaptainHook.Migrations.V1.down()
+    CaptainHook.Migrations.V2.down()
   end
 end
 ```

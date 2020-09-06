@@ -11,16 +11,21 @@ defmodule CaptainHook.Clients.HttpClient do
   alias CaptainHook.Clients.Response
 
   @impl true
-  @spec call(binary, map()) :: Response.t()
-  def call(url, params) when is_binary(url) and is_map(params) do
+  @spec call(binary, map(), map()) :: Response.t()
+  def call(url, params, headers) when is_binary(url) and is_map(params) and is_map(headers) do
     encoded_params = Jason.encode!(params)
 
     Logger.debug("#{inspect(url)} #{inspect(encoded_params)}")
 
     utc_now = DateTime.utc_now()
 
+    headers =
+      headers
+      |> Map.put("content-type", "application/json")
+      |> Map.to_list()
+
     http_result =
-      @http_adapter.post(url, encoded_params, [{"Content-Type", "application/json"}],
+      @http_adapter.post(url, encoded_params, headers,
         timeout: @timeout,
         recv_timeout: @rcv_timeout
       )

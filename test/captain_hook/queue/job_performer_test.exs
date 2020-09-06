@@ -55,7 +55,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
       CaptainHook.HttpAdapterMock
       |> expect(:post, fn ^url,
                           ^encoded_params,
-                          [{"Content-Type", "application/json"}],
+                          [{"content-type", "application/json"}],
                           _options ->
         {:error, %HTTPoison.Error{reason: :connect_timeout}}
       end)
@@ -116,16 +116,20 @@ defmodule CaptainHook.Queue.JobPerformerTest do
     end
 
     test "when the conversation success, returns a ok names tuple with the webhook_conversation" do
-      %{url: url} = webhook_endpoint = insert(:webhook_endpoint)
+      %{url: url} =
+        webhook_endpoint =
+        insert(:webhook_endpoint, headers: %{"authorization" => "Basic bG9naW46cGFzc3dvcmQ="})
 
       data = %{}
       encoded_params = Jason.encode!(data)
 
+      headers = [
+        {"authorization", "Basic bG9naW46cGFzc3dvcmQ="},
+        {"content-type", "application/json"}
+      ]
+
       CaptainHook.HttpAdapterMock
-      |> expect(:post, fn ^url,
-                          ^encoded_params,
-                          [{"Content-Type", "application/json"}],
-                          _options ->
+      |> expect(:post, fn ^url, ^encoded_params, ^headers, _options ->
         {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
       end)
 

@@ -60,7 +60,7 @@ defmodule CaptainHook.Queue.JobPerformer do
   end
 
   defp notify_endpoint(%WebhookEndpoint{} = webhook_endpoint, data) when is_map(data) do
-    @webhook_client.call(webhook_endpoint.url, Map.merge(data, webhook_endpoint.metadata))
+    @webhook_client.call(webhook_endpoint.url, Map.merge(data, webhook_endpoint.metadata), webhook_endpoint.headers)
   end
 
   defp webhook_conversation_attrs(

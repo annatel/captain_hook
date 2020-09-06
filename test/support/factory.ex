@@ -14,7 +14,8 @@ defmodule CaptainHook.Factory do
       webhook: sequence("webhook_"),
       started_at: DateTime.utc_now() |> DateTime.truncate(:second),
       url: sequence("url_"),
-      metadata: %{}
+      metadata: %{},
+      headers: %{}
     }
   end
 
