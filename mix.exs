@@ -4,7 +4,7 @@ defmodule CaptainHook.MixProject do
   def project do
     [
       app: :captain_hook,
-      version: "0.4.0",
+      version: "0.4.1",
       elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -30,7 +30,7 @@ defmodule CaptainHook.MixProject do
       {:ecto_sql, "~> 3.0"},
       {:antl_utils, "~> 0.4.1"},
       {:antl_datetime_utils, "~> 0.1.0"},
-      {:queuetopia, "~> 0.2.0"},
+      {:queuetopia, "~> 0.3.0"},
       {:httpoison, "~> 1.7"}
     ]
   end
