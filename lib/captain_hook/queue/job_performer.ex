@@ -31,15 +31,23 @@ defmodule CaptainHook.Queue.JobPerformer do
           {:error, binary} | {:ok, CaptainHook.WebhookConversations.WebhookConversation.t()}
   def send_notification(action, params, attempt_number)
       when is_binary(action) and is_map(params) and is_integer(attempt_number) do
-    params = struct!(CaptainHook.DataWrapper, Map.to_list(params))
+    params = for {key, val} <- params, into: %{}, do: {cast_atom(key), val}
+
+    data_wrapper = struct!(CaptainHook.DataWrapper, Map.to_list(params))
 
     webhook_endpoint =
-      WebhookEndpoints.get_webhook_endpoint!(params.webhook, params.webhook_endpoint_id)
+      WebhookEndpoints.get_webhook_endpoint!(
+        data_wrapper.webhook,
+        data_wrapper.webhook_endpoint_id
+      )
 
     webhook_conversation_attrs =
       webhook_endpoint
-      |> notify_endpoint(params.data)
-      |> webhook_conversation_attrs(webhook_endpoint, {params.schema_type, params.schema_id})
+      |> notify_endpoint(data_wrapper.data)
+      |> webhook_conversation_attrs(
+        webhook_endpoint,
+        {data_wrapper.schema_type, data_wrapper.schema_id}
+      )
 
     webhook_endpoint
     |> WebhookConversations.create_webhook_conversation(webhook_conversation_attrs)
@@ -48,7 +56,12 @@ defmodule CaptainHook.Queue.JobPerformer do
         if WebhookConversations.conversation_succeeded?(webhook_conversation) do
           {:ok, webhook_conversation}
         else
-          handle_failure(params.webhook_result_handler, webhook_conversation, attempt_number)
+          handle_failure(
+            data_wrapper.webhook_result_handler,
+            webhook_conversation,
+            attempt_number
+          )
+
           error = webhook_conversation |> inspect()
           {:error, error}
         end
@@ -107,4 +120,8 @@ defmodule CaptainHook.Queue.JobPerformer do
     |> String.split(".")
     |> Module.safe_concat()
   end
+
+  defp cast_atom(value) when is_atom(value), do: value
+
+  defp cast_atom(value) when is_binary(value), do: String.to_atom(value)
 end

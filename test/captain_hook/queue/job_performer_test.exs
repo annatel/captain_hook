@@ -61,11 +61,11 @@ defmodule CaptainHook.Queue.JobPerformerTest do
       end)
 
       params = %{
-        webhook: webhook_endpoint.webhook,
-        webhook_endpoint_id: webhook_endpoint.id,
-        schema_type: "schema_type",
-        schema_id: "schema_id",
-        data: data
+        "webhook" => webhook_endpoint.webhook,
+        "webhook_endpoint_id" => webhook_endpoint.id,
+        "schema_type" => "schema_type",
+        "schema_id" => "schema_id",
+        "data" => data
       }
 
       assert {:error, _webhook_conversation_as_string} =
@@ -82,11 +82,11 @@ defmodule CaptainHook.Queue.JobPerformerTest do
       |> expect(:handle_failure, 0, fn %WebhookConversation{}, 0 -> :ok end)
 
       params = %{
-        webhook: webhook_endpoint.webhook,
-        webhook_endpoint_id: webhook_endpoint.id,
-        schema_type: "schema_type",
-        schema_id: "schema_id",
-        data: %{}
+        "webhook" => webhook_endpoint.webhook,
+        "webhook_endpoint_id" => webhook_endpoint.id,
+        "schema_type" => "schema_type",
+        "schema_id" => "schema_id",
+        "data" => %{}
       }
 
       assert {:error, _webhook_conversation_as_string} =
@@ -103,12 +103,12 @@ defmodule CaptainHook.Queue.JobPerformerTest do
       |> expect(:handle_failure, 1, fn %WebhookConversation{}, 0 -> :ok end)
 
       params = %{
-        webhook: webhook_endpoint.webhook,
-        webhook_endpoint_id: webhook_endpoint.id,
-        schema_type: "schema_type",
-        schema_id: "schema_id",
-        webhook_result_handler: CaptainHook.WebhookResultHandlerMock |> to_string(),
-        data: %{}
+        "webhook" => webhook_endpoint.webhook,
+        "webhook_endpoint_id" => webhook_endpoint.id,
+        "schema_type" => "schema_type",
+        "schema_id" => "schema_id",
+        "webhook_result_handler" => CaptainHook.WebhookResultHandlerMock |> to_string(),
+        "data" => %{}
       }
 
       assert {:error, _webhook_conversation_as_string} =
@@ -120,7 +120,8 @@ defmodule CaptainHook.Queue.JobPerformerTest do
         webhook_endpoint =
         insert(:webhook_endpoint, headers: %{"authorization" => "Basic bG9naW46cGFzc3dvcmQ="})
 
-      data = %{}
+      data = %{id: "1"}
+
       encoded_params = Jason.encode!(data)
 
       headers = [
@@ -134,11 +135,11 @@ defmodule CaptainHook.Queue.JobPerformerTest do
       end)
 
       params = %{
-        webhook: webhook_endpoint.webhook,
-        webhook_endpoint_id: webhook_endpoint.id,
-        schema_type: "schema_type",
-        schema_id: "schema_id",
-        data: data
+        "webhook" => webhook_endpoint.webhook,
+        "webhook_endpoint_id" => webhook_endpoint.id,
+        "schema_type" => "schema_type",
+        "schema_id" => "schema_id",
+        "data" => data
       }
 
       assert {:ok, %WebhookConversation{status: status}} =
