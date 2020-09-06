@@ -6,9 +6,10 @@ defmodule CaptainHook.Behaviour do
   @callback update_webhook_endpoint(WebhookEndpoint.t(), map()) :: WebhookEndpoint.t()
   @callback delete_webhook_endpoint(WebhookEndpoint.t()) :: WebhookEndpoint.t()
 
-  @callback list_webhook_conversations(WebhookEndpoint.t()) :: [WebhookConversation.t()]
-  @callback list_webhook_conversations({binary, binary}) :: [WebhookConversation.t()]
-  @callback get_webhook_conversation(binary()) :: WebhookConversation.t()
+  @callback list_webhook_conversations(binary(), WebhookEndpoint.t()) :: [WebhookConversation.t()]
+  @callback list_webhook_conversations(binary(), {binary, binary}) :: [WebhookConversation.t()]
+  @callback get_webhook_conversation(binary(), binary()) :: WebhookConversation.t()
+
   @callback notify(binary, binary, {atom, binary}, map(), keyword()) ::
               :ok | {:error, :no_webhook_endpoint_found | Ecto.Changeset.t()}
 end

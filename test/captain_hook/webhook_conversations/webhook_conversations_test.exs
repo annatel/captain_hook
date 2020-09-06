@@ -15,11 +15,23 @@ defmodule WebhookConversations.WebhookConversationsTest do
       webhook_conversation_2 =
         insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_2.id)
 
+      assert [] ==
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_1.webhook,
+                 webhook_endpoint_2
+               )
+
       assert [webhook_conversation_1] ==
-               WebhookConversations.list_webhook_conversations(webhook_endpoint_1)
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_1.webhook,
+                 webhook_endpoint_1
+               )
 
       assert [webhook_conversation_2] ==
-               WebhookConversations.list_webhook_conversations(webhook_endpoint_2)
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_2.webhook,
+                 webhook_endpoint_2
+               )
     end
   end
 
@@ -34,13 +46,21 @@ defmodule WebhookConversations.WebhookConversationsTest do
       webhook_conversation_2 =
         insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_2.id)
 
+      assert [] ==
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_2.webhook,
+                 {webhook_conversation_1.schema_type, webhook_conversation_1.schema_id}
+               )
+
       assert [webhook_conversation_1] ==
                WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_1.webhook,
                  {webhook_conversation_1.schema_type, webhook_conversation_1.schema_id}
                )
 
       assert [webhook_conversation_2] ==
                WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_2.webhook,
                  {webhook_conversation_2.schema_type, webhook_conversation_2.schema_id}
                )
     end
@@ -48,14 +68,36 @@ defmodule WebhookConversations.WebhookConversationsTest do
 
   describe "get_webhook_conversation/1" do
     test "when the webhook_conversation does not exist, returns nil" do
-      assert is_nil(WebhookConversations.get_webhook_conversation(CaptainHook.Factory.uuid()))
+      assert is_nil(
+               WebhookConversations.get_webhook_conversation(
+                 "webhook",
+                 CaptainHook.Factory.uuid()
+               )
+             )
+    end
+
+    test "when the webhook_conversation does not belong to the webhook requestion, returns nil" do
+      webhook_conversation_factory = insert(:webhook_conversation)
+
+      assert is_nil(
+               WebhookConversations.get_webhook_conversation(
+                 "webhook",
+                 webhook_conversation_factory.id
+               )
+             )
     end
 
     test "when the webhook_conversation exists, returns the webhook_conversation" do
-      webhook_conversation_factory = insert(:webhook_conversation)
+      webhook_endpoint = insert(:webhook_endpoint)
+
+      webhook_conversation_factory =
+        insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint.id)
 
       assert webhook_conversation_factory ==
-               WebhookConversations.get_webhook_conversation(webhook_conversation_factory.id)
+               WebhookConversations.get_webhook_conversation(
+                 webhook_endpoint.webhook,
+                 webhook_conversation_factory.id
+               )
     end
   end
 

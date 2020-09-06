@@ -2,25 +2,29 @@ defmodule CaptainHook.WebhookConversations do
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.WebhookConversations.{WebhookConversation, WebhookConversationQueryable}
 
-  @spec list_webhook_conversations(WebhookEndpoint.t() | {binary, binary}) :: [
+  @spec list_webhook_conversations(binary(), WebhookEndpoint.t() | {binary, binary}) :: [
           WebhookConversation.t()
         ]
-  def list_webhook_conversations(%WebhookEndpoint{id: webhook_endpoint_id}) do
+  def list_webhook_conversations(webhook, %WebhookEndpoint{id: webhook_endpoint_id})
+      when is_binary(webhook) do
     WebhookConversationQueryable.queryable()
+    |> WebhookConversationQueryable.search(webhook)
     |> WebhookConversationQueryable.filter(webhook_endpoint_id: webhook_endpoint_id)
     |> CaptainHook.repo().all()
   end
 
-  def list_webhook_conversations({schema_type, schema_id})
-      when is_binary(schema_type) and is_binary(schema_id) do
+  def list_webhook_conversations(webhook, {schema_type, schema_id})
+      when is_binary(webhook) and is_binary(schema_type) and is_binary(schema_id) do
     WebhookConversationQueryable.queryable()
+    |> WebhookConversationQueryable.search(webhook)
     |> WebhookConversationQueryable.filter(schema_type: schema_type, schema_id: schema_id)
     |> CaptainHook.repo().all()
   end
 
-  @spec get_webhook_conversation(binary()) :: WebhookConversation.t()
-  def get_webhook_conversation(id) when is_binary(id) do
+  @spec get_webhook_conversation(binary(), binary()) :: WebhookConversation.t()
+  def get_webhook_conversation(webhook, id) when is_binary(webhook) and is_binary(id) do
     WebhookConversationQueryable.queryable()
+    |> WebhookConversationQueryable.search(webhook)
     |> WebhookConversationQueryable.filter(id: id)
     |> CaptainHook.repo().one()
   end

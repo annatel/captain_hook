@@ -2,7 +2,9 @@ defmodule CaptainHook do
   @behaviour CaptainHook.Behaviour
 
   alias CaptainHook.WebhookEndpoints
+  alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.WebhookConversations
+  alias CaptainHook.WebhookConversations.WebhookConversation
 
   @captain_hook_queue Application.get_env(:captain_hook, :queue, CaptainHook.Queue)
 
@@ -63,13 +65,13 @@ defmodule CaptainHook do
   @spec delete_webhook_endpoint(WebhookEndpoint.t()) :: WebhookEndpoint.t()
   defdelegate delete_webhook_endpoint(webhook_endpoint), to: WebhookEndpoints
 
-  @spec list_webhook_conversations(WebhookEndpoint.t() | {binary, binary}) :: [
+  @spec list_webhook_conversations(binary(), WebhookEndpoint.t() | {binary, binary}) :: [
           WebhookConversation.t()
         ]
-  defdelegate list_webhook_conversations(param), to: WebhookConversations
+  defdelegate list_webhook_conversations(webhook, param), to: WebhookConversations
 
-  @spec get_webhook_conversation(binary()) :: WebhookConversation.t()
-  defdelegate get_webhook_conversation(id), to: WebhookConversations
+  @spec get_webhook_conversation(binary(), binary()) :: WebhookConversation.t()
+  defdelegate get_webhook_conversation(webhook, id), to: WebhookConversations
 
   def repo() do
     Application.fetch_env!(:captain_hook, :repo)
