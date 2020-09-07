@@ -21,7 +21,9 @@ defmodule CaptainHook.Clients.HttpClient do
 
     headers =
       headers
-      |> Map.put("content-type", "application/json")
+      |> Recase.Enumerable.convert_keys(&Recase.to_header/1)
+      |> Map.put("Content-Type", "application/json")
+      |> Map.put("User-Agent", "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)")
       |> Map.to_list()
 
     http_result =
@@ -33,12 +35,13 @@ defmodule CaptainHook.Clients.HttpClient do
     Logger.debug("#{inspect(http_result)}")
 
     http_result
-    |> process_http_call_response(url, encoded_params, utc_now)
+    |> process_http_call_response(url, Enum.into(headers, %{}), encoded_params, utc_now)
   end
 
   defp process_http_call_response(
          {:ok, %HTTPoison.Response{status_code: status_code, body: response_body}},
          url,
+         request_headers,
          request_body,
          %DateTime{} = requested_at
        )
@@ -46,6 +49,7 @@ defmodule CaptainHook.Clients.HttpClient do
     %Response{
       requested_at: requested_at,
       request_url: url,
+      request_headers: request_headers,
       request_body: request_body,
       status_code: status_code,
       response_body: response_body
@@ -55,12 +59,14 @@ defmodule CaptainHook.Clients.HttpClient do
   defp process_http_call_response(
          {:ok, %HTTPoison.Response{status_code: status_code, body: response_body}},
          url,
+         request_headers,
          request_body,
          %DateTime{} = requested_at
        ) do
     %Response{
       requested_at: requested_at,
       request_url: url,
+      request_headers: request_headers,
       request_body: request_body,
       status_code: status_code,
       response_body: response_body
@@ -70,12 +76,14 @@ defmodule CaptainHook.Clients.HttpClient do
   defp process_http_call_response(
          {:error, %HTTPoison.Error{} = httpoison_error},
          url,
+         request_headers,
          request_body,
          %DateTime{} = requested_at
        ) do
     %Response{
       requested_at: requested_at,
       request_url: url,
+      request_headers: request_headers,
       request_body: request_body,
       client_error_message: HTTPoison.Error.message(httpoison_error)
     }

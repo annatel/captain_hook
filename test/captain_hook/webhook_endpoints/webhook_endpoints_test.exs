@@ -9,14 +9,29 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
   describe "list_webhook_endpoints/1" do
     test "return webhook_endpoints by webhook identifier" do
-      webhook_endpoint_1 = insert(:webhook_endpoint)
-      webhook_endpoint_2 = insert(:webhook_endpoint)
+      webhook = "webhook"
+      utc_now = DateTime.utc_now()
 
-      assert [webhook_endpoint_1] ==
-               WebhookEndpoints.list_webhook_endpoints(webhook_endpoint_1.webhook)
+      webhook_endpoint_1 =
+        insert(:webhook_endpoint,
+          webhook: webhook,
+          started_at: utc_now |> DateTime.add(1200, :second)
+        )
 
-      assert [webhook_endpoint_2] ==
-               WebhookEndpoints.list_webhook_endpoints(webhook_endpoint_2.webhook)
+      webhook_endpoint_2 =
+        insert(:webhook_endpoint,
+          webhook: webhook,
+          started_at: utc_now |> DateTime.add(2400, :second)
+        )
+
+      webhook_endpoint_3 =
+        insert(:webhook_endpoint, started_at: utc_now |> DateTime.add(3600, :second))
+
+      assert [^webhook_endpoint_1, ^webhook_endpoint_2] =
+               WebhookEndpoints.list_webhook_endpoints(webhook)
+
+      assert [^webhook_endpoint_3] =
+               WebhookEndpoints.list_webhook_endpoints(webhook_endpoint_3.webhook)
     end
   end
 

@@ -6,8 +6,6 @@ defmodule CaptainHook do
   alias CaptainHook.WebhookConversations
   alias CaptainHook.WebhookConversations.WebhookConversation
 
-  @captain_hook_queue Application.get_env(:captain_hook, :queue, CaptainHook.Queue)
-
   @spec notify(binary(), binary(), {atom(), binary()}, map(), keyword()) ::
           :ok | {:error, :no_webhook_endpoint_found}
   def notify(webhook, action, {schema_type, schema_id}, data, opts \\ [])
@@ -31,14 +29,10 @@ defmodule CaptainHook do
             data,
             opts
           )
+          |> Map.from_struct()
 
         {:ok, _} =
-          @captain_hook_queue.create_job(
-            "#{webhook}_#{webhook_endpoint.id}",
-            action,
-            params,
-            []
-          )
+          CaptainHook.Queue.create_job("#{webhook}_#{webhook_endpoint.id}", action, params)
       end)
     end
   end
@@ -65,10 +59,18 @@ defmodule CaptainHook do
   @spec delete_webhook_endpoint(WebhookEndpoint.t()) :: WebhookEndpoint.t()
   defdelegate delete_webhook_endpoint(webhook_endpoint), to: WebhookEndpoints
 
-  @spec list_webhook_conversations(binary(), WebhookEndpoint.t() | {binary, binary}) :: [
-          WebhookConversation.t()
-        ]
-  defdelegate list_webhook_conversations(webhook, param), to: WebhookConversations
+  @spec list_webhook_conversations(
+          binary,
+          binary | {binary, binary} | CaptainHook.WebhookEndpoints.WebhookEndpoint.t(),
+          %{opts: keyword, page: number}
+        ) :: %{items: [WebhookConversation.t()], total: integer}
+  defdelegate list_webhook_conversations(webhook, filter, pagination), to: WebhookConversations
+
+  @spec list_webhook_conversations(
+          binary,
+          binary | {binary, binary} | CaptainHook.WebhookEndpoints.WebhookEndpoint.t()
+        ) :: %{items: [WebhookConversation.t()], total: integer}
+  defdelegate list_webhook_conversations(webhook, filter), to: WebhookConversations
 
   @spec get_webhook_conversation(binary(), binary()) :: WebhookConversation.t()
   defdelegate get_webhook_conversation(webhook, id), to: WebhookConversations

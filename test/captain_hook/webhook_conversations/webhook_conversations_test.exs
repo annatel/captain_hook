@@ -4,64 +4,206 @@ defmodule WebhookConversations.WebhookConversationsTest do
 
   alias CaptainHook.WebhookConversations
 
-  describe "list_webhook_conversations/1" do
-    test "returns webhook conversation by webhook endpoint" do
+  describe "list_webhook_conversations/3 - by webhook_endpoint" do
+    test "returns the webhook_conversations according to the webhook_endpoint and the webhook name" do
       webhook_endpoint_1 = insert(:webhook_endpoint)
       webhook_endpoint_2 = insert(:webhook_endpoint)
 
       webhook_conversation_1 =
         insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_1.id)
 
-      webhook_conversation_2 =
-        insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_2.id)
-
-      assert [] ==
+      assert %{items: [], total: 0} ==
                WebhookConversations.list_webhook_conversations(
-                 webhook_endpoint_1.webhook,
-                 webhook_endpoint_2
+                 webhook_endpoint_2.webhook,
+                 webhook_endpoint_1
                )
 
-      assert [webhook_conversation_1] ==
+      assert %{items: [webhook_conversation_1], total: 1} ==
                WebhookConversations.list_webhook_conversations(
                  webhook_endpoint_1.webhook,
                  webhook_endpoint_1
                )
+    end
 
-      assert [webhook_conversation_2] ==
+    test "returns num of webhook_conversation according to the pagination params and ordered by inserted_at" do
+      webhook_endpoint_1 = insert(:webhook_endpoint)
+      webhook_endpoint_2 = insert(:webhook_endpoint)
+
+      utc_now = DateTime.utc_now()
+
+      webhook_conversation_1 =
+        insert(:webhook_conversation,
+          webhook_endpoint_id: webhook_endpoint_1.id,
+          inserted_at: utc_now |> DateTime.add(1200)
+        )
+
+      webhook_conversation_2 =
+        insert(:webhook_conversation,
+          webhook_endpoint_id: webhook_endpoint_1.id,
+          inserted_at: utc_now |> DateTime.add(2400)
+        )
+
+      _webhook_conversation_3 =
+        insert(:webhook_conversation,
+          webhook_endpoint_id: webhook_endpoint_2.id,
+          inserted_at: utc_now |> DateTime.add(3600)
+        )
+
+      assert %{items: [^webhook_conversation_1, ^webhook_conversation_2], total: 2} =
                WebhookConversations.list_webhook_conversations(
-                 webhook_endpoint_2.webhook,
-                 webhook_endpoint_2
+                 webhook_endpoint_1.webhook,
+                 webhook_endpoint_1,
+                 %{page: 1, opts: [per_page: 100]}
+               )
+
+      assert %{items: [^webhook_conversation_1], total: 2} =
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_1.webhook,
+                 webhook_endpoint_1,
+                 %{page: 1, opts: [per_page: 1]}
+               )
+
+      assert %{items: [^webhook_conversation_2], total: 2} =
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_1.webhook,
+                 webhook_endpoint_1,
+                 %{page: 2, opts: [per_page: 1]}
                )
     end
   end
 
-  describe "list_webhook_conversations/2" do
-    test "returns webhook conversation by parent type and id" do
+  describe "list_webhook_conversations/3 - by request_id" do
+    test "returns the webhook_conversations according to the request_id and the webhook name" do
       webhook_endpoint_1 = insert(:webhook_endpoint)
       webhook_endpoint_2 = insert(:webhook_endpoint)
 
       webhook_conversation_1 =
         insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_1.id)
 
-      webhook_conversation_2 =
-        insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_2.id)
+      assert %{items: [], total: 0} ==
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_2.webhook,
+                 webhook_conversation_1.request_id
+               )
 
-      assert [] ==
+      assert %{items: [webhook_conversation_1], total: 1} ==
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_1.webhook,
+                 webhook_conversation_1.request_id
+               )
+    end
+
+    test "returns num of webhook_conversation according to the pagination params and ordered by inserted_at" do
+      webhook_endpoint = insert(:webhook_endpoint)
+
+      utc_now = DateTime.utc_now()
+      request_id = CaptainHook.Factory.uuid()
+
+      webhook_conversation_1 =
+        insert(:webhook_conversation,
+          webhook_endpoint_id: webhook_endpoint.id,
+          request_id: request_id,
+          inserted_at: utc_now |> DateTime.add(1200)
+        )
+
+      webhook_conversation_2 =
+        insert(:webhook_conversation,
+          webhook_endpoint_id: webhook_endpoint.id,
+          request_id: request_id,
+          inserted_at: utc_now |> DateTime.add(2400)
+        )
+
+      _webhook_conversation_3 =
+        insert(:webhook_conversation,
+          webhook_endpoint_id: webhook_endpoint.id,
+          inserted_at: utc_now |> DateTime.add(3600)
+        )
+
+      assert %{items: [^webhook_conversation_1, ^webhook_conversation_2], total: 2} =
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint.webhook,
+                 request_id,
+                 %{page: 1, opts: [per_page: 100]}
+               )
+
+      assert %{items: [^webhook_conversation_1], total: 2} =
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint.webhook,
+                 request_id,
+                 %{page: 1, opts: [per_page: 1]}
+               )
+
+      assert %{items: [^webhook_conversation_2], total: 2} =
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint.webhook,
+                 request_id,
+                 %{page: 2, opts: [per_page: 1]}
+               )
+    end
+  end
+
+  describe "list_webhook_conversations/3 - by schema_type and schema_id" do
+    test "returns the webhook_conversations according to the request_id and the webhook name" do
+      webhook_endpoint_1 = insert(:webhook_endpoint)
+      webhook_endpoint_2 = insert(:webhook_endpoint)
+
+      webhook_conversation_1 =
+        insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_1.id)
+
+      assert %{items: [], total: 0} ==
                WebhookConversations.list_webhook_conversations(
                  webhook_endpoint_2.webhook,
                  {webhook_conversation_1.schema_type, webhook_conversation_1.schema_id}
                )
 
-      assert [webhook_conversation_1] ==
+      assert %{items: [webhook_conversation_1], total: 1} ==
                WebhookConversations.list_webhook_conversations(
                  webhook_endpoint_1.webhook,
                  {webhook_conversation_1.schema_type, webhook_conversation_1.schema_id}
                )
+    end
 
-      assert [webhook_conversation_2] ==
+    test "returns num of webhook_conversation according to the pagination params and ordered by inserted_at" do
+      webhook_endpoint = insert(:webhook_endpoint)
+
+      utc_now = DateTime.utc_now()
+      schema_type = "schema_type"
+      schema_id = "schema_id"
+
+      webhook_conversation_1 =
+        insert(:webhook_conversation,
+          webhook_endpoint_id: webhook_endpoint.id,
+          schema_type: schema_type,
+          schema_id: schema_id,
+          inserted_at: utc_now |> DateTime.add(1200)
+        )
+
+      webhook_conversation_2 =
+        insert(:webhook_conversation,
+          webhook_endpoint_id: webhook_endpoint.id,
+          schema_type: schema_type,
+          schema_id: schema_id,
+          inserted_at: utc_now |> DateTime.add(2400)
+        )
+
+      _webhook_conversation_3 =
+        insert(:webhook_conversation,
+          webhook_endpoint_id: webhook_endpoint.id,
+          inserted_at: utc_now |> DateTime.add(3600)
+        )
+
+      assert %{items: [^webhook_conversation_1, ^webhook_conversation_2], total: 2} =
                WebhookConversations.list_webhook_conversations(
-                 webhook_endpoint_2.webhook,
-                 {webhook_conversation_2.schema_type, webhook_conversation_2.schema_id}
+                 webhook_endpoint.webhook,
+                 {schema_type, schema_id},
+                 %{page: 1, opts: [per_page: 100]}
+               )
+
+      assert %{items: [^webhook_conversation_1], total: 2} =
+               WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint.webhook,
+                 {schema_type, schema_id},
+                 %{page: 1, opts: [per_page: 1]}
                )
     end
   end

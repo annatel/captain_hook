@@ -10,66 +10,107 @@ defmodule CaptainHook.Queue.JobPerformerTest do
   setup :verify_on_exit!
 
   describe "send_notification/3" do
+    test "params from captain_hook_queue can be either a Map with atom keys or string keys" do
+      webhook_endpoint = insert(:webhook_endpoint)
+
+      CaptainHook.HttpAdapterMock
+      |> stub(:post, fn _, _, _, _ ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
+      end)
+
+      map_with_string_keys = %{
+        "webhook" => webhook_endpoint.webhook,
+        "webhook_endpoint_id" => webhook_endpoint.id,
+        "schema_type" => "schema_type",
+        "schema_id" => "schema_id",
+        "request_id" => "request_id",
+        "data" => %{}
+      }
+
+      map_with_atom_keys = %{
+        webhook: webhook_endpoint.webhook,
+        webhook_endpoint_id: webhook_endpoint.id,
+        schema_type: "schema_type",
+        schema_id: "schema_id",
+        request_id: "request_id",
+        data: %{}
+      }
+
+      assert {:ok, %WebhookConversation{}} =
+               JobPerformer.send_notification("action", map_with_string_keys, 0)
+
+      assert {:ok, %WebhookConversation{}} =
+               JobPerformer.send_notification("action", map_with_atom_keys, 0)
+    end
+
     test "when the webhook (name) does not exists, raise a Ecto.NoResultsError" do
       webhook_endpoint = insert(:webhook_endpoint, webhook: "webhook1")
 
-      assert_raise Ecto.NoResultsError, fn ->
-        JobPerformer.send_notification(
-          "action",
-          %{
-            webhook: "webhook2",
-            webhook_endpoint_id: webhook_endpoint.id,
-            schema_type: "schema_type",
-            schema_id: "schema_id",
-            data: %{}
-          },
-          0
+      params =
+        CaptainHook.DataWrapper.new(
+          "webhook2",
+          webhook_endpoint.id,
+          "schema_type",
+          "schema_id",
+          %{},
+          []
         )
+        |> Map.from_struct()
+
+      assert_raise Ecto.NoResultsError, fn ->
+        JobPerformer.send_notification("action", params, 0)
       end
     end
 
     test "when the webhook_endpoint_id does not exists, raise a Ecto.NoResultsError" do
       webhook_endpoint = insert(:webhook_endpoint)
 
-      assert_raise Ecto.NoResultsError, fn ->
-        JobPerformer.send_notification(
-          "action",
-          %{
-            webhook: webhook_endpoint.webhook,
-            webhook_endpoint_id: CaptainHook.Factory.uuid(),
-            schema_type: "schema_type",
-            schema_id: "schema_id",
-            data: %{}
-          },
-          0
+      params =
+        CaptainHook.DataWrapper.new(
+          webhook_endpoint.webhook,
+          CaptainHook.Factory.uuid(),
+          "schema_type",
+          "schema_id",
+          %{},
+          []
         )
+        |> Map.from_struct()
+
+      assert_raise Ecto.NoResultsError, fn ->
+        JobPerformer.send_notification("action", params, 0)
       end
     end
 
     test "when the conversation failed, returns an error named tuple with the conversation" do
-      %{url: url} = webhook_endpoint = insert(:webhook_endpoint)
-
-      data = %{}
-      encoded_params = Jason.encode!(data)
+      webhook_endpoint = insert(:webhook_endpoint)
 
       CaptainHook.HttpAdapterMock
-      |> expect(:post, fn ^url,
-                          ^encoded_params,
-                          [{"content-type", "application/json"}],
-                          _options ->
+      |> expect(:post, fn _, _, _, _options ->
         {:error, %HTTPoison.Error{reason: :connect_timeout}}
       end)
 
-      params = %{
-        "webhook" => webhook_endpoint.webhook,
-        "webhook_endpoint_id" => webhook_endpoint.id,
-        "schema_type" => "schema_type",
-        "schema_id" => "schema_id",
-        "data" => data
-      }
+      params =
+        CaptainHook.DataWrapper.new(
+          webhook_endpoint.webhook,
+          webhook_endpoint.id,
+          "schema_type",
+          "schema_id",
+          %{},
+          []
+        )
+        |> Map.from_struct()
 
       assert {:error, _webhook_conversation_as_string} =
                JobPerformer.send_notification("action", params, 0)
+
+      assert %{items: [webhook_conversation]} =
+               CaptainHook.WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint.webhook,
+                 webhook_endpoint
+               )
+
+      assert webhook_conversation.status ==
+               CaptainHook.WebhookConversations.WebhookConversation.status().failed
     end
 
     test "when the conversation failed and a webhook_result_handler is not set, do not call the handle_failure callback" do
@@ -81,13 +122,16 @@ defmodule CaptainHook.Queue.JobPerformerTest do
       CaptainHook.WebhookResultHandlerMock
       |> expect(:handle_failure, 0, fn %WebhookConversation{}, 0 -> :ok end)
 
-      params = %{
-        "webhook" => webhook_endpoint.webhook,
-        "webhook_endpoint_id" => webhook_endpoint.id,
-        "schema_type" => "schema_type",
-        "schema_id" => "schema_id",
-        "data" => %{}
-      }
+      params =
+        CaptainHook.DataWrapper.new(
+          webhook_endpoint.webhook,
+          webhook_endpoint.id,
+          "schema_type",
+          "schema_id",
+          %{},
+          []
+        )
+        |> Map.from_struct()
 
       assert {:error, _webhook_conversation_as_string} =
                JobPerformer.send_notification("action", params, 0)
@@ -99,53 +143,142 @@ defmodule CaptainHook.Queue.JobPerformerTest do
       CaptainHook.HttpAdapterMock
       |> expect(:post, fn _, _, _, _ -> {:error, %HTTPoison.Error{reason: :connect_timeout}} end)
 
-      CaptainHook.WebhookResultHandlerMock
-      |> expect(:handle_failure, 1, fn %WebhookConversation{}, 0 -> :ok end)
+      status = WebhookConversation.status().failed
 
-      params = %{
-        "webhook" => webhook_endpoint.webhook,
-        "webhook_endpoint_id" => webhook_endpoint.id,
-        "schema_type" => "schema_type",
-        "schema_id" => "schema_id",
-        "webhook_result_handler" => CaptainHook.WebhookResultHandlerMock |> to_string(),
-        "data" => %{}
-      }
+      CaptainHook.WebhookResultHandlerMock
+      |> expect(:handle_failure, 1, fn %WebhookConversation{status: ^status}, 0 -> :ok end)
+
+      params =
+        CaptainHook.DataWrapper.new(
+          webhook_endpoint.webhook,
+          webhook_endpoint.id,
+          "schema_type",
+          "schema_id",
+          %{},
+          webhook_result_handler: CaptainHook.WebhookResultHandlerMock |> to_string()
+        )
+        |> Map.from_struct()
 
       assert {:error, _webhook_conversation_as_string} =
                JobPerformer.send_notification("action", params, 0)
     end
 
     test "when the conversation success, returns a ok names tuple with the webhook_conversation" do
-      %{url: url} =
-        webhook_endpoint =
-        insert(:webhook_endpoint, headers: %{"authorization" => "Basic bG9naW46cGFzc3dvcmQ="})
-
-      data = %{id: "1"}
-
-      encoded_params = Jason.encode!(data)
-
-      headers = [
-        {"authorization", "Basic bG9naW46cGFzc3dvcmQ="},
-        {"content-type", "application/json"}
-      ]
+      webhook_endpoint = insert(:webhook_endpoint)
 
       CaptainHook.HttpAdapterMock
-      |> expect(:post, fn ^url, ^encoded_params, ^headers, _options ->
+      |> expect(:post, fn _, _, _, _options ->
         {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
       end)
 
-      params = %{
-        "webhook" => webhook_endpoint.webhook,
-        "webhook_endpoint_id" => webhook_endpoint.id,
-        "schema_type" => "schema_type",
-        "schema_id" => "schema_id",
-        "data" => data
-      }
+      params =
+        CaptainHook.DataWrapper.new(
+          webhook_endpoint.webhook,
+          webhook_endpoint.id,
+          "schema_type",
+          "schema_id",
+          %{},
+          []
+        )
+        |> Map.from_struct()
 
       assert {:ok, %WebhookConversation{status: status}} =
                JobPerformer.send_notification("action", params, 0)
 
       assert status == WebhookConversation.status().success
+    end
+
+    test "add the request_id to the body request when notifying the endpoint" do
+      %{url: url} = webhook_endpoint = insert(:webhook_endpoint)
+
+      data = %{id: "1"}
+
+      params =
+        CaptainHook.DataWrapper.new(
+          webhook_endpoint.webhook,
+          webhook_endpoint.id,
+          "schema_type",
+          "schema_id",
+          data,
+          []
+        )
+        |> Map.from_struct()
+
+      encoded_params = data |> Map.put(:request_id, params.request_id) |> Jason.encode!()
+
+      CaptainHook.HttpAdapterMock
+      |> expect(:post, fn ^url, ^encoded_params, _, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
+      end)
+
+      assert {:ok, %WebhookConversation{}} = JobPerformer.send_notification("action", params, 0)
+    end
+
+    test "add the webhook_endpoint headers to the request when notifying the endpoint" do
+      %{url: url} =
+        webhook_endpoint =
+        insert(:webhook_endpoint,
+          headers: %{
+            "authorization" => "Basic bG9naW46cGFzc3dvcmQ=",
+            "some header" => "some value"
+          }
+        )
+
+      headers = [
+        {"Authorization", "Basic bG9naW46cGFzc3dvcmQ="},
+        {"Content-Type", "application/json"},
+        {"Some-Header", "some value"},
+        {"User-Agent", "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)"}
+      ]
+
+      CaptainHook.HttpAdapterMock
+      |> expect(:post, fn ^url, _, ^headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
+      end)
+
+      params =
+        CaptainHook.DataWrapper.new(
+          webhook_endpoint.webhook,
+          webhook_endpoint.id,
+          "schema_type",
+          "schema_id",
+          %{},
+          []
+        )
+        |> Map.from_struct()
+
+      assert {:ok, %WebhookConversation{}} = JobPerformer.send_notification("action", params, 0)
+    end
+
+    test "add the webhook_endpoint metadata to the body request when notifying the endpoint" do
+      %{url: url} =
+        webhook_endpoint = insert(:webhook_endpoint, metadata: %{"source" => "CaptainHook"})
+
+      data = %{id: "1"}
+
+      params =
+        CaptainHook.DataWrapper.new(
+          webhook_endpoint.webhook,
+          webhook_endpoint.id,
+          "schema_type",
+          "schema_id",
+          data,
+          []
+        )
+        |> Map.from_struct()
+
+      encoded_params =
+        data
+        |> Map.put(:request_id, params.request_id)
+        |> Map.merge(webhook_endpoint.metadata)
+        |> Jason.encode!()
+
+      CaptainHook.HttpAdapterMock
+      |> expect(:post, fn ^url, ^encoded_params, _, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
+      end)
+
+      assert {:ok, %WebhookConversation{}} = JobPerformer.send_notification("action", params, 0)
     end
   end
 end

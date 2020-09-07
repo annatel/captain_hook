@@ -6,8 +6,17 @@ defmodule CaptainHook.Behaviour do
   @callback update_webhook_endpoint(WebhookEndpoint.t(), map()) :: WebhookEndpoint.t()
   @callback delete_webhook_endpoint(WebhookEndpoint.t()) :: WebhookEndpoint.t()
 
-  @callback list_webhook_conversations(binary(), WebhookEndpoint.t()) :: [WebhookConversation.t()]
-  @callback list_webhook_conversations(binary(), {binary, binary}) :: [WebhookConversation.t()]
+  @callback list_webhook_conversations(
+              binary,
+              binary | {binary, binary} | CaptainHook.WebhookEndpoints.WebhookEndpoint.t(),
+              %{opts: keyword, page: number}
+            ) :: %{items: [WebhookConversation.t()], total: integer}
+  @callback list_webhook_conversations(
+              binary,
+              binary | {binary, binary} | CaptainHook.WebhookEndpoints.WebhookEndpoint.t()
+            ) :: %{items: [WebhookConversation.t()], total: integer}
+  @optional_callbacks list_webhook_conversations: 2, list_webhook_conversations: 3
+
   @callback get_webhook_conversation(binary(), binary()) :: WebhookConversation.t()
 
   @callback notify(binary, binary, {atom, binary}, map(), keyword()) ::

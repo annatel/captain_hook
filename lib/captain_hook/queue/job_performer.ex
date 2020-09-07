@@ -31,7 +31,7 @@ defmodule CaptainHook.Queue.JobPerformer do
           {:error, binary} | {:ok, CaptainHook.WebhookConversations.WebhookConversation.t()}
   def send_notification(action, params, attempt_number)
       when is_binary(action) and is_map(params) and is_integer(attempt_number) do
-    params = for {key, val} <- params, into: %{}, do: {cast_atom(key), val}
+    params = Recase.Enumerable.atomize_keys(params, &Recase.to_snake/1)
 
     data_wrapper = struct!(CaptainHook.DataWrapper, Map.to_list(params))
 
@@ -43,11 +43,8 @@ defmodule CaptainHook.Queue.JobPerformer do
 
     webhook_conversation_attrs =
       webhook_endpoint
-      |> notify_endpoint(data_wrapper.data)
-      |> webhook_conversation_attrs(
-        webhook_endpoint,
-        {data_wrapper.schema_type, data_wrapper.schema_id}
-      )
+      |> notify_endpoint(data_wrapper.request_id, data_wrapper.data)
+      |> webhook_conversation_attrs(webhook_endpoint, data_wrapper)
 
     webhook_endpoint
     |> WebhookConversations.create_webhook_conversation(webhook_conversation_attrs)
@@ -72,19 +69,21 @@ defmodule CaptainHook.Queue.JobPerformer do
     end
   end
 
-  defp notify_endpoint(%WebhookEndpoint{} = webhook_endpoint, data) when is_map(data) do
+  defp notify_endpoint(%WebhookEndpoint{} = webhook_endpoint, request_id, data)
+       when is_binary(request_id) and is_map(data) do
     metadata = Map.get(webhook_endpoint, :metadata) || %{}
     headers = Map.get(webhook_endpoint, :headers) || %{}
+    params = data |> Map.merge(metadata) |> Map.put(:request_id, request_id)
 
-    @webhook_client.call(webhook_endpoint.url, Map.merge(data, metadata), headers)
+    @webhook_client.call(webhook_endpoint.url, params, headers)
   end
 
   defp webhook_conversation_attrs(
          %Response{} = response,
          %WebhookEndpoint{id: webhook_endpoint_id},
-         {schema_type, schema_id}
+         %CaptainHook.DataWrapper{} = data_wrapper
        )
-       when is_binary(webhook_endpoint_id) and is_binary(schema_type) and is_binary(schema_id) do
+       when is_binary(webhook_endpoint_id) do
     status =
       if response.status_code in 200..299,
         do: WebhookConversation.status().success,
@@ -92,10 +91,12 @@ defmodule CaptainHook.Queue.JobPerformer do
 
     %{
       webhook_endpoint_id: webhook_endpoint_id,
-      schema_type: schema_type,
-      schema_id: schema_id,
+      schema_type: data_wrapper.schema_type,
+      schema_id: data_wrapper.schema_id,
+      request_id: data_wrapper.request_id |> AntlUtils.Ecto.UUID.to_uuid(),
       requested_at: response.requested_at,
       request_url: response.request_url,
+      request_headers: response.request_headers,
       request_body: response.request_body,
       http_status: response.status_code,
       response_body: response.response_body,
@@ -119,8 +120,4 @@ defmodule CaptainHook.Queue.JobPerformer do
     |> String.split(".")
     |> Module.safe_concat()
   end
-
-  defp cast_atom(value) when is_atom(value), do: value
-
-  defp cast_atom(value) when is_binary(value), do: String.to_atom(value)
 end

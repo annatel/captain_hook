@@ -14,10 +14,12 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
 
     field(:schema_type, :string)
     field(:schema_id, :string)
+    field(:request_id, :binary_id)
 
     field(:requested_at, :utc_datetime)
 
     field(:request_url, :string)
+    field(:request_headers, :map)
     field(:request_body, :string)
 
     field(:http_status, :integer)
@@ -36,8 +38,10 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
       :webhook_endpoint_id,
       :schema_type,
       :schema_id,
+      :request_id,
       :requested_at,
       :request_url,
+      :request_headers,
       :request_body,
       :http_status,
       :response_body,
@@ -46,8 +50,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     ])
     |> validate_required([
       :webhook_endpoint_id,
-      :schema_type,
-      :schema_id,
+      :request_id,
       :requested_at,
       :request_url,
       :request_body,

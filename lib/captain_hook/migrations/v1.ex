@@ -27,6 +27,7 @@ defmodule CaptainHook.Migrations.V1 do
 
       add(:url, :string)
       add(:metadata, :map)
+      add(:headers, :map)
 
       timestamps()
     end
@@ -50,12 +51,16 @@ defmodule CaptainHook.Migrations.V1 do
         null: false
       )
 
-      add(:schema_type, :string, null: false)
-      add(:schema_id, :string, null: false)
+      add(:schema_type, :string, null: true)
+      add(:schema_id, :string, null: true)
+
+      # a unique string to identify this call. This request_id will be the same for all attempts of a webhook call.
+      add(:request_id, :binary_id, null: false)
 
       add(:requested_at, :utc_datetime, null: false)
 
       add(:request_url, :string, null: false)
+      add(:request_headers, :map, null: true)
       add(:request_body, :text, null: true)
 
       add(:http_status, :integer, null: true)
@@ -67,9 +72,11 @@ defmodule CaptainHook.Migrations.V1 do
       timestamps()
     end
 
-    create(index(:captain_hook_webhook_conversations, [:status]))
     create(index(:captain_hook_webhook_conversations, [:schema_id]))
     create(index(:captain_hook_webhook_conversations, [:schema_type, :schema_id]))
+    create(index(:captain_hook_webhook_conversations, [:request_id]))
+    create(index(:captain_hook_webhook_conversations, [:status]))
+    create(index(:captain_hook_webhook_conversations, [:inserted_at]))
   end
 
   defp drop_webhook_conversations_table do

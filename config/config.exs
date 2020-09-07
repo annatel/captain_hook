@@ -11,8 +11,7 @@ if(Mix.env() == :test) do
     pool: Ecto.Adapters.SQL.Sandbox
 
   config :captain_hook,
-    http_adapter: CaptainHook.HttpAdapterMock,
-    queue: CaptainHook.QueueMock
+    http_adapter: CaptainHook.HttpAdapterMock
 
   config :captain_hook,
     repo: CaptainHook.TestRepo

@@ -1,9 +1,10 @@
 defmodule CaptainHookTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   use CaptainHook.DataCase
 
   import Mox
 
+  setup :set_mox_global
   setup :verify_on_exit!
 
   describe "notify/4" do
@@ -12,27 +13,43 @@ defmodule CaptainHookTest do
                CaptainHook.notify("webhook", "action", {:atom, "id"}, %{})
     end
 
-    test "when the webhook exists, run for each endpoint a job and return :ok" do
-      %{webhook: webhook, id: webhook_endpoint_id_1} = insert(:webhook_endpoint)
-      %{id: webhook_endpoint_id_2} = insert(:webhook_endpoint, webhook: webhook)
+    test "when the webhook exists, run for each endpoint a job ordered by their creation date  and return :ok" do
+      webhook = "webhook"
+      %{url: url_1} = webhook_endpoint_1 = insert(:webhook_endpoint, webhook: webhook)
+      %{url: url_2} = webhook_endpoint_2 = insert(:webhook_endpoint, webhook: webhook)
 
-      queue_name_1 = "#{webhook}_#{webhook_endpoint_id_1}"
-      params_1 = CaptainHook.DataWrapper.new(webhook, webhook_endpoint_id_1, :atom, "id", %{}, [])
-      queue_name_2 = "#{webhook}_#{webhook_endpoint_id_2}"
+      CaptainHook.HttpAdapterMock
+      |> expect(:post, 2, fn
+        ^url_1, _, _, _options ->
+          {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
 
-      params_2 = CaptainHook.DataWrapper.new(webhook, webhook_endpoint_id_2, :atom, "id", %{}, [])
-
-      action = "action"
-
-      # Mox does not provide a way to test that the same function with the same arity are called only once.
-      # When you redifine a mock for the same function with the same arity mox are override
-      CaptainHook.QueueMock
-      |> expect(:create_job, 2, fn
-        ^queue_name_1, ^action, ^params_1, _ -> {:ok, nil}
-        ^queue_name_2, ^action, ^params_2, _ -> {:ok, nil}
+        ^url_2, _, _, _options ->
+          {:error, %HTTPoison.Error{reason: :connect_timeout}}
       end)
 
       assert :ok == CaptainHook.notify(webhook, "action", {:atom, "id"}, %{})
+
+      start_supervised({CaptainHook.Supervisor, [poll_interval: 500]})
+
+      :timer.sleep(800)
+
+      assert %{items: [webhook_conversation]} =
+               CaptainHook.WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_1.webhook,
+                 webhook_endpoint_1
+               )
+
+      assert webhook_conversation.status ==
+               CaptainHook.WebhookConversations.WebhookConversation.status().success
+
+      assert %{items: [webhook_conversation]} =
+               CaptainHook.WebhookConversations.list_webhook_conversations(
+                 webhook_endpoint_2.webhook,
+                 webhook_endpoint_2
+               )
+
+      assert webhook_conversation.status ==
+               CaptainHook.WebhookConversations.WebhookConversation.status().failed
     end
   end
 end

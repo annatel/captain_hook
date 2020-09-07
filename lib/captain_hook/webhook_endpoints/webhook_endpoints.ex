@@ -1,10 +1,13 @@
 defmodule CaptainHook.WebhookEndpoints do
+  import Ecto.Query, only: [order_by: 2]
+
   alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, WebhookEndpointQueryable}
 
   @spec list_webhook_endpoints(binary) :: [WebhookEndpoint.t()]
   def list_webhook_endpoints(webhook) do
     WebhookEndpointQueryable.queryable()
     |> WebhookEndpointQueryable.filter(webhook: webhook)
+    |> order_by([:started_at])
     |> CaptainHook.repo().all()
   end
 
