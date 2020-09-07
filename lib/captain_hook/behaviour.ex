@@ -21,4 +21,7 @@ defmodule CaptainHook.Behaviour do
 
   @callback notify(binary, binary, {atom, binary}, map(), keyword()) ::
               :ok | {:error, :no_webhook_endpoint_found | Ecto.Changeset.t()}
+  @callback notify(binary, binary, {atom, binary}, map()) ::
+              :ok | {:error, :no_webhook_endpoint_found | Ecto.Changeset.t()}
+  @optional_callbacks notify: 5, notify: 4
 end
