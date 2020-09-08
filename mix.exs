@@ -30,7 +30,7 @@ defmodule CaptainHook.MixProject do
       {:ecto_sql, "~> 3.0"},
       {:antl_utils, "~> 0.4.1"},
       {:antl_datetime_utils, "~> 0.1.0"},
-      {:queuetopia, "~> 0.5.0"},
+      {:queuetopia, "~> 0.5.1"},
       {:httpoison, "~> 1.7"},
       {:recase,
        git: "https://github.com/sobolevn/recase", ref: "1a1e0c9f3eec84d827b912906476f0a1144174fb"}
