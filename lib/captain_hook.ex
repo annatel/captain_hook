@@ -8,8 +8,8 @@ defmodule CaptainHook do
 
   @spec notify(binary(), binary(), {atom(), binary()}, map(), keyword()) ::
           :ok | {:error, :no_webhook_endpoint_found}
-  def notify(webhook, action, {schema_type, schema_id}, data, opts \\ [])
-      when is_binary(webhook) and is_binary(action) and is_atom(schema_type) and is_map(data) do
+  def notify(webhook, action, {resource_type, resource_id}, data, opts \\ [])
+      when is_binary(webhook) and is_binary(action) and is_atom(resource_type) and is_map(data) do
     webhook_endpoints =
       webhook
       |> list_webhook_endpoints()
@@ -24,8 +24,8 @@ defmodule CaptainHook do
           CaptainHook.DataWrapper.new(
             webhook,
             webhook_endpoint.id,
-            schema_type,
-            schema_id,
+            resource_type,
+            resource_id,
             data,
             opts
           )

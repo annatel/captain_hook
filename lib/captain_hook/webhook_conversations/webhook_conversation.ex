@@ -12,8 +12,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
   schema "captain_hook_webhook_conversations" do
     belongs_to(:webhook_endpoint, WebhookEndpoint)
 
-    field(:schema_type, :string)
-    field(:schema_id, :string)
+    field(:resource_type, :string)
+    field(:resource_id, :string)
     field(:request_id, :binary_id)
 
     field(:requested_at, :utc_datetime)
@@ -36,8 +36,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     webhook_conversation
     |> cast(attrs, [
       :webhook_endpoint_id,
-      :schema_type,
-      :schema_id,
+      :resource_type,
+      :resource_id,
       :request_id,
       :requested_at,
       :request_url,

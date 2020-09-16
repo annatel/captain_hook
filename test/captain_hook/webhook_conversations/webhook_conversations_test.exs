@@ -142,7 +142,7 @@ defmodule WebhookConversations.WebhookConversationsTest do
     end
   end
 
-  describe "list_webhook_conversations/3 - by schema_type and schema_id" do
+  describe "list_webhook_conversations/3 - by resource_type and resource_id" do
     test "returns the webhook_conversations according to the request_id and the webhook name" do
       webhook_endpoint_1 = insert(:webhook_endpoint)
       webhook_endpoint_2 = insert(:webhook_endpoint)
@@ -153,13 +153,13 @@ defmodule WebhookConversations.WebhookConversationsTest do
       assert %{items: [], total: 0} ==
                WebhookConversations.list_webhook_conversations(
                  webhook_endpoint_2.webhook,
-                 {webhook_conversation_1.schema_type, webhook_conversation_1.schema_id}
+                 {webhook_conversation_1.resource_type, webhook_conversation_1.resource_id}
                )
 
       assert %{items: [webhook_conversation_1], total: 1} ==
                WebhookConversations.list_webhook_conversations(
                  webhook_endpoint_1.webhook,
-                 {webhook_conversation_1.schema_type, webhook_conversation_1.schema_id}
+                 {webhook_conversation_1.resource_type, webhook_conversation_1.resource_id}
                )
     end
 
@@ -167,22 +167,22 @@ defmodule WebhookConversations.WebhookConversationsTest do
       webhook_endpoint = insert(:webhook_endpoint)
 
       utc_now = DateTime.utc_now()
-      schema_type = "schema_type"
-      schema_id = "schema_id"
+      resource_type = "resource_type"
+      resource_id = "resource_id"
 
       webhook_conversation_1 =
         insert(:webhook_conversation,
           webhook_endpoint_id: webhook_endpoint.id,
-          schema_type: schema_type,
-          schema_id: schema_id,
+          resource_type: resource_type,
+          resource_id: resource_id,
           inserted_at: utc_now |> DateTime.add(1200)
         )
 
       webhook_conversation_2 =
         insert(:webhook_conversation,
           webhook_endpoint_id: webhook_endpoint.id,
-          schema_type: schema_type,
-          schema_id: schema_id,
+          resource_type: resource_type,
+          resource_id: resource_id,
           inserted_at: utc_now |> DateTime.add(2400)
         )
 
@@ -195,14 +195,14 @@ defmodule WebhookConversations.WebhookConversationsTest do
       assert %{items: [^webhook_conversation_1, ^webhook_conversation_2], total: 2} =
                WebhookConversations.list_webhook_conversations(
                  webhook_endpoint.webhook,
-                 {schema_type, schema_id},
+                 {resource_type, resource_id},
                  %{page: 1, opts: [per_page: 100]}
                )
 
       assert %{items: [^webhook_conversation_1], total: 2} =
                WebhookConversations.list_webhook_conversations(
                  webhook_endpoint.webhook,
-                 {schema_type, schema_id},
+                 {resource_type, resource_id},
                  %{page: 1, opts: [per_page: 1]}
                )
     end

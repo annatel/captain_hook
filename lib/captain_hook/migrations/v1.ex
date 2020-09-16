@@ -28,6 +28,7 @@ defmodule CaptainHook.Migrations.V1 do
       add(:url, :string)
       add(:metadata, :map)
       add(:headers, :map)
+      add(:allow_insecure, :boolean)
 
       timestamps()
     end
@@ -51,8 +52,8 @@ defmodule CaptainHook.Migrations.V1 do
         null: false
       )
 
-      add(:schema_type, :string, null: true)
-      add(:schema_id, :string, null: true)
+      add(:resource_type, :string, null: true)
+      add(:resource_id, :string, null: true)
 
       # a unique string to identify this call. This request_id will be the same for all attempts of a webhook call.
       add(:request_id, :binary_id, null: false)
@@ -72,8 +73,14 @@ defmodule CaptainHook.Migrations.V1 do
       timestamps()
     end
 
-    create(index(:captain_hook_webhook_conversations, [:schema_id]))
-    create(index(:captain_hook_webhook_conversations, [:schema_type, :schema_id]))
+    create(index(:captain_hook_webhook_conversations, [:resource_id]))
+
+    create(
+      index(:captain_hook_webhook_conversations, [:resource_type, :resource_id],
+        name: "captain_hook_webhook_conversations_rt_ri_index"
+      )
+    )
+
     create(index(:captain_hook_webhook_conversations, [:request_id]))
     create(index(:captain_hook_webhook_conversations, [:status]))
     create(index(:captain_hook_webhook_conversations, [:inserted_at]))

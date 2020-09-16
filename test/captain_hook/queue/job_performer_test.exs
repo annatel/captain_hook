@@ -21,18 +21,18 @@ defmodule CaptainHook.Queue.JobPerformerTest do
       map_with_string_keys = %{
         "webhook" => webhook_endpoint.webhook,
         "webhook_endpoint_id" => webhook_endpoint.id,
-        "schema_type" => "schema_type",
-        "schema_id" => "schema_id",
-        "request_id" => "request_id",
+        "resource_type" => "resource_type",
+        "resource_id" => "resource_id",
+        "request_id" => Ecto.UUID.generate(),
         "data" => %{}
       }
 
       map_with_atom_keys = %{
         webhook: webhook_endpoint.webhook,
         webhook_endpoint_id: webhook_endpoint.id,
-        schema_type: "schema_type",
-        schema_id: "schema_id",
-        request_id: "request_id",
+        resource_type: "resource_type",
+        resource_id: "resource_id",
+        request_id: Ecto.UUID.generate(),
         data: %{}
       }
 
@@ -50,8 +50,8 @@ defmodule CaptainHook.Queue.JobPerformerTest do
         CaptainHook.DataWrapper.new(
           "webhook2",
           webhook_endpoint.id,
-          "schema_type",
-          "schema_id",
+          "resource_type",
+          "resource_id",
           %{},
           []
         )
@@ -69,8 +69,8 @@ defmodule CaptainHook.Queue.JobPerformerTest do
         CaptainHook.DataWrapper.new(
           webhook_endpoint.webhook,
           CaptainHook.Factory.uuid(),
-          "schema_type",
-          "schema_id",
+          "resource_type",
+          "resource_id",
           %{},
           []
         )
@@ -93,8 +93,8 @@ defmodule CaptainHook.Queue.JobPerformerTest do
         CaptainHook.DataWrapper.new(
           webhook_endpoint.webhook,
           webhook_endpoint.id,
-          "schema_type",
-          "schema_id",
+          "resource_type",
+          "resource_id",
           %{},
           []
         )
@@ -126,8 +126,8 @@ defmodule CaptainHook.Queue.JobPerformerTest do
         CaptainHook.DataWrapper.new(
           webhook_endpoint.webhook,
           webhook_endpoint.id,
-          "schema_type",
-          "schema_id",
+          "resource_type",
+          "resource_id",
           %{},
           []
         )
@@ -152,8 +152,8 @@ defmodule CaptainHook.Queue.JobPerformerTest do
         CaptainHook.DataWrapper.new(
           webhook_endpoint.webhook,
           webhook_endpoint.id,
-          "schema_type",
-          "schema_id",
+          "resource_type",
+          "resource_id",
           %{},
           webhook_result_handler: CaptainHook.WebhookResultHandlerMock |> to_string()
         )
@@ -175,8 +175,8 @@ defmodule CaptainHook.Queue.JobPerformerTest do
         CaptainHook.DataWrapper.new(
           webhook_endpoint.webhook,
           webhook_endpoint.id,
-          "schema_type",
-          "schema_id",
+          "resource_type",
+          "resource_id",
           %{},
           []
         )
@@ -197,8 +197,8 @@ defmodule CaptainHook.Queue.JobPerformerTest do
         CaptainHook.DataWrapper.new(
           webhook_endpoint.webhook,
           webhook_endpoint.id,
-          "schema_type",
-          "schema_id",
+          "resource_type",
+          "resource_id",
           data,
           []
         )
@@ -240,8 +240,8 @@ defmodule CaptainHook.Queue.JobPerformerTest do
         CaptainHook.DataWrapper.new(
           webhook_endpoint.webhook,
           webhook_endpoint.id,
-          "schema_type",
-          "schema_id",
+          "resource_type",
+          "resource_id",
           %{},
           []
         )
@@ -260,8 +260,8 @@ defmodule CaptainHook.Queue.JobPerformerTest do
         CaptainHook.DataWrapper.new(
           webhook_endpoint.webhook,
           webhook_endpoint.id,
-          "schema_type",
-          "schema_id",
+          "resource_type",
+          "resource_id",
           data,
           []
         )
@@ -275,6 +275,30 @@ defmodule CaptainHook.Queue.JobPerformerTest do
 
       CaptainHook.HttpAdapterMock
       |> expect(:post, fn ^url, ^encoded_params, _, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
+      end)
+
+      assert {:ok, %WebhookConversation{}} = JobPerformer.send_notification("action", params, 0)
+    end
+
+    test "allow insecure ssl call when the webhook_endpoint's allow_insecure is true when notifying the endpoint" do
+      %{url: url} = webhook_endpoint = insert(:webhook_endpoint, allow_insecure: true)
+
+      data = %{id: "1"}
+
+      params =
+        CaptainHook.DataWrapper.new(
+          webhook_endpoint.webhook,
+          webhook_endpoint.id,
+          "resource_type",
+          "resource_id",
+          data,
+          []
+        )
+        |> Map.from_struct()
+
+      CaptainHook.HttpAdapterMock
+      |> expect(:post, fn ^url, _, _, [{:hackney, [:insecure]} | _] ->
         {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
       end)
 

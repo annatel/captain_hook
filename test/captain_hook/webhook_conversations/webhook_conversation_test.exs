@@ -17,8 +17,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationTest do
       changes_keys = changeset.changes |> Map.keys()
 
       assert :webhook_endpoint_id in changes_keys
-      assert :schema_type in changes_keys
-      assert :schema_id in changes_keys
+      assert :resource_type in changes_keys
+      assert :resource_id in changes_keys
       assert :request_id in changes_keys
       assert :requested_at in changes_keys
       assert :request_url in changes_keys
@@ -55,8 +55,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationTest do
       assert get_field(changeset, :webhook_endpoint_id) ==
                webhook_conversation_params.webhook_endpoint_id
 
-      assert get_field(changeset, :schema_id) == webhook_conversation_params.schema_id
-      assert get_field(changeset, :schema_type) == webhook_conversation_params.schema_type
+      assert get_field(changeset, :resource_id) == webhook_conversation_params.resource_id
+      assert get_field(changeset, :resource_type) == webhook_conversation_params.resource_type
       assert get_field(changeset, :request_id) == webhook_conversation_params.request_id
       assert get_field(changeset, :requested_at) == webhook_conversation_params.requested_at
       assert get_field(changeset, :request_url) == webhook_conversation_params.request_url

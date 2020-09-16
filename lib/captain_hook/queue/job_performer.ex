@@ -69,13 +69,22 @@ defmodule CaptainHook.Queue.JobPerformer do
     end
   end
 
-  defp notify_endpoint(%WebhookEndpoint{} = webhook_endpoint, request_id, data)
+  defp notify_endpoint(
+         %WebhookEndpoint{
+           url: url,
+           metadata: metadata,
+           headers: headers,
+           allow_insecure: allow_insecure
+         },
+         request_id,
+         data
+       )
        when is_binary(request_id) and is_map(data) do
-    metadata = Map.get(webhook_endpoint, :metadata) || %{}
-    headers = Map.get(webhook_endpoint, :headers) || %{}
+    metadata = metadata || %{}
+    headers = headers || %{}
     params = data |> Map.merge(metadata) |> Map.put(:request_id, request_id)
 
-    @webhook_client.call(webhook_endpoint.url, params, headers)
+    @webhook_client.call(url, params, headers, allow_insecure: allow_insecure)
   end
 
   defp webhook_conversation_attrs(
@@ -91,9 +100,9 @@ defmodule CaptainHook.Queue.JobPerformer do
 
     %{
       webhook_endpoint_id: webhook_endpoint_id,
-      schema_type: data_wrapper.schema_type,
-      schema_id: data_wrapper.schema_id,
-      request_id: data_wrapper.request_id |> AntlUtils.Ecto.UUID.to_uuid(),
+      resource_type: data_wrapper.resource_type,
+      resource_id: data_wrapper.resource_id,
+      request_id: data_wrapper.request_id,
       requested_at: response.requested_at,
       request_url: response.request_url,
       request_headers: response.request_headers,

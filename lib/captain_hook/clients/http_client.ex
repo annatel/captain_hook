@@ -11,8 +11,9 @@ defmodule CaptainHook.Clients.HttpClient do
   alias CaptainHook.Clients.Response
 
   @impl true
-  @spec call(binary, map(), map()) :: Response.t()
-  def call(url, params, headers) when is_binary(url) and is_map(params) and is_map(headers) do
+  @spec call(binary, map(), map(), keyword) :: Response.t()
+  def call(url, params, headers, options \\ [])
+      when is_binary(url) and is_map(params) and is_map(headers) do
     encoded_params = Jason.encode!(params)
 
     Logger.debug("#{inspect(url)} #{inspect(encoded_params)}")
@@ -26,11 +27,14 @@ defmodule CaptainHook.Clients.HttpClient do
       |> Map.put("User-Agent", "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)")
       |> Map.to_list()
 
-    http_result =
-      @http_adapter.post(url, encoded_params, headers,
-        timeout: @timeout,
-        recv_timeout: @rcv_timeout
-      )
+    request_options = [timeout: @timeout, recv_timeout: @rcv_timeout]
+
+    request_options =
+      if Keyword.get(options, :allow_insecure),
+        do: [{:hackney, [:insecure]} | request_options],
+        else: request_options
+
+    http_result = @http_adapter.post(url, encoded_params, headers, request_options)
 
     Logger.debug("#{inspect(http_result)}")
 

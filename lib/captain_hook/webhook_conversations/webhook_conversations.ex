@@ -45,12 +45,15 @@ defmodule CaptainHook.WebhookConversations do
 
   def list_webhook_conversations(
         webhook,
-        {schema_type, schema_id},
+        {resource_type, resource_id},
         %{page: page, opts: opts} = _pagination
       )
-      when is_binary(webhook) and is_binary(schema_type) and is_binary(schema_id) do
+      when is_binary(webhook) and is_binary(resource_type) and is_binary(resource_id) do
     query =
-      list_webhook_conversations_query(webhook, schema_type: schema_type, schema_id: schema_id)
+      list_webhook_conversations_query(webhook,
+        resource_type: resource_type,
+        resource_id: resource_id
+      )
 
     conversations_count = query |> CaptainHook.repo().aggregate(:count, :id)
 

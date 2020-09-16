@@ -15,7 +15,8 @@ defmodule CaptainHook.Factory do
       started_at: DateTime.utc_now() |> DateTime.truncate(:second),
       url: sequence("url_"),
       metadata: %{},
-      headers: %{}
+      headers: %{},
+      allow_insecure: false
     }
   end
 
@@ -25,8 +26,8 @@ defmodule CaptainHook.Factory do
 
     webhook_conversation = %WebhookConversation{
       webhook_endpoint_id: webhook_endpoint_id,
-      schema_type: sequence("schema_type_"),
-      schema_id: CaptainHook.Factory.uuid(),
+      resource_type: sequence("resource_type_"),
+      resource_id: CaptainHook.Factory.uuid(),
       request_id: CaptainHook.Factory.uuid(),
       requested_at: DateTime.utc_now() |> DateTime.truncate(:second),
       request_url: sequence("request_url_"),
