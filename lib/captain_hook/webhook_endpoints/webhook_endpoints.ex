@@ -1,6 +1,7 @@
 defmodule CaptainHook.WebhookEndpoints do
   import Ecto.Query, only: [order_by: 2]
 
+  alias AntlUtilsElixir.DateTime.Period
   alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, WebhookEndpointQueryable}
 
   @spec list_webhook_endpoints(binary) :: [WebhookEndpoint.t()]
@@ -16,7 +17,7 @@ defmodule CaptainHook.WebhookEndpoints do
         ]
   def filter_webhook_endpoints(webhook_endpoints, status, %DateTime{} = datetime) do
     webhook_endpoints
-    |> AntlDateTimeUtils.Period.filter_by_status(status, datetime, :started_at, :ended_at)
+    |> Period.filter_by_status(status, datetime, :started_at, :ended_at)
   end
 
   @spec get_webhook_endpoint(binary, binary) :: WebhookEndpoint.t()

@@ -2,7 +2,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   use Ecto.Schema
   import Ecto.Changeset, only: [cast: 3, validate_required: 2]
 
-  alias AntlDateTimeUtils.Ecto.Changeset, as: AntlDateTimeUtilsEctoChangeset
+  alias AntlUtilsEcto.Changeset, as: AntlUtilsEctoChangeset
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -39,6 +39,6 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     webhook_endpoint
     |> cast(attrs, [:ended_at])
     |> validate_required([:ended_at])
-    |> AntlDateTimeUtilsEctoChangeset.validate_datetime_gte(:ended_at, :started_at)
+    |> AntlUtilsEctoChangeset.validate_datetime_gte(:ended_at, :started_at)
   end
 end

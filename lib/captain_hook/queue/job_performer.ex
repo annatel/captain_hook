@@ -1,7 +1,7 @@
 defmodule CaptainHook.Queue.JobPerformer do
   @behaviour Queuetopia.Jobs.Performer
 
-  alias AntlUtils.Ecto.Changeset, as: AntlUtilsEctoChangeset
+  alias AntlUtilsEcto.Changeset, as: AntlUtilsEctoChangeset
   alias CaptainHook.Clients.Response
   alias CaptainHook.WebhookEndpoints
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
