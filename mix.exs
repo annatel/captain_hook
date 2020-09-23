@@ -32,7 +32,8 @@ defmodule CaptainHook.MixProject do
       {:antl_utils_ecto, git: "https://github.com/annatel/antl_utils_ecto", branch: "master"},
       {:queuetopia, "~> 0.6.0"},
       {:httpoison, "~> 1.7"},
-      {:recase, git: "https://github.com/sobolevn/recase", ref: "1a1e0c9f3eec84d827b912906476f0a1144174fb"}
+      {:recase,
+       git: "https://github.com/sobolevn/recase", ref: "1a1e0c9f3eec84d827b912906476f0a1144174fb"}
     ]
   end
 

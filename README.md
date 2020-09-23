@@ -12,7 +12,7 @@ The package can be installed by adding `captain_hook` to your list of dependenci
 ```elixir
 def deps do
   [
-    {:captain_hook, "~> 0.1.0"}
+    {:captain_hook, "~> 0.6.0"}
   ]
 end
 ```
