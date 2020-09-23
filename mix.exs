@@ -29,7 +29,7 @@ defmodule CaptainHook.MixProject do
       {:myxql, "~> 0.4.0"},
       {:ecto_sql, "~> 3.0"},
       {:antl_utils_elixir, "~> 0.1.0"},
-      {:antl_utils_ecto, git: "https://github.com/annatel/antl_utils_ecto", branch: "master"},
+      {:antl_utils_ecto, "~> 0.2.0"},
       {:queuetopia, "~> 0.6.0"},
       {:httpoison, "~> 1.7"},
       {:recase,
