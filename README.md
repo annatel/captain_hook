@@ -1,5 +1,7 @@
 # CaptainHook
 
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/annatel/captain_hook/CI?cacheSeconds=3600&style=flat-square)](https://github.com/annatel/captain_hook/actions) [![GitHub issues](https://img.shields.io/github/issues-raw/annatel/captain_hook?style=flat-square&cacheSeconds=3600)](https://github.com/annatel/captain_hook/issues) [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?cacheSeconds=3600?style=flat-square)](http://opensource.org/licenses/MIT) [![Hex.pm](https://img.shields.io/hexpm/v/captain_hook?style=flat-square)](https://hex.pm/packages/captain_hook) [![Hex.pm](https://img.shields.io/hexpm/dt/captain_hook?style=flat-square)](https://hex.pm/packages/captain_hook)
+
 Ordered webhooks notification
 
 ## Installation
