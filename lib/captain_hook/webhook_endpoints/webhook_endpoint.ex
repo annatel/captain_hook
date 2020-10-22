@@ -4,7 +4,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
 
   alias AntlUtilsEcto.Changeset, as: AntlUtilsEctoChangeset
 
-  @primary_key {:id, :binary_id, autogenerate: true}
+  @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "we"}
   @foreign_key_type :binary_id
 
   schema "captain_hook_webhook_endpoints" do

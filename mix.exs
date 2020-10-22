@@ -4,7 +4,7 @@ defmodule CaptainHook.MixProject do
   def project do
     [
       app: :captain_hook,
-      version: "0.6.0",
+      version: "0.7.0",
       elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -27,13 +27,13 @@ defmodule CaptainHook.MixProject do
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:ex_machina, "~> 2.3", only: :test},
       {:myxql, "~> 0.4.0"},
-      {:ecto_sql, "~> 3.0"},
-      {:antl_utils_elixir, "~> 0.1.0"},
-      {:antl_utils_ecto, "~> 0.2.0"},
+      {:ecto_sql, "~> 3.5"},
+      {:antl_utils_elixir, "~> 0.2.0", override: true},
+      {:antl_utils_ecto, "~> 0.4.0"},
       {:queuetopia, "~> 0.6.1"},
       {:httpoison, "~> 1.7"},
-      {:recase,
-       git: "https://github.com/sobolevn/recase", ref: "1a1e0c9f3eec84d827b912906476f0a1144174fb"}
+      {:recase, "~> 0.7"},
+      {:shortcode, "~> 0.5.0"}
     ]
   end
 

@@ -27,8 +27,8 @@ defmodule CaptainHook.Factory do
     webhook_conversation = %WebhookConversation{
       webhook_endpoint_id: webhook_endpoint_id,
       resource_type: sequence("resource_type_"),
-      resource_id: CaptainHook.Factory.uuid(),
-      request_id: CaptainHook.Factory.uuid(),
+      resource_id: uuid(),
+      request_id: uuid(),
       requested_at: DateTime.utc_now() |> DateTime.truncate(:second),
       request_url: sequence("request_url_"),
       request_headers: %{"Header-Key" => "header value"},

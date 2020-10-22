@@ -6,15 +6,15 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
 
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
 
-  @primary_key {:id, :binary_id, autogenerate: true}
+  @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wc"}
   @foreign_key_type :binary_id
 
   schema "captain_hook_webhook_conversations" do
-    belongs_to(:webhook_endpoint, WebhookEndpoint)
+    belongs_to(:webhook_endpoint, WebhookEndpoint, type: Shortcode.Ecto.UUID, prefix: "we")
 
     field(:resource_type, :string)
     field(:resource_id, :string)
-    field(:request_id, :binary_id)
+    field(:request_id, Shortcode.Ecto.UUID, prefix: "req")
 
     field(:requested_at, :utc_datetime)
 
