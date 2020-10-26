@@ -39,7 +39,8 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
     end
 
     test "when params are valid, return a valid changeset" do
-      webhook_endpoint_params = params_for(:webhook_endpoint, started_at: @datetime_1)
+      webhook_endpoint_params =
+        params_for(:webhook_endpoint, started_at: @datetime_1, allow_insecure: true)
 
       changeset = WebhookEndpoint.create_changeset(%WebhookEndpoint{}, webhook_endpoint_params)
 
@@ -55,7 +56,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
 
   describe "update_changeset/2" do
     test "only permitted_keys are casted" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       webhook_endpoint_params =
         params_for(:webhook_endpoint,
@@ -85,7 +86,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
     end
 
     test "when params are valid, return a valid changeset" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       new_metadata = %{key: "value"}
       new_headers = %{"Authorization" => "Basic bG9naW46cGFzc3dvcmQ="}
@@ -109,7 +110,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
 
   describe "remove_changeset/2" do
     test "only permitted_keys are casted" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       webhook_endpoint_params =
         params_for(:webhook_endpoint,
@@ -137,7 +138,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
     end
 
     test "when required params are missing, returns an invalid changeset" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       changeset = WebhookEndpoint.remove_changeset(webhook_endpoint, %{})
 
@@ -146,7 +147,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
     end
 
     test "when params are invalid, returns an invalid changeset" do
-      webhook_endpoint = insert(:webhook_endpoint, started_at: @datetime_2)
+      webhook_endpoint = insert!(:webhook_endpoint, started_at: @datetime_2)
 
       changeset = WebhookEndpoint.remove_changeset(webhook_endpoint, %{ended_at: @datetime_1})
 
@@ -156,7 +157,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
     end
 
     test "when params are valid, return a valid changeset" do
-      webhook_endpoint = insert(:webhook_endpoint, started_at: @datetime_1)
+      webhook_endpoint = insert!(:webhook_endpoint, started_at: @datetime_1)
 
       changeset = WebhookEndpoint.remove_changeset(webhook_endpoint, %{ended_at: @datetime_2})
 

@@ -6,11 +6,11 @@ defmodule WebhookConversations.WebhookConversationsTest do
 
   describe "list_webhook_conversations/3 - by webhook_endpoint" do
     test "returns the webhook_conversations according to the webhook_endpoint and the webhook name" do
-      webhook_endpoint_1 = insert(:webhook_endpoint)
-      webhook_endpoint_2 = insert(:webhook_endpoint)
+      webhook_endpoint_1 = insert!(:webhook_endpoint)
+      webhook_endpoint_2 = insert!(:webhook_endpoint)
 
       webhook_conversation_1 =
-        insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_1.id)
+        insert!(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_1.id)
 
       assert %{items: [], total: 0} ==
                WebhookConversations.list_webhook_conversations(
@@ -26,25 +26,25 @@ defmodule WebhookConversations.WebhookConversationsTest do
     end
 
     test "returns num of webhook_conversation according to the pagination params and ordered by inserted_at" do
-      webhook_endpoint_1 = insert(:webhook_endpoint)
-      webhook_endpoint_2 = insert(:webhook_endpoint)
+      webhook_endpoint_1 = insert!(:webhook_endpoint)
+      webhook_endpoint_2 = insert!(:webhook_endpoint)
 
-      utc_now = DateTime.utc_now()
+      utc_now = utc_now()
 
       webhook_conversation_1 =
-        insert(:webhook_conversation,
+        insert!(:webhook_conversation,
           webhook_endpoint_id: webhook_endpoint_1.id,
           inserted_at: utc_now |> DateTime.add(1200)
         )
 
       webhook_conversation_2 =
-        insert(:webhook_conversation,
+        insert!(:webhook_conversation,
           webhook_endpoint_id: webhook_endpoint_1.id,
           inserted_at: utc_now |> DateTime.add(2400)
         )
 
       _webhook_conversation_3 =
-        insert(:webhook_conversation,
+        insert!(:webhook_conversation,
           webhook_endpoint_id: webhook_endpoint_2.id,
           inserted_at: utc_now |> DateTime.add(3600)
         )
@@ -74,11 +74,11 @@ defmodule WebhookConversations.WebhookConversationsTest do
 
   describe "list_webhook_conversations/3 - by request_id" do
     test "returns the webhook_conversations according to the request_id and the webhook name" do
-      webhook_endpoint_1 = insert(:webhook_endpoint)
-      webhook_endpoint_2 = insert(:webhook_endpoint)
+      webhook_endpoint_1 = insert!(:webhook_endpoint)
+      webhook_endpoint_2 = insert!(:webhook_endpoint)
 
       webhook_conversation_1 =
-        insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_1.id)
+        insert!(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_1.id)
 
       assert %{items: [], total: 0} ==
                WebhookConversations.list_webhook_conversations(
@@ -94,27 +94,27 @@ defmodule WebhookConversations.WebhookConversationsTest do
     end
 
     test "returns num of webhook_conversation according to the pagination params and ordered by inserted_at" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       utc_now = DateTime.utc_now()
       request_id = CaptainHook.Factory.uuid()
 
       webhook_conversation_1 =
-        insert(:webhook_conversation,
+        insert!(:webhook_conversation,
           webhook_endpoint_id: webhook_endpoint.id,
           request_id: request_id,
           inserted_at: utc_now |> DateTime.add(1200)
         )
 
       webhook_conversation_2 =
-        insert(:webhook_conversation,
+        insert!(:webhook_conversation,
           webhook_endpoint_id: webhook_endpoint.id,
           request_id: request_id,
           inserted_at: utc_now |> DateTime.add(2400)
         )
 
       _webhook_conversation_3 =
-        insert(:webhook_conversation,
+        insert!(:webhook_conversation,
           webhook_endpoint_id: webhook_endpoint.id,
           inserted_at: utc_now |> DateTime.add(3600)
         )
@@ -144,11 +144,11 @@ defmodule WebhookConversations.WebhookConversationsTest do
 
   describe "list_webhook_conversations/3 - by resource_type and resource_id" do
     test "returns the webhook_conversations according to the request_id and the webhook name" do
-      webhook_endpoint_1 = insert(:webhook_endpoint)
-      webhook_endpoint_2 = insert(:webhook_endpoint)
+      webhook_endpoint_1 = insert!(:webhook_endpoint)
+      webhook_endpoint_2 = insert!(:webhook_endpoint)
 
       webhook_conversation_1 =
-        insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_1.id)
+        insert!(:webhook_conversation, webhook_endpoint_id: webhook_endpoint_1.id)
 
       assert %{items: [], total: 0} ==
                WebhookConversations.list_webhook_conversations(
@@ -164,14 +164,14 @@ defmodule WebhookConversations.WebhookConversationsTest do
     end
 
     test "returns num of webhook_conversation according to the pagination params and ordered by inserted_at" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       utc_now = DateTime.utc_now()
       resource_type = "resource_type"
       resource_id = "resource_id"
 
       webhook_conversation_1 =
-        insert(:webhook_conversation,
+        insert!(:webhook_conversation,
           webhook_endpoint_id: webhook_endpoint.id,
           resource_type: resource_type,
           resource_id: resource_id,
@@ -179,7 +179,7 @@ defmodule WebhookConversations.WebhookConversationsTest do
         )
 
       webhook_conversation_2 =
-        insert(:webhook_conversation,
+        insert!(:webhook_conversation,
           webhook_endpoint_id: webhook_endpoint.id,
           resource_type: resource_type,
           resource_id: resource_id,
@@ -187,7 +187,7 @@ defmodule WebhookConversations.WebhookConversationsTest do
         )
 
       _webhook_conversation_3 =
-        insert(:webhook_conversation,
+        insert!(:webhook_conversation,
           webhook_endpoint_id: webhook_endpoint.id,
           inserted_at: utc_now |> DateTime.add(3600)
         )
@@ -219,7 +219,7 @@ defmodule WebhookConversations.WebhookConversationsTest do
     end
 
     test "when the webhook_conversation does not belong to the webhook requestion, returns nil" do
-      webhook_conversation_factory = insert(:webhook_conversation)
+      webhook_conversation_factory = insert!(:webhook_conversation)
 
       assert is_nil(
                WebhookConversations.get_webhook_conversation(
@@ -230,10 +230,10 @@ defmodule WebhookConversations.WebhookConversationsTest do
     end
 
     test "when the webhook_conversation exists, returns the webhook_conversation" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       webhook_conversation_factory =
-        insert(:webhook_conversation, webhook_endpoint_id: webhook_endpoint.id)
+        insert!(:webhook_conversation, webhook_endpoint_id: webhook_endpoint.id)
 
       assert webhook_conversation_factory ==
                WebhookConversations.get_webhook_conversation(
@@ -260,7 +260,7 @@ defmodule WebhookConversations.WebhookConversationsTest do
     end
 
     test "with valid params, returns the webhook_endpoint" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
       webhook_conversation_params = params_for(:webhook_conversation)
 
       assert {:ok, webhook_conversation} =

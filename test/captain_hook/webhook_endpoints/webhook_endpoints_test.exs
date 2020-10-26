@@ -10,22 +10,22 @@ defmodule CaptainHook.WebhookEndpointsTest do
   describe "list_webhook_endpoints/1" do
     test "return webhook_endpoints by webhook identifier" do
       webhook = "webhook"
-      utc_now = DateTime.utc_now()
+      utc_now = utc_now()
 
       webhook_endpoint_1 =
-        insert(:webhook_endpoint,
+        insert!(:webhook_endpoint,
           webhook: webhook,
           started_at: utc_now |> DateTime.add(1200, :second)
         )
 
       webhook_endpoint_2 =
-        insert(:webhook_endpoint,
+        insert!(:webhook_endpoint,
           webhook: webhook,
           started_at: utc_now |> DateTime.add(2400, :second)
         )
 
       webhook_endpoint_3 =
-        insert(:webhook_endpoint, started_at: utc_now |> DateTime.add(3600, :second))
+        insert!(:webhook_endpoint, started_at: utc_now |> DateTime.add(3600, :second))
 
       assert [^webhook_endpoint_1, ^webhook_endpoint_2] =
                WebhookEndpoints.list_webhook_endpoints(webhook)
@@ -71,7 +71,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
   describe "get_webhook_endpoint/2" do
     test "when then webhook_endoint's id belongs to the webhook, return the webhook_endpoint" do
-      webhook_endpoint_factory = insert(:webhook_endpoint)
+      webhook_endpoint_factory = insert!(:webhook_endpoint)
 
       webhook_endpoint =
         WebhookEndpoints.get_webhook_endpoint(
@@ -95,8 +95,8 @@ defmodule CaptainHook.WebhookEndpointsTest do
     end
 
     test "when the webhook_endpoint does not belong to the webhook, returns nil" do
-      %{webhook: webhook} = insert(:webhook_endpoint)
-      webhook_endpoint = insert(:webhook_endpoint)
+      %{webhook: webhook} = insert!(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       assert is_nil(WebhookEndpoints.get_webhook_endpoint(webhook, webhook_endpoint.id))
     end
@@ -134,7 +134,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
   describe "update_webhook_endpoint/2" do
     test "with valid params, update the webhook_endpoint" do
-      webhook_endpoint_factory = insert(:webhook_endpoint)
+      webhook_endpoint_factory = insert!(:webhook_endpoint)
 
       assert {:ok, webhook_endpoint} =
                WebhookEndpoints.update_webhook_endpoint(webhook_endpoint_factory, %{
@@ -148,7 +148,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
   describe "delete_webhook_endpoint/2" do
     test "with a webhook_endpoint that is ended, raises a FunctionClauseError" do
-      webhook_endpoint = insert(:webhook_endpoint, ended_at: @datetime_1)
+      webhook_endpoint = insert!(:webhook_endpoint, ended_at: @datetime_1)
 
       assert_raise FunctionClauseError, fn ->
         WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint, @datetime_1)
@@ -156,7 +156,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
     end
 
     test "with an invalid params, returns an invalid changeset" do
-      webhook_endpoint = insert(:webhook_endpoint, started_at: @datetime_2)
+      webhook_endpoint = insert!(:webhook_endpoint, started_at: @datetime_2)
 
       assert {:error, changeset} =
                WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint, @datetime_1)
@@ -165,7 +165,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
     end
 
     test "with valid params, returns the ended webhook_endpoint" do
-      webhook_endpoint_factory = insert(:webhook_endpoint, started_at: @datetime_1)
+      webhook_endpoint_factory = insert!(:webhook_endpoint, started_at: @datetime_1)
 
       assert {:ok, webhook_endpoint} =
                WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint_factory, @datetime_2)

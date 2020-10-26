@@ -25,7 +25,6 @@ defmodule CaptainHook.MixProject do
     [
       {:mox, "~> 0.4", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:ex_machina, "~> 2.3", only: :test},
       {:myxql, "~> 0.4.0"},
       {:ecto_sql, "~> 3.5"},
       {:antl_utils_elixir, "~> 0.2.0", override: true},

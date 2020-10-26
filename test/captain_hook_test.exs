@@ -15,8 +15,8 @@ defmodule CaptainHookTest do
 
     test "when the webhook exists, run for each endpoint a job ordered by their creation date  and return :ok" do
       webhook = "webhook"
-      %{url: url_1} = webhook_endpoint_1 = insert(:webhook_endpoint, webhook: webhook)
-      %{url: url_2} = webhook_endpoint_2 = insert(:webhook_endpoint, webhook: webhook)
+      %{url: url_1} = webhook_endpoint_1 = insert!(:webhook_endpoint, webhook: webhook)
+      %{url: url_2} = webhook_endpoint_2 = insert!(:webhook_endpoint, webhook: webhook)
 
       CaptainHook.HttpAdapterMock
       |> expect(:post, 2, fn

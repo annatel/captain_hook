@@ -11,7 +11,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
 
   describe "send_notification/3" do
     test "params from captain_hook_queue can be either a Map with atom keys or string keys" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       CaptainHook.HttpAdapterMock
       |> stub(:post, fn _, _, _, _ ->
@@ -44,7 +44,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
     end
 
     test "when the webhook (name) does not exists, raise a Ecto.NoResultsError" do
-      webhook_endpoint = insert(:webhook_endpoint, webhook: "webhook1")
+      webhook_endpoint = insert!(:webhook_endpoint, webhook: "webhook1")
 
       params =
         CaptainHook.DataWrapper.new(
@@ -63,7 +63,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
     end
 
     test "when the webhook_endpoint_id does not exists, raise a Ecto.NoResultsError" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       params =
         CaptainHook.DataWrapper.new(
@@ -82,7 +82,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
     end
 
     test "when the conversation failed, returns an error named tuple with the conversation" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       CaptainHook.HttpAdapterMock
       |> expect(:post, fn _, _, _, _options ->
@@ -114,7 +114,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
     end
 
     test "when the conversation failed and a webhook_result_handler is not set, do not call the handle_failure callback" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       CaptainHook.HttpAdapterMock
       |> expect(:post, fn _, _, _, _ -> {:error, %HTTPoison.Error{reason: :connect_timeout}} end)
@@ -138,7 +138,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
     end
 
     test "when the conversation failed and a webhook_result_handler is set, call the handle_failure callback" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       CaptainHook.HttpAdapterMock
       |> expect(:post, fn _, _, _, _ -> {:error, %HTTPoison.Error{reason: :connect_timeout}} end)
@@ -164,7 +164,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
     end
 
     test "when the conversation success, returns a ok names tuple with the webhook_conversation" do
-      webhook_endpoint = insert(:webhook_endpoint)
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       CaptainHook.HttpAdapterMock
       |> expect(:post, fn _, _, _, _options ->
@@ -189,7 +189,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
     end
 
     test "add the request_id to the body request when notifying the endpoint" do
-      %{url: url} = webhook_endpoint = insert(:webhook_endpoint)
+      %{url: url} = webhook_endpoint = insert!(:webhook_endpoint)
 
       data = %{id: "1"}
 
@@ -217,7 +217,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
     test "add the webhook_endpoint headers to the request when notifying the endpoint" do
       %{url: url} =
         webhook_endpoint =
-        insert(:webhook_endpoint,
+        insert!(:webhook_endpoint,
           headers: %{
             "authorization" => "Basic bG9naW46cGFzc3dvcmQ=",
             "some header" => "some value"
@@ -252,7 +252,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
 
     test "add the webhook_endpoint metadata to the body request when notifying the endpoint" do
       %{url: url} =
-        webhook_endpoint = insert(:webhook_endpoint, metadata: %{"source" => "CaptainHook"})
+        webhook_endpoint = insert!(:webhook_endpoint, metadata: %{"source" => "CaptainHook"})
 
       data = %{id: "1"}
 
@@ -282,7 +282,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
     end
 
     test "allow insecure ssl call when the webhook_endpoint's allow_insecure is true when notifying the endpoint" do
-      %{url: url} = webhook_endpoint = insert(:webhook_endpoint, allow_insecure: true)
+      %{url: url} = webhook_endpoint = insert!(:webhook_endpoint, allow_insecure: true)
 
       data = %{id: "1"}
 
