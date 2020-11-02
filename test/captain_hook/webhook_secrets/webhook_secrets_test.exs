@@ -1,176 +1,120 @@
-# defmodule CaptainHook.WebhookEndpointsTest do
-#   use ExUnit.Case, async: true
-#   use CaptainHook.DataCase
+defmodule CaptainHook.WebhookSecretsTest do
+  use ExUnit.Case, async: true
+  use CaptainHook.DataCase
 
-#   alias CaptainHook.WebhookEndpoints
+  alias CaptainHook.WebhookSecrets
+  alias CaptainHook.WebhookSecrets.WebhookSecret
 
-#   @datetime_1 DateTime.from_naive!(~N[2018-05-24 12:27:48], "Etc/UTC")
-#   @datetime_2 DateTime.from_naive!(~N[2018-06-24 12:27:48], "Etc/UTC")
+  @datetime_1 DateTime.from_naive!(~N[2018-05-24 12:27:48], "Etc/UTC")
+  @datetime_2 DateTime.from_naive!(~N[2018-06-24 12:27:48], "Etc/UTC")
 
-#   describe "list_webhook_endpoints/1" do
-#     test "return webhook_endpoints by webhook identifier" do
-#       webhook = "webhook"
-#       utc_now = DateTime.utc_now()
+  describe "filter_webhook_secrets/3" do
+    test "returns webhook_secrets according to the status" do
+      assert [] == WebhookSecrets.filter_webhook_secrets([], :ongoing, @datetime_1)
+      assert [] == WebhookSecrets.filter_webhook_secrets([], :ended, @datetime_1)
+      assert [] == WebhookSecrets.filter_webhook_secrets([], :scheduled, @datetime_1)
 
-#       webhook_endpoint_1 =
-#         insert(:webhook_endpoint,
-#           webhook: webhook,
-#           started_at: utc_now |> DateTime.add(1200, :second)
-#         )
+      ongoing = build(:webhook_endpoint, started_at: @datetime_1)
+      ended = build(:webhook_endpoint, started_at: @datetime_1, ended_at: @datetime_1)
+      scheduled = build(:webhook_endpoint, started_at: @datetime_2, ended_at: @datetime_2)
 
-#       webhook_endpoint_2 =
-#         insert(:webhook_endpoint,
-#           webhook: webhook,
-#           started_at: utc_now |> DateTime.add(2400, :second)
-#         )
+      webhook_secrets = [ongoing, ended, scheduled]
 
-#       webhook_endpoint_3 =
-#         insert(:webhook_endpoint, started_at: utc_now |> DateTime.add(3600, :second))
+      assert [^ongoing] =
+               WebhookSecrets.filter_webhook_secrets(webhook_secrets, :ongoing, @datetime_1)
 
-#       assert [^webhook_endpoint_1, ^webhook_endpoint_2] =
-#                WebhookEndpoints.list_webhook_endpoints(webhook)
+      assert [^ended] =
+               WebhookSecrets.filter_webhook_secrets(webhook_secrets, :ended, @datetime_1)
 
-#       assert [^webhook_endpoint_3] =
-#                WebhookEndpoints.list_webhook_endpoints(webhook_endpoint_3.webhook)
-#     end
-#   end
+      assert [^scheduled] =
+               WebhookSecrets.filter_webhook_secrets(
+                 webhook_secrets,
+                 :scheduled,
+                 @datetime_1
+               )
 
-#   describe "filter_webhook_endpoints/3" do
-#     test "returns webhook_endpoints according to the status" do
-#       assert [] == WebhookEndpoints.filter_webhook_endpoints([], :ongoing, @datetime_1)
-#       assert [] == WebhookEndpoints.filter_webhook_endpoints([], :ended, @datetime_1)
-#       assert [] == WebhookEndpoints.filter_webhook_endpoints([], :scheduled, @datetime_1)
+      assert [] =
+               WebhookSecrets.filter_webhook_secrets(
+                 webhook_secrets,
+                 :unknown_status,
+                 @datetime_1
+               )
+    end
+  end
 
-#       ongoing = build(:webhook_endpoint, started_at: @datetime_1)
-#       ended = build(:webhook_endpoint, started_at: @datetime_1, ended_at: @datetime_1)
-#       scheduled = build(:webhook_endpoint, started_at: @datetime_2, ended_at: @datetime_2)
+  describe "create_webhook_secret/2" do
+    test "when a main webhook_secret already exists, returns an error tuple with an invalid changeset" do
+      webhook_endpoint = insert!(:webhook_endpoint)
 
-#       webhook_endpoints = [ongoing, ended, scheduled]
+      insert!(:webhook_secret, webhook_endpoint_id: webhook_endpoint.id, main?: true)
 
-#       assert [^ongoing] =
-#                WebhookEndpoints.filter_webhook_endpoints(webhook_endpoints, :ongoing, @datetime_1)
+      assert {:error, changeset} =
+               WebhookSecrets.create_webhook_secret(webhook_endpoint, utc_now())
 
-#       assert [^ended] =
-#                WebhookEndpoints.filter_webhook_endpoints(webhook_endpoints, :ended, @datetime_1)
+      refute changeset.valid?
+      assert %{main?: ["already exists"]} = errors_on(changeset)
+    end
 
-#       assert [^scheduled] =
-#                WebhookEndpoints.filter_webhook_endpoints(
-#                  webhook_endpoints,
-#                  :scheduled,
-#                  @datetime_1
-#                )
+    test "with valid params, returns the webhook_secret" do
+      webhook_endpoint = insert!(:webhook_endpoint)
 
-#       assert [] =
-#                WebhookEndpoints.filter_webhook_endpoints(
-#                  webhook_endpoints,
-#                  :unknown_status,
-#                  @datetime_1
-#                )
-#     end
-#   end
+      assert {:ok, %WebhookSecret{} = webhook_secret} =
+               WebhookSecrets.create_webhook_secret(webhook_endpoint, utc_now())
 
-#   describe "get_webhook_endpoint/2" do
-#     test "when then webhook_endoint's id belongs to the webhook, return the webhook_endpoint" do
-#       webhook_endpoint_factory = insert(:webhook_endpoint)
+      assert webhook_secret.webhook_endpoint_id == webhook_endpoint.id
+    end
+  end
 
-#       webhook_endpoint =
-#         WebhookEndpoints.get_webhook_endpoint(
-#           webhook_endpoint_factory.webhook,
-#           webhook_endpoint_factory.id
-#         )
+  describe "generate_secret/1" do
+    test "generate secret returns a secret prefixed with the @secret_prefix value" do
+      generated_secret = WebhookSecrets.generate_secret()
+      [prefix, secret] = generated_secret |> String.split("_")
+      assert prefix == "whsec"
+      assert String.length(secret) == 32
+    end
 
-#       assert webhook_endpoint.webhook == webhook_endpoint_factory.webhook
-#       assert webhook_endpoint.id == webhook_endpoint_factory.id
-#     end
+    test "generated secret contains the prefix separator only once" do
+      generated_secret = WebhookSecrets.generate_secret()
+      assert [_prefix, _secret] = generated_secret |> String.split("_")
+    end
+  end
 
-#     test "when the webhook_endpoint does not exist, returns nil" do
-#       webhook_endpoint = build(:webhook_endpoint, id: CaptainHook.Factory.uuid())
+  describe "roll/1" do
+    test "when rolling the webhook_secret, closes the main webhook_secret if exists, creates a new one and return it" do
+      webhook_endpoint = insert!(:webhook_endpoint)
+      webhook_secret = insert!(:webhook_secret, webhook_endpoint_id: webhook_endpoint.id)
+      rolling_datetime = utc_now() |> DateTime.add(2 * 3600)
 
-#       assert is_nil(
-#                WebhookEndpoints.get_webhook_endpoint(
-#                  webhook_endpoint.webhook,
-#                  webhook_endpoint.id
-#                )
-#              )
-#     end
+      assert {:ok, %WebhookSecret{} = new_webhook_secret} =
+               WebhookSecrets.roll(webhook_endpoint, rolling_datetime)
 
-#     test "when the webhook_endpoint does not belong to the webhook, returns nil" do
-#       %{webhook: webhook} = insert(:webhook_endpoint)
-#       webhook_endpoint = insert(:webhook_endpoint)
+      webhook_secret = CaptainHook.TestRepo.reload!(webhook_secret)
 
-#       assert is_nil(WebhookEndpoints.get_webhook_endpoint(webhook, webhook_endpoint.id))
-#     end
-#   end
+      assert new_webhook_secret.id != webhook_secret.id
+      assert new_webhook_secret.secret != webhook_secret.secret
+      assert new_webhook_secret.started_at != rolling_datetime
 
-#   describe "create_webhook_endpoint/2" do
-#     test "without required params, returns an :error tuple with an invalid changeset" do
-#       webhook_endpoint_params = params_for(:webhook_endpoint, url: nil)
+      assert_in_delta DateTime.to_unix(new_webhook_secret.started_at),
+                      DateTime.to_unix(DateTime.utc_now()),
+                      100
 
-#       assert {:error, changeset} =
-#                WebhookEndpoints.create_webhook_endpoint(
-#                  webhook_endpoint_params.webhook,
-#                  webhook_endpoint_params
-#                )
+      assert new_webhook_secret.main?
+      assert is_nil(new_webhook_secret.ended_at)
 
-#       refute changeset.valid?
-#     end
+      assert webhook_secret.ended_at == rolling_datetime
+      refute webhook_secret.main?
+    end
 
-#     test "with valid params, returns the webhook_endpoint" do
-#       webhook_endpoint_params = params_for(:webhook_endpoint)
+    test "when rolling with a ended datetime that is more than 24 hours, return an error tuple with a invalid changeset" do
+      webhook_endpoint = insert!(:webhook_endpoint)
+      insert!(:webhook_secret, webhook_endpoint_id: webhook_endpoint.id)
+      utc_now = utc_now()
 
-#       assert {:ok, webhook_endpoint} =
-#                WebhookEndpoints.create_webhook_endpoint(
-#                  webhook_endpoint_params.webhook,
-#                  webhook_endpoint_params
-#                )
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               WebhookSecrets.roll(webhook_endpoint, utc_now |> DateTime.add(25 * 3600))
 
-#       assert webhook_endpoint.webhook == webhook_endpoint_params.webhook
-#       assert webhook_endpoint.started_at == webhook_endpoint_params.started_at
-#       assert webhook_endpoint.url == webhook_endpoint_params.url
-#       assert webhook_endpoint.metadata == webhook_endpoint_params.metadata
-#       assert is_nil(webhook_endpoint.ended_at)
-#     end
-#   end
-
-#   describe "update_webhook_endpoint/2" do
-#     test "with valid params, update the webhook_endpoint" do
-#       webhook_endpoint_factory = insert(:webhook_endpoint)
-
-#       assert {:ok, webhook_endpoint} =
-#                WebhookEndpoints.update_webhook_endpoint(webhook_endpoint_factory, %{
-#                  metadata: %{key: "new_value"}
-#                })
-
-#       assert webhook_endpoint.metadata == %{key: "new_value"}
-#       assert is_nil(webhook_endpoint.ended_at)
-#     end
-#   end
-
-#   describe "delete_webhook_endpoint/2" do
-#     test "with a webhook_endpoint that is ended, raises a FunctionClauseError" do
-#       webhook_endpoint = insert(:webhook_endpoint, ended_at: @datetime_1)
-
-#       assert_raise FunctionClauseError, fn ->
-#         WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint, @datetime_1)
-#       end
-#     end
-
-#     test "with an invalid params, returns an invalid changeset" do
-#       webhook_endpoint = insert(:webhook_endpoint, started_at: @datetime_2)
-
-#       assert {:error, changeset} =
-#                WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint, @datetime_1)
-
-#       refute changeset.valid?
-#     end
-
-#     test "with valid params, returns the ended webhook_endpoint" do
-#       webhook_endpoint_factory = insert(:webhook_endpoint, started_at: @datetime_1)
-
-#       assert {:ok, webhook_endpoint} =
-#                WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint_factory, @datetime_2)
-
-#       assert webhook_endpoint.ended_at == @datetime_2
-#     end
-#   end
-# end
+      refute changeset.valid?
+      assert %{ended_at: ["must be in the next 24 hours"]} = errors_on(changeset)
+    end
+  end
+end

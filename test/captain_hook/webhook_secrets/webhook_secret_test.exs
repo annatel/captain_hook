@@ -1,167 +1,105 @@
-# defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
-#   use ExUnit.Case, async: true
-#   use CaptainHook.DataCase
+defmodule CaptainHook.WebhookSecrets.WebhookSecretTest do
+  use ExUnit.Case, async: true
+  use CaptainHook.DataCase
 
-#   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
+  alias CaptainHook.WebhookSecrets.WebhookSecret
 
-#   @datetime_1 DateTime.from_naive!(~N[2018-05-24 12:27:48], "Etc/UTC")
-#   @datetime_2 DateTime.from_naive!(~N[2018-06-24 12:27:48], "Etc/UTC")
+  @datetime_1 DateTime.from_naive!(~N[2018-05-24 12:27:48], "Etc/UTC")
+  @datetime_2 DateTime.from_naive!(~N[2018-06-24 12:27:48], "Etc/UTC")
 
-#   describe "create_changeset/2" do
-#     test "only permitted_keys are casted" do
-#       webhook_endpoint_params = params_for(:webhook_endpoint, allow_insecure: true)
+  describe "create_changeset/2" do
+    test "only permitted_keys are casted" do
+      webhook_secret_params = params_for(:webhook_secret)
 
-#       changeset =
-#         WebhookEndpoint.create_changeset(
-#           %WebhookEndpoint{},
-#           Map.merge(webhook_endpoint_params, %{new_key: "value"})
-#         )
+      changeset =
+        WebhookSecret.create_changeset(
+          %WebhookSecret{},
+          Map.merge(webhook_secret_params, %{new_key: "value"})
+        )
 
-#       changes_keys = changeset.changes |> Map.keys()
+      changes_keys = changeset.changes |> Map.keys()
 
-#       assert :webhook in changes_keys
-#       assert :started_at in changes_keys
-#       assert :url in changes_keys
-#       assert :metadata in changes_keys
-#       assert :headers in changes_keys
-#       assert :allow_insecure in changes_keys
-#       refute :ended_at in changes_keys
-#       refute :new_key in changes_keys
-#     end
+      assert :webhook_endpoint_id in changes_keys
+      assert :started_at in changes_keys
+      assert :started_at in changes_keys
+      refute :ended_at in changes_keys
+      refute :new_key in changes_keys
+    end
 
-#     test "when required params are missing, returns an invalid changeset" do
-#       changeset = WebhookEndpoint.create_changeset(%WebhookEndpoint{}, %{})
+    test "when required params are missing, returns an invalid changeset" do
+      changeset = WebhookSecret.create_changeset(%WebhookSecret{}, %{})
 
-#       refute changeset.valid?
-#       assert %{webhook: ["can't be blank"]} = errors_on(changeset)
-#       assert %{started_at: ["can't be blank"]} = errors_on(changeset)
-#       assert %{url: ["can't be blank"]} = errors_on(changeset)
-#     end
+      refute changeset.valid?
+      assert %{webhook_endpoint_id: ["can't be blank"]} = errors_on(changeset)
+      assert %{started_at: ["can't be blank"]} = errors_on(changeset)
+    end
 
-#     test "when params are valid, return a valid changeset" do
-#       webhook_endpoint_params = params_for(:webhook_endpoint, started_at: @datetime_1)
+    test "when params are valid, return a valid changeset" do
+      webhook_secret_params = params_for(:webhook_secret, started_at: @datetime_1)
 
-#       changeset = WebhookEndpoint.create_changeset(%WebhookEndpoint{}, webhook_endpoint_params)
+      changeset = WebhookSecret.create_changeset(%WebhookSecret{}, webhook_secret_params)
 
-#       assert changeset.valid?
-#       assert get_field(changeset, :webhook) == webhook_endpoint_params.webhook
-#       assert get_field(changeset, :started_at) == @datetime_1
-#       assert get_field(changeset, :url) == webhook_endpoint_params.url
-#       assert get_field(changeset, :metadata) == webhook_endpoint_params.metadata
-#       assert get_field(changeset, :headers) == webhook_endpoint_params.headers
-#       assert get_field(changeset, :allow_insecure) == webhook_endpoint_params.allow_insecure
-#     end
-#   end
+      assert changeset.valid?
 
-#   describe "update_changeset/2" do
-#     test "only permitted_keys are casted" do
-#       webhook_endpoint = insert(:webhook_endpoint)
+      assert get_field(changeset, :webhook_endpoint_id) ==
+               webhook_secret_params.webhook_endpoint_id
 
-#       webhook_endpoint_params =
-#         params_for(:webhook_endpoint,
-#           started_at: @datetime_1,
-#           ended_at: @datetime_2,
-#           metadata: %{key: "value"},
-#           headers: %{"Authorization" => "Basic bG9naW46cGFzc3dvcmQ="},
-#           allow_insecure: true
-#         )
+      assert get_field(changeset, :started_at) == @datetime_1
+      refute is_nil(get_field(changeset, :secret))
+    end
+  end
 
-#       changeset =
-#         WebhookEndpoint.update_changeset(
-#           webhook_endpoint,
-#           Map.merge(webhook_endpoint_params, %{new_key: "new value"})
-#         )
+  describe "remove_changeset/2" do
+    test "only permitted_keys are casted" do
+      webhook_secret = insert!(:webhook_secret)
 
-#       changes_keys = changeset.changes |> Map.keys()
+      webhook_secret_params =
+        params_for(:webhook_secret, started_at: @datetime_1, ended_at: @datetime_2)
+        |> Map.put(:main?, false)
 
-#       refute :webhook in changes_keys
-#       refute :started_at in changes_keys
-#       assert :url in changes_keys
-#       assert :metadata in changes_keys
-#       assert :headers in changes_keys
-#       assert :allow_insecure in changes_keys
-#       refute :ended_at in changes_keys
-#       refute :new_key in changes_keys
-#     end
+      changeset =
+        WebhookSecret.remove_changeset(
+          webhook_secret,
+          Map.merge(webhook_secret_params, %{new_key: "value"})
+        )
 
-#     test "when params are valid, return a valid changeset" do
-#       webhook_endpoint = insert(:webhook_endpoint)
+      changes_keys = changeset.changes |> Map.keys()
 
-#       new_metadata = %{key: "value"}
-#       new_headers = %{"Authorization" => "Basic bG9naW46cGFzc3dvcmQ="}
-#       new_url = "new_url"
+      refute :webhook_endpoint_id in changes_keys
+      refute :secret in changes_keys
+      refute :started_at in changes_keys
+      assert :main? in changes_keys
+      assert :ended_at in changes_keys
+      refute :new_key in changes_keys
+    end
 
-#       changeset =
-#         WebhookEndpoint.update_changeset(webhook_endpoint, %{
-#           url: new_url,
-#           metadata: new_metadata,
-#           headers: new_headers,
-#           allow_insecure: true
-#         })
+    test "when required params are missing, returns an invalid changeset" do
+      webhook_secret = insert!(:webhook_secret)
 
-#       assert changeset.valid?
-#       assert get_field(changeset, :url) == new_url
-#       assert get_field(changeset, :metadata) == new_metadata
-#       assert get_field(changeset, :headers) == new_headers
-#       assert get_field(changeset, :allow_insecure) == true
-#     end
-#   end
+      changeset = WebhookSecret.remove_changeset(webhook_secret, %{main?: nil})
 
-#   describe "remove_changeset/2" do
-#     test "only permitted_keys are casted" do
-#       webhook_endpoint = insert(:webhook_endpoint)
+      refute changeset.valid?
+      assert %{main?: ["can't be blank"]} = errors_on(changeset)
+      assert %{ended_at: ["can't be blank"]} = errors_on(changeset)
+    end
 
-#       webhook_endpoint_params =
-#         params_for(:webhook_endpoint,
-#           started_at: @datetime_1,
-#           ended_at: @datetime_2,
-#           metadata: %{key: "value"}
-#         )
+    test "when params are invalid, returns an invalid changeset" do
+      webhook_secret = insert!(:webhook_secret, started_at: @datetime_2)
 
-#       changeset =
-#         WebhookEndpoint.remove_changeset(
-#           webhook_endpoint,
-#           Map.merge(webhook_endpoint_params, %{new_key: "value"})
-#         )
+      changeset = WebhookSecret.remove_changeset(webhook_secret, %{ended_at: @datetime_1})
 
-#       changes_keys = changeset.changes |> Map.keys()
+      refute changeset.valid?
 
-#       refute :webhook in changes_keys
-#       refute :started_at in changes_keys
-#       refute :url in changes_keys
-#       refute :metadata in changes_keys
-#       refute :headers in changes_keys
-#       refute :allow_insecure in changes_keys
-#       assert :ended_at in changes_keys
-#       refute :new_key in changes_keys
-#     end
+      assert %{ended_at: ["should be after or equal to started_at"]} = errors_on(changeset)
+    end
 
-#     test "when required params are missing, returns an invalid changeset" do
-#       webhook_endpoint = insert(:webhook_endpoint)
+    test "when params are valid, return a valid changeset" do
+      webhook_secret = insert!(:webhook_secret, started_at: @datetime_1)
 
-#       changeset = WebhookEndpoint.remove_changeset(webhook_endpoint, %{})
+      changeset = WebhookSecret.remove_changeset(webhook_secret, %{ended_at: @datetime_2})
 
-#       refute changeset.valid?
-#       assert %{ended_at: ["can't be blank"]} = errors_on(changeset)
-#     end
-
-#     test "when params are invalid, returns an invalid changeset" do
-#       webhook_endpoint = insert(:webhook_endpoint, started_at: @datetime_2)
-
-#       changeset = WebhookEndpoint.remove_changeset(webhook_endpoint, %{ended_at: @datetime_1})
-
-#       refute changeset.valid?
-
-#       assert %{ended_at: ["should be after or equal to started_at"]} = errors_on(changeset)
-#     end
-
-#     test "when params are valid, return a valid changeset" do
-#       webhook_endpoint = insert(:webhook_endpoint, started_at: @datetime_1)
-
-#       changeset = WebhookEndpoint.remove_changeset(webhook_endpoint, %{ended_at: @datetime_2})
-
-#       assert changeset.valid?
-#       assert get_field(changeset, :ended_at) == @datetime_2
-#     end
-#   end
-# end
+      assert changeset.valid?
+      assert get_field(changeset, :ended_at) == @datetime_2
+    end
+  end
+end

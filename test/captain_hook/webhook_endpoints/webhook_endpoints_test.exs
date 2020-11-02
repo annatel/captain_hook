@@ -83,6 +83,24 @@ defmodule CaptainHook.WebhookEndpointsTest do
       assert webhook_endpoint.id == webhook_endpoint_factory.id
     end
 
+    test "when secret is requested, return the endpoint with the main secret" do
+      webhook_endpoint_factory = insert!(:webhook_endpoint)
+      webhook_secret = insert!(:webhook_secret, webhook_endpoint_id: webhook_endpoint_factory.id)
+
+      with_secret? = true
+
+      webhook_endpoint =
+        WebhookEndpoints.get_webhook_endpoint(
+          webhook_endpoint_factory.webhook,
+          webhook_endpoint_factory.id,
+          with_secret?
+        )
+
+      assert webhook_endpoint.webhook == webhook_endpoint_factory.webhook
+      assert webhook_endpoint.id == webhook_endpoint_factory.id
+      assert webhook_endpoint.secret == webhook_secret.secret
+    end
+
     test "when the webhook_endpoint does not exist, returns nil" do
       webhook_endpoint = build(:webhook_endpoint, id: CaptainHook.Factory.uuid())
 

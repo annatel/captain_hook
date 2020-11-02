@@ -18,8 +18,6 @@ defmodule CaptainHook.Clients.HttpClient do
 
     Logger.debug("#{inspect(url)} #{inspect(encoded_params)}")
 
-    utc_now = DateTime.utc_now()
-
     headers =
       headers
       |> Recase.Enumerable.convert_keys(&Recase.to_header/1)
@@ -39,19 +37,17 @@ defmodule CaptainHook.Clients.HttpClient do
     Logger.debug("#{inspect(http_result)}")
 
     http_result
-    |> process_http_call_response(url, Enum.into(headers, %{}), encoded_params, utc_now)
+    |> process_http_call_response(url, Enum.into(headers, %{}), encoded_params)
   end
 
   defp process_http_call_response(
          {:ok, %HTTPoison.Response{status_code: status_code, body: response_body}},
          url,
          request_headers,
-         request_body,
-         %DateTime{} = requested_at
+         request_body
        )
        when status_code in 200..299 do
     %Response{
-      requested_at: requested_at,
       request_url: url,
       request_headers: request_headers,
       request_body: request_body,
@@ -64,11 +60,9 @@ defmodule CaptainHook.Clients.HttpClient do
          {:ok, %HTTPoison.Response{status_code: status_code, body: response_body}},
          url,
          request_headers,
-         request_body,
-         %DateTime{} = requested_at
+         request_body
        ) do
     %Response{
-      requested_at: requested_at,
       request_url: url,
       request_headers: request_headers,
       request_body: request_body,
@@ -81,11 +75,9 @@ defmodule CaptainHook.Clients.HttpClient do
          {:error, %HTTPoison.Error{} = httpoison_error},
          url,
          request_headers,
-         request_body,
-         %DateTime{} = requested_at
+         request_body
        ) do
     %Response{
-      requested_at: requested_at,
       request_url: url,
       request_headers: request_headers,
       request_body: request_body,

@@ -12,6 +12,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
   schema "captain_hook_webhook_conversations" do
     belongs_to(:webhook_endpoint, WebhookEndpoint, type: Shortcode.Ecto.UUID, prefix: "we")
 
+    field(:sequence, :integer)
     field(:resource_type, :string)
     field(:resource_id, :string)
     field(:request_id, Shortcode.Ecto.UUID, prefix: "req")
@@ -36,6 +37,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     webhook_conversation
     |> cast(attrs, [
       :webhook_endpoint_id,
+      :sequence,
       :resource_type,
       :resource_id,
       :request_id,

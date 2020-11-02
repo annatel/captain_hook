@@ -1,15 +1,18 @@
 defmodule CaptainHook do
   @behaviour CaptainHook.Behaviour
 
+  alias CaptainHook.Sender
   alias CaptainHook.WebhookEndpoints
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.WebhookConversations
   alias CaptainHook.WebhookConversations.WebhookConversation
+  alias CaptainHook.WebhookSecrets
+  alias CaptainHook.WebhookSecrets.WebhookSecret
 
   @spec notify(binary(), binary(), {atom(), binary()}, map(), keyword()) ::
           :ok | {:error, :no_webhook_endpoint_found}
-  def notify(webhook, action, {resource_type, resource_id}, data, opts \\ [])
-      when is_binary(webhook) and is_binary(action) and is_atom(resource_type) and is_map(data) do
+  def notify(webhook, event_type, {resource_type, _resource_id} = resource, data, opts \\ [])
+      when is_binary(webhook) and is_binary(event) and is_atom(resource_type) and is_map(data) do
     webhook_endpoints =
       webhook
       |> list_webhook_endpoints()
@@ -19,21 +22,7 @@ defmodule CaptainHook do
       {:error, :no_webhook_endpoint_found}
     else
       webhook_endpoints
-      |> Enum.each(fn webhook_endpoint ->
-        params =
-          CaptainHook.DataWrapper.new(
-            webhook,
-            webhook_endpoint.id,
-            resource_type,
-            resource_id,
-            data,
-            opts
-          )
-          |> Map.from_struct()
-
-        {:ok, _} =
-          CaptainHook.Queue.create_job("#{webhook}_#{webhook_endpoint.id}", action, params)
-      end)
+      |> Enum.each(&Sender.enqueue_event(&1, event_type, resource, data, opts))
     end
   end
 
@@ -44,8 +33,12 @@ defmodule CaptainHook do
           WebhookEndpoint.t()
         ]
   defdelegate filter_webhook_endpoints(webhook_endpoints, status, datetime), to: WebhookEndpoints
+
   @spec get_webhook_endpoint(binary, binary) :: WebhookEndpoint.t()
   defdelegate get_webhook_endpoint(webhook, id), to: WebhookEndpoints
+
+  @spec get_webhook_endpoint(binary, binary, boolean) :: WebhookEndpoint.t()
+  defdelegate get_webhook_endpoint(webhook, id, with_secret?), to: WebhookEndpoints
 
   @spec get_webhook_endpoint!(binary, binary) :: WebhookEndpoint.t()
   defdelegate get_webhook_endpoint!(webhook, id), to: WebhookEndpoints
@@ -59,17 +52,23 @@ defmodule CaptainHook do
   @spec delete_webhook_endpoint(WebhookEndpoint.t()) :: WebhookEndpoint.t()
   defdelegate delete_webhook_endpoint(webhook_endpoint), to: WebhookEndpoints
 
+  @spec roll_webhook_endpoint_secret(WebhookEndpoint.t(), DateTime.t()) ::
+          {:ok, WebhookSecret.t()} | {:error, Ecto.Changeset.t()}
+  defdelegate roll_webhook_endpoint_secret(webhook_endpoint, expires_at),
+    to: WebhookSecrets,
+    as: :roll
+
   @spec list_webhook_conversations(
           binary,
-          binary | {binary, binary} | CaptainHook.WebhookEndpoints.WebhookEndpoint.t(),
+          binary | {binary, binary} | WebhookEndpoint.t(),
           %{opts: keyword, page: number}
-        ) :: %{items: [WebhookConversation.t()], total: integer}
+        ) :: %{data: [WebhookConversation.t()], total: integer}
   defdelegate list_webhook_conversations(webhook, filter, pagination), to: WebhookConversations
 
   @spec list_webhook_conversations(
           binary,
-          binary | {binary, binary} | CaptainHook.WebhookEndpoints.WebhookEndpoint.t()
-        ) :: %{items: [WebhookConversation.t()], total: integer}
+          binary | {binary, binary} | WebhookEndpoint.t()
+        ) :: %{data: [WebhookConversation.t()], total: integer}
   defdelegate list_webhook_conversations(webhook, filter), to: WebhookConversations
 
   @spec get_webhook_conversation(binary(), binary()) :: WebhookConversation.t()

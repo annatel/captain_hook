@@ -103,7 +103,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
       assert {:error, _webhook_conversation_as_string} =
                JobPerformer.send_notification("action", params, 0)
 
-      assert %{items: [webhook_conversation]} =
+      assert %{data: [webhook_conversation]} =
                CaptainHook.WebhookConversations.list_webhook_conversations(
                  webhook_endpoint.webhook,
                  webhook_endpoint
@@ -165,6 +165,7 @@ defmodule CaptainHook.Queue.JobPerformerTest do
 
     test "when the conversation success, returns a ok names tuple with the webhook_conversation" do
       webhook_endpoint = insert!(:webhook_endpoint)
+      _webhook_secret = insert!(:webhook_secret, webhook_endpoint_id: webhook_endpoint.id)
 
       CaptainHook.HttpAdapterMock
       |> expect(:post, fn _, _, _, _options ->

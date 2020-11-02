@@ -1,15 +1,19 @@
 defmodule CaptainHook.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/annatel/captain_hook"
+  @version "0.7.0"
+
   def project do
     [
       app: :captain_hook,
-      version: "0.7.0",
+      version: @version,
       elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
       deps: deps(),
+      docs: docs(),
       elixirc_paths: elixirc_paths(Mix.env()),
       aliases: aliases()
     ]
@@ -28,7 +32,7 @@ defmodule CaptainHook.MixProject do
       {:myxql, "~> 0.4.0"},
       {:ecto_sql, "~> 3.5"},
       {:antl_utils_elixir, "~> 0.2.0", override: true},
-      {:antl_utils_ecto, "~> 0.4.0"},
+      {:antl_utils_ecto, "~> 0.5.0"},
       {:queuetopia, "~> 0.6.1"},
       {:httpoison, "~> 1.7"},
       {:recase, "~> 0.7"},
@@ -41,7 +45,12 @@ defmodule CaptainHook.MixProject do
 
   defp aliases do
     [
-      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: ["ecto.setup", "test"],
+      "ecto.setup": [
+        "ecto.create --quiet -r CaptainHook.TestRepo",
+        "ecto.migrate -r CaptainHook.TestRepo"
+      ],
+      "ecto.reset": ["ecto.drop -r CaptainHook.TestRepo", "ecto.setup"]
     ]
   end
 
@@ -52,7 +61,17 @@ defmodule CaptainHook.MixProject do
   defp package() do
     [
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/annatel/captain_hook"}
+      links: %{"GitHub" => @source_url}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      source_url: @source_url,
+      extras: [
+        "README.md"
+      ]
     ]
   end
 end

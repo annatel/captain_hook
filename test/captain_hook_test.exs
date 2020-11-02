@@ -33,7 +33,7 @@ defmodule CaptainHookTest do
 
       :timer.sleep(800)
 
-      assert %{items: [webhook_conversation]} =
+      assert %{data: [webhook_conversation]} =
                CaptainHook.WebhookConversations.list_webhook_conversations(
                  webhook_endpoint_1.webhook,
                  webhook_endpoint_1
@@ -42,7 +42,7 @@ defmodule CaptainHookTest do
       assert webhook_conversation.status ==
                CaptainHook.WebhookConversations.WebhookConversation.status().success
 
-      assert %{items: [webhook_conversation]} =
+      assert %{data: [webhook_conversation]} =
                CaptainHook.WebhookConversations.list_webhook_conversations(
                  webhook_endpoint_2.webhook,
                  webhook_endpoint_2

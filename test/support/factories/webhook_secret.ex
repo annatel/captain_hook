@@ -1,11 +1,17 @@
 defmodule CaptainHook.Factory.WebhookSecret do
+  alias CaptainHook.WebhookSecrets
   alias CaptainHook.WebhookSecrets.WebhookSecret
 
   defmacro __using__(_opts) do
     quote do
       def build(:webhook_secret) do
+        %{id: webhook_endpoint_id} = insert!(:webhook_endpoint)
+
         %WebhookSecret{
-          started_at: utc_now()
+          webhook_endpoint_id: webhook_endpoint_id,
+          started_at: utc_now(),
+          secret: WebhookSecrets.generate_secret(),
+          main?: true
         }
       end
 

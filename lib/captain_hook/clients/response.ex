@@ -1,6 +1,5 @@
 defmodule CaptainHook.Clients.Response do
-  defstruct requested_at: nil,
-            request_url: nil,
+  defstruct request_url: nil,
             request_headers: nil,
             request_body: nil,
             status_code: nil,

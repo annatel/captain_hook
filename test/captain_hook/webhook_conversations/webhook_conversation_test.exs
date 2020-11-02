@@ -58,8 +58,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationTest do
       assert get_field(changeset, :resource_id) == webhook_conversation_params.resource_id
       assert get_field(changeset, :resource_type) == webhook_conversation_params.resource_type
 
-      assert Shortcode.to_uuid!(get_field(changeset, :request_id)) ==
-               webhook_conversation_params.request_id
+      assert get_field(changeset, :request_id) == webhook_conversation_params.request_id
 
       assert get_field(changeset, :requested_at) == webhook_conversation_params.requested_at
       assert get_field(changeset, :request_url) == webhook_conversation_params.request_url

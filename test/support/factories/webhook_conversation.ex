@@ -7,10 +7,11 @@ defmodule CaptainHook.Factory.WebhookConversation do
         %{id: webhook_endpoint_id} = insert!(:webhook_endpoint)
 
         %WebhookConversation{
+          sequence: System.unique_integer([:positive]),
           webhook_endpoint_id: webhook_endpoint_id,
           resource_type: "resource_type_#{System.unique_integer()}",
           resource_id: uuid(),
-          request_id: uuid(),
+          request_id: uuid() |> Shortcode.to_shortcode!("req"),
           requested_at: utc_now(),
           request_url: "request_url_#{System.unique_integer()}",
           request_headers: %{"Header-Key" => "header value"},

@@ -20,24 +20,35 @@ defmodule CaptainHook.WebhookEndpoints do
     |> Period.filter_by_status(status, datetime, :started_at, :ended_at)
   end
 
-  @spec get_webhook_endpoint(binary, binary) :: WebhookEndpoint.t()
-  def get_webhook_endpoint(webhook, id) when is_binary(webhook) and is_binary(id) do
-    WebhookEndpointQueryable.queryable()
-    |> WebhookEndpointQueryable.filter(webhook: webhook, id: id)
-    |> CaptainHook.repo().one()
+  @spec get_webhook_endpoint(binary, boolean) :: WebhookEndpoint.t()
+  def get_webhook_endpoint(id, with_secret? \\ false) when is_binary(id) do
+    query =
+      WebhookEndpointQueryable.queryable()
+      |> WebhookEndpointQueryable.filter(id: id)
+
+    query = if with_secret?, do: query |> WebhookEndpointQueryable.with_secret(), else: query
+
+    result =
+      query
+      |> CaptainHook.repo().one()
+
+    if with_secret? do
+      [webhook_endpoint, secret] = result
+      webhook_endpoint |> Map.merge(secret)
+    else
+      result
+    end
   end
 
-  @spec get_webhook_endpoint!(binary, binary) :: WebhookEndpoint.t()
-  def get_webhook_endpoint!(webhook, id) when is_binary(webhook) and is_binary(id) do
+  @spec get_webhook_endpoint!(binary) :: WebhookEndpoint.t()
+  def get_webhook_endpoint!(id) when is_binary(id) do
     WebhookEndpointQueryable.queryable()
-    |> WebhookEndpointQueryable.filter(webhook: webhook, id: id)
+    |> WebhookEndpointQueryable.filter(id: id)
     |> CaptainHook.repo().one!()
   end
 
-  @spec create_webhook_endpoint(binary, map()) :: WebhookEndpoint.t()
-  def create_webhook_endpoint(webhook, attrs) when is_map(attrs) do
-    attrs = attrs |> Map.put(:webhook, webhook)
-
+  @spec create_webhook_endpoint(map()) :: WebhookEndpoint.t()
+  def create_webhook_endpoint(attrs) when is_map(attrs) do
     %WebhookEndpoint{}
     |> WebhookEndpoint.create_changeset(attrs)
     |> CaptainHook.repo().insert()
