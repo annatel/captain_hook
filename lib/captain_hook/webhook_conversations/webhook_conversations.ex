@@ -18,9 +18,9 @@ defmodule CaptainHook.WebhookConversations do
     list_webhook_conversations(webhook, [webhook_endpoint_id: webhook_endpoint_id], pagination)
   end
 
-  def list_webhook_conversations(webhook, request_id, pagination)
-      when is_binary(webhook) and is_binary(request_id) do
-    list_webhook_conversations(webhook, [request_id: request_id], pagination)
+  def list_webhook_conversations(webhook, notification_id, pagination)
+      when is_binary(webhook) and is_binary(notification_id) do
+    list_webhook_conversations(webhook, [notification_id: notification_id], pagination)
   end
 
   def list_webhook_conversations(webhook, {resource_type, resource_id}, pagination)
@@ -46,6 +46,26 @@ defmodule CaptainHook.WebhookConversations do
       query |> WebhookConversationQueryable.paginate(page, opts) |> CaptainHook.repo().all()
 
     %{total: conversations_count, data: conversations}
+  end
+
+  def list_webhook_conversations(webhook, filters, opts)
+      when is_binary(webhook) and is_list(opts) do
+    pagination_params = Keyword.get(opts, :pagination_params, %{page: 1, opts: []})
+
+    query =
+      WebhookConversationQueryable.queryable()
+      |> WebhookConversationQueryable.search(webhook)
+      |> WebhookConversationQueryable.filter(filters)
+      |> order_by([:sequence])
+
+    webhook_conversations =
+      query
+      |> WebhookConversationQueryable.paginate(pagination_params.page, pagination_params.opts)
+      |> CaptainHook.repo().all()
+
+    count = query |> CaptainHook.repo().aggregate(:count, :id)
+
+    %{total: count, data: webhook_conversations}
   end
 
   @spec get_webhook_conversation(binary(), binary()) :: WebhookConversation.t()
@@ -79,13 +99,5 @@ defmodule CaptainHook.WebhookConversations do
   @spec conversation_succeeded?(WebhookConversation.t()) :: boolean
   def conversation_succeeded?(%WebhookConversation{status: status}) do
     status == WebhookConversation.status().success
-  end
-
-  defp list_webhook_conversations_query(webhook, filters)
-       when is_binary(webhook) and is_list(filters) do
-    WebhookConversationQueryable.queryable()
-    |> WebhookConversationQueryable.search(webhook)
-    |> WebhookConversationQueryable.filter(filters)
-    |> order_by([:sequence])
   end
 end

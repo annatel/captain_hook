@@ -13,6 +13,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     field(:started_at, :utc_datetime)
     field(:ended_at, :utc_datetime)
 
+    field(:livemode, :boolean)
     field(:url, :string)
     field(:metadata, :map)
     field(:headers, :map)
@@ -24,8 +25,8 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   @spec create_changeset(WebhookEndpoint.t(), map()) :: Ecto.Changeset.t()
   def create_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
-    |> cast(attrs, [:webhook, :started_at, :url, :metadata, :headers, :allow_insecure])
-    |> validate_required([:webhook, :started_at, :url])
+    |> cast(attrs, [:webhook, :started_at, :livemode, :url, :metadata, :headers, :allow_insecure])
+    |> validate_required([:webhook, :livemode, :started_at, :url])
   end
 
   @spec update_changeset(WebhookEndpoint.t(), map()) :: Ecto.Changeset.t()

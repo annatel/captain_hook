@@ -16,7 +16,8 @@ defmodule CaptainHook.Supervisor do
     poll_interval = Keyword.get(opts, :poll_interval, @default_poll_interval)
 
     children = [
-      {CaptainHook.Queue, [repoll_after_job_performed?: true, poll_interval: poll_interval]}
+      {CaptainHook.Queue, [repoll_after_job_performed?: true, poll_interval: poll_interval]},
+      {Finch, name: CaptainHookFinch}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

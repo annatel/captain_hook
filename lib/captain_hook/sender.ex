@@ -55,6 +55,12 @@ defmodule CaptainHook.Sender do
     @http_client.call(url, encoded_params, headers, allow_insecure: allow_insecure)
   end
 
+  def signature(body, timestamp) do
+    signed_payload = "#{timestamp}.#{body}"
+    hmac = :crypto.mac(:hmac, :sha256, "secret", signed_payload)
+    Base.encode16(hmac, case: :lower)
+  end
+
   # @spec send_notification(binary, map, integer) ::
   #         {:error, binary} | {:ok, CaptainHook.WebhookConversations.WebhookConversation.t()}
   # def send_notification(action, params, attempt_number)

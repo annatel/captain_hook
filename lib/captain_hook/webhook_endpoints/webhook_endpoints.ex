@@ -8,6 +8,7 @@ defmodule CaptainHook.WebhookEndpoints do
   def list_webhook_endpoints(webhook) do
     WebhookEndpointQueryable.queryable()
     |> WebhookEndpointQueryable.filter(webhook: webhook)
+    |> WebhookEndpointQueryable.filter_by_period_status(:ongoing, DateTime.utc_now())
     |> order_by([:started_at])
     |> CaptainHook.repo().all()
   end

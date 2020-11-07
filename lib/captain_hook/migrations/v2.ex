@@ -6,21 +6,21 @@ defmodule CaptainHook.Migrations.V2 do
   def up do
     alter_table_webhook_endpoints_add_livemode_column()
     alter_table_webhook_conversations_rename_request_id_column()
-    alter_table_webhook_conversations_add_event_type_column()
+    alter_table_webhook_conversations_add_notification_type_column()
     alter_table_webhook_conversations_add_sequence_column()
     create_sequences_table()
     create_webhook_secrets_table()
-    create_webhook_events_table()
+    create_webhook_notification_types_table()
   end
 
   def down do
     alter_table_webhook_endpoints_remove_livemode_column()
     alter_table_webhook_conversations_revert_rename_request_id_column()
-    alter_table_webhook_conversations_remove_event_type_column()
+    alter_table_webhook_conversations_remove_notification_type_column()
     alter_table_webhook_conversations_remove_sequence_column()
     drop_sequences_table()
     drop_webhook_secrets_table()
-    drop_webhook_events_table()
+    drop_webhook_notification_types_table()
   end
 
   defp alter_table_webhook_endpoints_add_livemode_column() do
@@ -29,8 +29,6 @@ defmodule CaptainHook.Migrations.V2 do
     )
 
     create(index(:captain_hook_webhook_endpoints, [:livemode]))
-
-    flush()
 
     execute("UPDATE captain_hook_webhook_endpoints SET livemode = 1")
   end
@@ -43,31 +41,32 @@ defmodule CaptainHook.Migrations.V2 do
 
   defp alter_table_webhook_conversations_rename_request_id_column() do
     execute(
-      "ALTER TABLE captain_hook_webhook_conversations CHANGE request_id event_id BINARY(16) NOT NULL"
+      "ALTER TABLE captain_hook_webhook_conversations CHANGE request_id notification_id BINARY(16) NOT NULL"
     )
 
-    create(index(:captain_hook_webhook_conversations, [:event_id]))
+    create(index(:captain_hook_webhook_conversations, [:notification_id]))
   end
 
   defp alter_table_webhook_conversations_revert_rename_request_id_column() do
-    execute("ALTER TABLE webhook_conversations CHANGE event_id request_id BINARY(16) NOT NULL")
-    drop(index(:captain_hook_webhook_conversations, [:event_id]))
+    execute(
+      "ALTER TABLE webhook_conversations CHANGE notification_id request_id BINARY(16) NOT NULL"
+    )
+
+    drop(index(:captain_hook_webhook_conversations, [:notification_id]))
     create(index(:captain_hook_webhook_conversations, [:request_id]))
   end
 
-  defp alter_table_webhook_conversations_add_event_type_column() do
+  defp alter_table_webhook_conversations_add_notification_type_column() do
     execute(
-      "ALTER TABLE captain_hook_webhook_conversations ADD COLUMN event_type VARCHAR(255) NOT NULL AFTER event_id;"
+      "ALTER TABLE captain_hook_webhook_conversations ADD COLUMN notification_type VARCHAR(255) NOT NULL AFTER notification_id;"
     )
 
-    create(index(:captain_hook_webhook_conversations, [:event_type]))
-    flush()
-    seed_webhook_conversation_sequence()
+    create(index(:captain_hook_webhook_conversations, [:notification_type]))
   end
 
-  defp alter_table_webhook_conversations_remove_event_type_column() do
+  defp alter_table_webhook_conversations_remove_notification_type_column() do
     alter table(:captain_hook_webhook_conversations) do
-      remove(:sequence)
+      remove(:notification_type)
     end
   end
 
@@ -170,7 +169,6 @@ defmodule CaptainHook.Migrations.V2 do
 
     rows
     |> Enum.each(fn [id, started_at] ->
-      IO.inspect(started_at, label: "STARTED_AT")
       started_at = DateTime.from_naive!(started_at, "Etc/UTC")
       id = Ecto.UUID.cast!(id)
 
@@ -185,8 +183,8 @@ defmodule CaptainHook.Migrations.V2 do
     drop(table(:captain_hook_webhook_secrets))
   end
 
-  defp create_webhook_events_table do
-    create table(:captain_hook_webhook_events, primary_key: false) do
+  defp create_webhook_notification_types_table do
+    create table(:captain_hook_webhook_notification_types, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
 
       add(
@@ -195,13 +193,15 @@ defmodule CaptainHook.Migrations.V2 do
         null: false
       )
 
-      add(:name, :string, null: true)
+      add(:type, :string, null: false)
 
       timestamps()
     end
+
+    create(index(:captain_hook_webhook_notification_types, [:type]))
   end
 
-  defp drop_webhook_events_table do
-    drop(table(:captain_hook_webhook_events))
+  defp drop_webhook_notification_types_table do
+    drop(table(:captain_hook_webhook_notification_types))
   end
 end

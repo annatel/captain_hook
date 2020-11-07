@@ -13,12 +13,11 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     belongs_to(:webhook_endpoint, WebhookEndpoint, type: Shortcode.Ecto.UUID, prefix: "we")
 
     field(:sequence, :integer)
+    field(:notification_id, Shortcode.Ecto.UUID)
+    field(:notification_type, :string)
     field(:resource_type, :string)
     field(:resource_id, :string)
-    field(:request_id, Shortcode.Ecto.UUID, prefix: "req")
-
     field(:requested_at, :utc_datetime)
-
     field(:request_url, :string)
     field(:request_headers, :map)
     field(:request_body, :string)
@@ -38,6 +37,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     |> cast(attrs, [
       :webhook_endpoint_id,
       :sequence,
+      :notification_type,
+      :notification_id,
       :resource_type,
       :resource_id,
       :request_id,
@@ -52,7 +53,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     ])
     |> validate_required([
       :webhook_endpoint_id,
-      :request_id,
+      :notification_type,
+      :notification_id,
       :requested_at,
       :request_url,
       :request_body,
