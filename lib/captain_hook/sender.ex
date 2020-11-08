@@ -17,18 +17,25 @@ defmodule CaptainHook.Sender do
 
   def enqueue_event(
         %WebhookEndpoint{} = webhook_endpoint,
-        event_type,
+        notification_type,
         {resource_type, resource_id},
         data,
         opts \\ []
       ) do
     data_wrapper =
-      DataWrapper.new(webhook_endpoint.id, event_type, resource_type, resource_id, data, opts)
+      DataWrapper.new(
+        webhook_endpoint.id,
+        notification_type,
+        resource_type,
+        resource_id,
+        data,
+        opts
+      )
       |> Map.from_struct()
 
     queue_name = "#{webhook_endpoint.webhook}_#{webhook_endpoint.id}"
 
-    {:ok, _} = Queue.create_job(queue_name, "sending_an_event", data_wrapper)
+    {:ok, _} = Queue.create_job(queue_name, "notify", data_wrapper)
   end
 
   def perform_send(raw_data_wrapper, attempt_number) when is_map(raw_data_wrapper) do
@@ -39,26 +46,75 @@ defmodule CaptainHook.Sender do
 
     performing_request_datetime = DateTime.utc_now()
 
-    ongoing_webhook_secrets =
-      WebhookSecrets.list_webhook_secrets(webhook_endpoint)
-      |> WebhookSecrets.filter_webhook_secrets(:ongoing, performing_request_datetime)
+    secrets =
+      webhook_endpoint
+      |> WebhookSecrets.list_webhook_secrets()
+      |> Enum.sort_by(&{&1.main?, &1.started_at})
+      |> Enum.map(& &1.secret)
 
-    metadata = Map.get(data_wrapper, :metadata, %{})
-    request_id = data_wrapper.request_id
+    body = %{
+      id: data_wrapper.notification_id,
+      type: data_wrapper.notification_type,
+      livemode: webhook_endpoint.livemode,
+      data: data_wrapper.data,
+      metadata: webhook_endpoint.metadata
+    }
 
-    data_wrapper.data |> Map.merge(metadata)
-    params = data |> Map.merge(metadata) |> Map.put(:request_id, request_id)
-    %Response{} = response = do_send(webhook_endpoint.url)
+    request_datetime = DateTime.utc_now()
+
+    headers =
+      (webhook_endpoint.headers || %{})
+      |> Map.put("Signature", build_signature(body, DateTime.to_unix(request_datetime), secrets))
+
+    %Response{} =
+      response = do_send(webhook_endpoint.url, body, headers, webhook_endpoint.allow_insecure)
+
+    webhook_conversation_attrs =
+      webhook_conversation_attrs(response, webhook_endpoint, data_wrapper, request_datetime)
+
+    webhook_endpoint
+    |> WebhookConversations.create_webhook_conversation(webhook_conversation_attrs)
+    |> case do
+      {:ok, webhook_conversation} ->
+        if WebhookConversations.conversation_succeeded?(webhook_conversation) do
+          {:ok, webhook_conversation}
+        else
+          handle_failure(
+            data_wrapper.webhook_result_handler,
+            webhook_conversation,
+            attempt_number
+          )
+
+          error = webhook_conversation |> inspect()
+          {:error, error}
+        end
+
+      {:error, changeset} ->
+        error = changeset |> AntlUtilsEctoChangeset.errors_on() |> inspect()
+        {:error, error}
+    end
   end
 
-  defp do_send(url, encoded_params, headers, allow_insecure) do
-    @http_client.call(url, encoded_params, headers, allow_insecure: allow_insecure)
+  defp do_send(url, body, headers, allow_insecure) do
+    @http_client.call(url, body, headers, allow_insecure: allow_insecure)
   end
 
-  def signature(body, timestamp) do
+  defp build_signature(body, timestamp, secrets) do
+    signature = "t=#{timestamp},"
+    body = Jason.encode!(body)
+
+    secrets
+    |> Enum.reduce(signature, fn secret, acc ->
+      acc <> "v1=#{signature(body, timestamp, secret)},"
+    end)
+    |> String.trim(",")
+  end
+
+  defp signature(body, timestamp, secret) do
     signed_payload = "#{timestamp}.#{body}"
-    hmac = :crypto.mac(:hmac, :sha256, "secret", signed_payload)
-    Base.encode16(hmac, case: :lower)
+
+    :crypto.mac(:hmac, :sha256, secret, signed_payload)
+    |> Base.encode16(case: :lower)
   end
 
   # @spec send_notification(binary, map, integer) ::
@@ -134,26 +190,6 @@ defmodule CaptainHook.Sender do
   #   headers = (headers || %{}) |> Map.put("CaptainHook-Signature", signature)
 
   #   @webhook_client.call(url, params, headers, allow_insecure: allow_insecure)
-  # end
-
-  # defp build_signature(request_datetime, params, webhook_secrets) do
-  #   timestamp = DateTime.to_unix(request_datetime)
-
-  #   signature = "t=#{timestamp},"
-
-  #   webhook_secrets
-  #   |> Enum.sort_by(& &1.main?)
-  #   |> Enum.sort_by(& &1.started_at)
-  #   |> Enum.with_index()
-  #   |> Enum.reduce(signature, fn {%WebhookSecret{secret: secret}, index}, acc ->
-  #     payload_to_sign = "#{timestamp}.#{Jason.encode!(params)}"
-
-  #     signed_payload =
-  #       :crypto.hmac(:sha256, secret, payload_to_sign) |> Base.encode16(case: :lower)
-
-  #     acc <> "v1=#{signed_payload},"
-  #   end)
-  #   |> String.trim(",")
   # end
 
   # defp webhook_conversation_attrs(

@@ -32,23 +32,7 @@ defmodule CaptainHook.WebhookConversations do
     )
   end
 
-  def list_webhook_conversations(
-        webhook,
-        filters,
-        %{page: page, opts: opts} = _pagination
-      )
-      when is_binary(webhook) do
-    query = list_webhook_conversations_query(webhook, filters)
-
-    conversations_count = query |> CaptainHook.repo().aggregate(:count, :id)
-
-    conversations =
-      query |> WebhookConversationQueryable.paginate(page, opts) |> CaptainHook.repo().all()
-
-    %{total: conversations_count, data: conversations}
-  end
-
-  def list_webhook_conversations(webhook, filters, opts)
+  def list_webhook_conversations(webhook, filters, %{page: page, opts: opts} = _pagination)
       when is_binary(webhook) and is_list(opts) do
     pagination_params = Keyword.get(opts, :pagination_params, %{page: 1, opts: []})
 
@@ -59,9 +43,7 @@ defmodule CaptainHook.WebhookConversations do
       |> order_by([:sequence])
 
     webhook_conversations =
-      query
-      |> WebhookConversationQueryable.paginate(pagination_params.page, pagination_params.opts)
-      |> CaptainHook.repo().all()
+      query |> WebhookConversationQueryable.paginate(page, opts) |> CaptainHook.repo().all()
 
     count = query |> CaptainHook.repo().aggregate(:count, :id)
 

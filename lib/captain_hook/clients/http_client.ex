@@ -12,11 +12,11 @@ defmodule CaptainHook.Clients.HttpClient do
 
   @impl true
   @spec call(binary, map(), map(), keyword) :: Response.t()
-  def call(url, params, headers, options \\ [])
-      when is_binary(url) and is_map(params) and is_map(headers) do
-    encoded_params = Jason.encode!(params)
+  def call(url, body, headers, options \\ [])
+      when is_binary(url) and is_map(body) and is_map(headers) do
+    encoded_body = Jason.encode!(body)
 
-    Logger.debug("#{inspect(url)} #{inspect(encoded_params)}")
+    Logger.debug("#{inspect(url)} #{inspect(encoded_body)}")
 
     headers =
       headers
@@ -32,12 +32,12 @@ defmodule CaptainHook.Clients.HttpClient do
         do: [{:hackney, [:insecure]} | request_options],
         else: request_options
 
-    http_result = @http_adapter.post(url, encoded_params, headers, request_options)
+    http_result = @http_adapter.post(url, encoded_body, headers, request_options)
 
     Logger.debug("#{inspect(http_result)}")
 
     http_result
-    |> process_http_call_response(url, Enum.into(headers, %{}), encoded_params)
+    |> process_http_call_response(url, Enum.into(headers, %{}), encoded_body)
   end
 
   defp process_http_call_response(

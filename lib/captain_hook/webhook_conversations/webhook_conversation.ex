@@ -41,7 +41,6 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
       :notification_id,
       :resource_type,
       :resource_id,
-      :request_id,
       :requested_at,
       :request_url,
       :request_headers,
@@ -53,6 +52,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     ])
     |> validate_required([
       :webhook_endpoint_id,
+      :sequence,
       :notification_type,
       :notification_id,
       :requested_at,

@@ -168,13 +168,19 @@ defmodule CaptainHook.Migrations.V2 do
       )
 
     rows
-    |> Enum.each(fn [id, started_at] ->
+    |> Enum.each(fn [webhook_endpoint_id, started_at] ->
       started_at = DateTime.from_naive!(started_at, "Etc/UTC")
-      id = Ecto.UUID.cast!(id)
 
-      CaptainHook.WebhookSecrets.create_webhook_secret(
-        %CaptainHook.WebhookEndpoints.WebhookEndpoint{id: id},
-        started_at
+      webhook_endpoint_id =
+        Ecto.UUID.cast!(webhook_endpoint_id) |> String.replace("-", "") |> String.upcase()
+
+      secret = CaptainHook.WebhookSecrets.generate_secret()
+      now = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_naive()
+
+      execute(
+        "INSERT INTO captain_hook_webhook_secrets(webhook_endpoint_id, started_at, main, secrect, inserted_at, updated_at) VALUES ('#{
+          webhook_endpoint_id
+        }', '#{started_at}', 1, '#{secret}', '#{now}', '#{now}')"
       )
     end)
   end

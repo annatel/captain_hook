@@ -4,8 +4,8 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
 
   import Ecto.Query, only: [select: 3, where: 2]
 
-  @spec with_secret(Ecto.Queryable.t()) :: Ecto.Queryable.t()
-  def with_secret(queryable) do
+  @spec include_secret(Ecto.Queryable.t()) :: Ecto.Queryable.t()
+  def include_secret(queryable) do
     queryable
     |> select([webhook_endpoint], [
       webhook_endpoint,

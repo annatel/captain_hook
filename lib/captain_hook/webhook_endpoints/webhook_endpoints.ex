@@ -3,37 +3,36 @@ defmodule CaptainHook.WebhookEndpoints do
 
   alias AntlUtilsElixir.DateTime.Period
   alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, WebhookEndpointQueryable}
+  alias CaptainHook.WebhookSecrets
 
   @spec list_webhook_endpoints(binary) :: [WebhookEndpoint.t()]
-  def list_webhook_endpoints(webhook) do
+  def list_webhook_endpoints(
+        webhook,
+        livemode?,
+        period_status \\ :ongoing,
+        period_status_at \\ DateTime.utc_now()
+      ) do
     WebhookEndpointQueryable.queryable()
-    |> WebhookEndpointQueryable.filter(webhook: webhook)
-    |> WebhookEndpointQueryable.filter_by_period_status(:ongoing, DateTime.utc_now())
+    |> WebhookEndpointQueryable.filter(webhook: webhook, livemode: livemode?)
+    |> WebhookEndpointQueryable.filter_by_period_status(period_status, period_status_at)
     |> order_by([:started_at])
     |> CaptainHook.repo().all()
   end
 
-  @spec filter_webhook_endpoints([WebhookEndpoint.t()], atom, DateTime.t()) :: [
-          WebhookEndpoint.t()
-        ]
-  def filter_webhook_endpoints(webhook_endpoints, status, %DateTime{} = datetime) do
-    webhook_endpoints
-    |> Period.filter_by_status(status, datetime, :started_at, :ended_at)
-  end
-
   @spec get_webhook_endpoint(binary, boolean) :: WebhookEndpoint.t()
-  def get_webhook_endpoint(id, with_secret? \\ false) when is_binary(id) do
+  def get_webhook_endpoint(id, include_secret? \\ false) when is_binary(id) do
     query =
       WebhookEndpointQueryable.queryable()
       |> WebhookEndpointQueryable.filter(id: id)
 
-    query = if with_secret?, do: query |> WebhookEndpointQueryable.with_secret(), else: query
+    query =
+      if include_secret?, do: query |> WebhookEndpointQueryable.include_secret(), else: query
 
     result =
       query
       |> CaptainHook.repo().one()
 
-    if with_secret? do
+    if include_secret? do
       [webhook_endpoint, secret] = result
       webhook_endpoint |> Map.merge(secret)
     else
@@ -50,9 +49,19 @@ defmodule CaptainHook.WebhookEndpoints do
 
   @spec create_webhook_endpoint(map()) :: WebhookEndpoint.t()
   def create_webhook_endpoint(attrs) when is_map(attrs) do
-    %WebhookEndpoint{}
-    |> WebhookEndpoint.create_changeset(attrs)
-    |> CaptainHook.repo().insert()
+    Multi.new()
+    |> Multi.insert(
+      :webhook_endpoint,
+      %WebhookEndpoint{} |> WebhookEndpoint.create_changeset(attrs)
+    )
+    |> Multi.run(:create_webhook_secret, fn _, %{webhook_endpoint: webhook_endpoint} ->
+      WebhookSecrets.create_webhook_secret(webhook_endpoint, webhook_endpoint.started_at)
+    end)
+    |> CaptainHook.repo().transaction()
+    |> case do
+      {:ok, %{webhook_endpoint: webhook_endpoint}} -> {:ok, webhook_endpoint}
+      {:error, _, failed_value, _} -> {:error, failed_value}
+    end
   end
 
   @spec update_webhook_endpoint(WebhookEndpoint.t(), map()) :: WebhookEndpoint.t()
@@ -68,8 +77,20 @@ defmodule CaptainHook.WebhookEndpoints do
         %WebhookEndpoint{id: _id, ended_at: nil} = webhook_endpoint,
         %DateTime{} = ended_at \\ DateTime.utc_now()
       ) do
-    webhook_endpoint
-    |> WebhookEndpoint.remove_changeset(%{ended_at: ended_at})
-    |> CaptainHook.repo().update()
+    webhook_secrets = WebhookSecrets.list_webhook_secrets(webhook_endpoint)
+
+    Multi.new()
+    |> Multi.update(
+      :webhook_endpoint,
+      webhook_endpoint |> WebhookEndpoint.remove_changeset(%{ended_at: ended_at})
+    )
+    |> Multi.run(:remove_webhook_secret, fn _, %{webhook_endpoint: webhook_endpoint} ->
+      WebhookSecrets.create_webhook_secret(webhook_endpoint, webhook_endpoint.started_at)
+    end)
+    |> CaptainHook.repo().transaction()
+    |> case do
+      {:ok, %{webhook_endpoint: webhook_endpoint}} -> {:ok, webhook_endpoint}
+      {:error, _, failed_value, _} -> {:error, failed_value}
+    end
   end
 end
