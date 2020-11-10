@@ -2,7 +2,7 @@ defmodule CaptainHook.NotifierTest do
   use ExUnit.Case, async: true
   use CaptainHook.DataCase
 
-  alias CaptainHook.WebhookConversations.WebhookConversation
+  # alias CaptainHook.WebhookConversations.WebhookConversation
 
   # describe "send_notification/3" do
   #   test "params from captain_hook_queue can be either a Map with atom keys or string keys" do
