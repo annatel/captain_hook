@@ -11,7 +11,7 @@ defmodule CaptainHook.Factory.WebhookSecret do
           webhook_endpoint_id: webhook_endpoint_id,
           started_at: utc_now(),
           secret: WebhookSecrets.generate_secret(),
-          main?: true
+          is_main: true
         }
       end
 

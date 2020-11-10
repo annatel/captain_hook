@@ -5,9 +5,11 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationQueryable do
 
   alias CaptainHook.WebhookEndpoints
 
-  defp search_by_field({:webhook, value}, dynamic) do
+  defp search_by_field({:webhook, value}, dynamic, livemode: livemode) do
     webhook_endpoint_ids =
-      WebhookEndpoints.list_webhook_endpoints(value, nil) |> Enum.map(& &1.id) |> Enum.uniq()
+      WebhookEndpoints.list_webhook_endpoints(value, livemode, nil)
+      |> Enum.map(& &1.id)
+      |> Enum.uniq()
 
     dynamic(
       [webhook_conversation],

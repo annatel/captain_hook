@@ -9,10 +9,10 @@ defmodule CaptainHook.Factory.WebhookConversation do
         %WebhookConversation{
           sequence: System.unique_integer([:positive]),
           webhook_endpoint_id: webhook_endpoint_id,
-          resource_type: "resource_type_#{System.unique_integer()}",
+          notification_id: uuid() |> Shortcode.to_shortcode!("not"),
+          notification_type: "notification_type_#{System.unique_integer()}",
           resource_id: uuid(),
-          notification_id: uuid(),
-          notification_type: "resource_type_#{System.unique_integer()}",
+          resource_type: "resource_type_#{System.unique_integer()}",
           requested_at: utc_now(),
           request_url: "request_url_#{System.unique_integer()}",
           request_headers: %{"Header-Key" => "header value"},

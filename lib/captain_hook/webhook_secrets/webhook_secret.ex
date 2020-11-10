@@ -17,7 +17,7 @@ defmodule CaptainHook.WebhookSecrets.WebhookSecret do
     field(:ended_at, :utc_datetime)
 
     field(:secret, :string)
-    field(:main?, :boolean, source: :is_main)
+    field(:is_main, :boolean)
 
     timestamps()
   end
@@ -25,8 +25,8 @@ defmodule CaptainHook.WebhookSecrets.WebhookSecret do
   @spec create_changeset(WebhookSecret.t(), map()) :: Ecto.Changeset.t()
   def create_changeset(%__MODULE__{} = webhook_secret, attrs) when is_map(attrs) do
     webhook_secret
-    |> cast(attrs, [:webhook_endpoint_id, :started_at, :main?])
-    |> validate_required([:webhook_endpoint_id, :started_at, :main?])
+    |> cast(attrs, [:webhook_endpoint_id, :started_at, :is_main])
+    |> validate_required([:webhook_endpoint_id, :started_at, :is_main])
     |> put_change_secret()
     |> assoc_constraint(:webhook_endpoint)
   end
@@ -34,8 +34,8 @@ defmodule CaptainHook.WebhookSecrets.WebhookSecret do
   @spec remove_changeset(WebhookSecret.t(), map()) :: Ecto.Changeset.t()
   def remove_changeset(%__MODULE__{} = webhook_secret, attrs) when is_map(attrs) do
     webhook_secret
-    |> cast(attrs, [:ended_at, :main?])
-    |> validate_required([:ended_at, :main?])
+    |> cast(attrs, [:ended_at, :is_main])
+    |> validate_required([:ended_at, :is_main])
     |> AntlUtilsEctoChangeset.validate_datetime_gte(:ended_at, :started_at)
   end
 

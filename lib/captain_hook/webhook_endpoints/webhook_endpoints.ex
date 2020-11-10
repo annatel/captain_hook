@@ -3,20 +3,19 @@ defmodule CaptainHook.WebhookEndpoints do
 
   alias Ecto.Multi
 
-  alias AntlUtilsElixir.DateTime.Period
   alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, WebhookEndpointQueryable}
   alias CaptainHook.WebhookSecrets
 
   def list_webhook_endpoints(
         webhook,
         livemode?,
-        period_status \\ :ongoing,
-        period_status_at \\ DateTime.utc_now()
+        status \\ :ongoing,
+        datetime \\ DateTime.utc_now()
       ) do
     WebhookEndpointQueryable.queryable()
     |> WebhookEndpointQueryable.filter(webhook: webhook, livemode: livemode?)
-    |> WebhookEndpointQueryable.filter_by_period_status(period_status, period_status_at)
-    |> order_by([:started_at])
+    |> WebhookEndpointQueryable.filter_by_status(status, datetime)
+    |> order_by(asc: :started_at)
     |> CaptainHook.repo().all()
   end
 
@@ -75,8 +74,8 @@ defmodule CaptainHook.WebhookEndpoints do
 
   @spec delete_webhook_endpoint(WebhookEndpoint.t(), DateTime.t()) :: WebhookEndpoint.t()
   def delete_webhook_endpoint(
-        %WebhookEndpoint{id: _id, ended_at: nil} = webhook_endpoint,
-        %DateTime{} = ended_at \\ DateTime.utc_now()
+        %WebhookEndpoint{ended_at: nil} = webhook_endpoint,
+        %DateTime{} = ended_at
       ) do
     webhook_secrets = WebhookSecrets.list_webhook_secrets(webhook_endpoint)
 
@@ -85,8 +84,14 @@ defmodule CaptainHook.WebhookEndpoints do
       :webhook_endpoint,
       webhook_endpoint |> WebhookEndpoint.remove_changeset(%{ended_at: ended_at})
     )
-    |> Multi.run(:remove_webhook_secret, fn _, %{webhook_endpoint: webhook_endpoint} ->
-      WebhookSecrets.create_webhook_secret(webhook_endpoint, webhook_endpoint.started_at)
+    |> Multi.merge(fn _ ->
+      webhook_secrets
+      |> Enum.reduce(Multi.new(), fn webhook_secret, acc ->
+        acc
+        |> Multi.run(:"remove_webhook_secret_#{webhook_secret.id}", fn _repo, %{} ->
+          WebhookSecrets.remove_webhook_secret(webhook_secret, ended_at)
+        end)
+      end)
     end)
     |> CaptainHook.repo().transaction()
     |> case do

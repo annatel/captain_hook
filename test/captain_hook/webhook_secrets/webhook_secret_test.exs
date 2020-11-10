@@ -21,7 +21,7 @@ defmodule CaptainHook.WebhookSecrets.WebhookSecretTest do
 
       assert :webhook_endpoint_id in changes_keys
       assert :started_at in changes_keys
-      assert :started_at in changes_keys
+      assert :is_main in changes_keys
       refute :ended_at in changes_keys
       refute :new_key in changes_keys
     end
@@ -32,6 +32,7 @@ defmodule CaptainHook.WebhookSecrets.WebhookSecretTest do
       refute changeset.valid?
       assert %{webhook_endpoint_id: ["can't be blank"]} = errors_on(changeset)
       assert %{started_at: ["can't be blank"]} = errors_on(changeset)
+      assert %{is_main: ["can't be blank"]} = errors_on(changeset)
     end
 
     test "when params are valid, return a valid changeset" do
@@ -45,6 +46,7 @@ defmodule CaptainHook.WebhookSecrets.WebhookSecretTest do
                webhook_secret_params.webhook_endpoint_id
 
       assert get_field(changeset, :started_at) == @datetime_1
+      assert get_field(changeset, :is_main) == webhook_secret_params.is_main
       refute is_nil(get_field(changeset, :secret))
     end
   end
@@ -55,7 +57,7 @@ defmodule CaptainHook.WebhookSecrets.WebhookSecretTest do
 
       webhook_secret_params =
         params_for(:webhook_secret, started_at: @datetime_1, ended_at: @datetime_2)
-        |> Map.put(:main?, false)
+        |> Map.put(:is_main, false)
 
       changeset =
         WebhookSecret.remove_changeset(
@@ -68,7 +70,7 @@ defmodule CaptainHook.WebhookSecrets.WebhookSecretTest do
       refute :webhook_endpoint_id in changes_keys
       refute :secret in changes_keys
       refute :started_at in changes_keys
-      assert :main? in changes_keys
+      assert :is_main in changes_keys
       assert :ended_at in changes_keys
       refute :new_key in changes_keys
     end
@@ -76,10 +78,10 @@ defmodule CaptainHook.WebhookSecrets.WebhookSecretTest do
     test "when required params are missing, returns an invalid changeset" do
       webhook_secret = insert!(:webhook_secret)
 
-      changeset = WebhookSecret.remove_changeset(webhook_secret, %{main?: nil})
+      changeset = WebhookSecret.remove_changeset(webhook_secret, %{is_main: nil})
 
       refute changeset.valid?
-      assert %{main?: ["can't be blank"]} = errors_on(changeset)
+      assert %{is_main: ["can't be blank"]} = errors_on(changeset)
       assert %{ended_at: ["can't be blank"]} = errors_on(changeset)
     end
 
