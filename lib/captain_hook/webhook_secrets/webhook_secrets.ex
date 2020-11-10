@@ -1,8 +1,7 @@
 defmodule CaptainHook.WebhookSecrets do
-  import Ecto.Changeset, only: [add_error: 3, fetch_field!: 2]
+  import Ecto.Changeset, only: [add_error: 3, fetch_field!: 2, prepare_changes: 2]
 
   alias Ecto.Multi
-  alias AntlUtilsElixir.DateTime.Period
 
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.WebhookSecrets.{WebhookSecret, WebhookSecretQueryable}
@@ -20,7 +19,7 @@ defmodule CaptainHook.WebhookSecrets do
       ) do
     WebhookSecretQueryable.queryable()
     |> WebhookSecretQueryable.filter(webhook_endpoint_id: webhook_endpoint.id)
-    |> WebhookSecretQueryable.filter_by_status(period_status, period_status_at)
+    |> WebhookSecretQueryable.filter_by_period_status(period_status, period_status_at)
     |> CaptainHook.repo().all()
   end
 
@@ -37,7 +36,7 @@ defmodule CaptainHook.WebhookSecrets do
 
   def remove_webhook_secret(%WebhookSecret{} = webhook_secret, %DateTime{} = ended_at) do
     webhook_secret
-    |> WebhookSecret.remove_changeset(%{main?: false, ended_at: expires_at})
+    |> WebhookSecret.remove_changeset(%{main?: false, ended_at: ended_at})
     |> validate_remove_changes()
     |> CaptainHook.repo().update()
   end

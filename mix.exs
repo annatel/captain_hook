@@ -28,13 +28,13 @@ defmodule CaptainHook.MixProject do
   defp deps do
     [
       {:mox, "~> 0.4", only: :test},
+      {:bypass, "~> 1.0", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:myxql, "~> 0.4.0"},
       {:ecto_sql, "~> 3.5"},
       {:antl_utils_elixir, "~> 0.2.0", override: true},
       {:antl_utils_ecto, "~> 0.7.0"},
       {:queuetopia, "~> 0.6.3"},
-      {:httpoison, "~> 1.7"},
       {:finch, "~> 0.5"},
       {:recase, "~> 0.7"},
       {:shortcode, "~> 0.5.0"}

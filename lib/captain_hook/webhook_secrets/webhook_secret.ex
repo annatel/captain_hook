@@ -26,7 +26,7 @@ defmodule CaptainHook.WebhookSecrets.WebhookSecret do
   def create_changeset(%__MODULE__{} = webhook_secret, attrs) when is_map(attrs) do
     webhook_secret
     |> cast(attrs, [:webhook_endpoint_id, :started_at, :main?])
-    |> validate_required([:webhook_endpoint_id :started_at , :main?])
+    |> validate_required([:webhook_endpoint_id, :started_at, :main?])
     |> put_change_secret()
     |> assoc_constraint(:webhook_endpoint)
   end

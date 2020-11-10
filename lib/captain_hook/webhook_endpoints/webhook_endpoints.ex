@@ -1,11 +1,12 @@
 defmodule CaptainHook.WebhookEndpoints do
   import Ecto.Query, only: [order_by: 2]
 
+  alias Ecto.Multi
+
   alias AntlUtilsElixir.DateTime.Period
   alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, WebhookEndpointQueryable}
   alias CaptainHook.WebhookSecrets
 
-  @spec list_webhook_endpoints(binary) :: [WebhookEndpoint.t()]
   def list_webhook_endpoints(
         webhook,
         livemode?,

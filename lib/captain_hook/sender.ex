@@ -69,30 +69,30 @@ defmodule CaptainHook.Sender do
     %Response{} =
       response = do_send(webhook_endpoint.url, body, headers, webhook_endpoint.allow_insecure)
 
-    webhook_conversation_attrs =
-      webhook_conversation_attrs(response, webhook_endpoint, data_wrapper, request_datetime)
+    # webhook_conversation_attrs =
+    #   webhook_conversation_attrs(response, webhook_endpoint, data_wrapper, request_datetime)
 
-    webhook_endpoint
-    |> WebhookConversations.create_webhook_conversation(webhook_conversation_attrs)
-    |> case do
-      {:ok, webhook_conversation} ->
-        if WebhookConversations.conversation_succeeded?(webhook_conversation) do
-          {:ok, webhook_conversation}
-        else
-          handle_failure(
-            data_wrapper.webhook_result_handler,
-            webhook_conversation,
-            attempt_number
-          )
+    # webhook_endpoint
+    # |> WebhookConversations.create_webhook_conversation(webhook_conversation_attrs)
+    # |> case do
+    #   {:ok, webhook_conversation} ->
+    #     if WebhookConversations.conversation_succeeded?(webhook_conversation) do
+    #       {:ok, webhook_conversation}
+    #     else
+    #       handle_failure(
+    #         data_wrapper.webhook_result_handler,
+    #         webhook_conversation,
+    #         attempt_number
+    #       )
 
-          error = webhook_conversation |> inspect()
-          {:error, error}
-        end
+    #       error = webhook_conversation |> inspect()
+    #       {:error, error}
+    #     end
 
-      {:error, changeset} ->
-        error = changeset |> AntlUtilsEctoChangeset.errors_on() |> inspect()
-        {:error, error}
-    end
+    #   {:error, changeset} ->
+    #     error = changeset |> AntlUtilsEctoChangeset.errors_on() |> inspect()
+    #     {:error, error}
+    # end
   end
 
   defp do_send(url, body, headers, allow_insecure) do

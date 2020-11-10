@@ -7,6 +7,7 @@ defmodule CaptainHook.Factory.WebhookEndpoint do
         %WebhookEndpoint{
           webhook: "webhook_#{System.unique_integer()}",
           started_at: utc_now(),
+          livemode: true,
           url: "url_#{System.unique_integer()}",
           metadata: %{},
           headers: %{},

@@ -19,7 +19,8 @@ defmodule CaptainHook do
         data,
         opts \\ []
       )
-      when is_binary(webhook) is_boolean(livemode) and is_binary(notification_type) and is_atom(resource_type) and
+      when is_binary(webhook) and is_boolean(livemode?) and is_binary(notification_type) and
+             is_atom(resource_type) and
              is_map(data) do
     webhook_endpoints = webhook |> list_webhook_endpoints(livemode?)
 
