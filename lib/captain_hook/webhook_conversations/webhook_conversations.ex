@@ -19,6 +19,8 @@ defmodule CaptainHook.WebhookConversations do
       |> WebhookConversationQueryable.filter(filters)
       |> order_by([:sequence])
 
+    count = query |> CaptainHook.repo().aggregate(:count, :id)
+
     query =
       if pagination do
         {page_number, page_size} = pagination
@@ -28,8 +30,6 @@ defmodule CaptainHook.WebhookConversations do
       end
 
     webhook_conversations = query |> CaptainHook.repo().all()
-
-    count = query |> CaptainHook.repo().aggregate(:count, :id)
 
     %{total: count, data: webhook_conversations}
   end
