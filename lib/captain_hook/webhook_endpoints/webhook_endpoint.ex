@@ -14,10 +14,12 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     field(:ended_at, :utc_datetime)
 
     field(:livemode, :boolean)
-    field(:url, :string)
-    field(:metadata, :map)
-    field(:headers, :map)
+
     field(:allow_insecure, :boolean, default: false)
+    field(:headers, :map)
+    field(:metadata, :map)
+    field(:url, :string)
+    field(:secret, :string, virtual: true)
 
     timestamps()
   end

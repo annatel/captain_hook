@@ -88,7 +88,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
       assert webhook_endpoint.webhook == webhook_endpoint_factory.webhook
       assert webhook_endpoint.id == webhook_endpoint_factory.id
-      refute Map.has_key?(webhook_endpoint, :secret)
+      assert is_nil(webhook_endpoint.secret)
     end
 
     test "when secret is requested, return the endpoint with the main secret" do

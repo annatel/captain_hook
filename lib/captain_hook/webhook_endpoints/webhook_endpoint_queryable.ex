@@ -2,13 +2,13 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
   use AntlUtilsEcto.Queryable,
     base_schema: CaptainHook.WebhookEndpoints.WebhookEndpoint
 
-  import Ecto.Query, only: [select: 3, where: 2]
+  import Ecto.Query, only: [select_merge: 3, where: 2]
 
   @spec include_secret(Ecto.Queryable.t()) :: Ecto.Queryable.t()
   def include_secret(queryable) do
     queryable
-    |> select([webhook_endpoint], [
-      webhook_endpoint,
+    |> select_merge(
+      [webhook_endpoint],
       %{
         secret:
           fragment(
@@ -16,7 +16,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
             webhook_endpoint.id
           )
       }
-    ])
+    )
   end
 
   @spec filter_by_status(

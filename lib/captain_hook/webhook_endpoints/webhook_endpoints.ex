@@ -28,16 +28,8 @@ defmodule CaptainHook.WebhookEndpoints do
     query =
       if include_secret?, do: query |> WebhookEndpointQueryable.include_secret(), else: query
 
-    result =
-      query
-      |> CaptainHook.repo().one()
-
-    if include_secret? do
-      [webhook_endpoint, secret] = result
-      webhook_endpoint |> Map.merge(secret)
-    else
-      result
-    end
+    query
+    |> CaptainHook.repo().one()
   end
 
   @spec get_webhook_endpoint!(binary) :: WebhookEndpoint.t()
