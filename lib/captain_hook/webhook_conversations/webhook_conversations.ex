@@ -3,15 +3,20 @@ defmodule CaptainHook.WebhookConversations do
 
   alias Ecto.Multi
   alias CaptainHook.Sequences
-  alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.WebhookConversations.{WebhookConversation, WebhookConversationQueryable}
 
+  @default_page_number 1
+  @default_page_size 100
+
   @spec list_webhook_conversations(keyword) :: %{data: any, total: any}
-  def list_webhook_conversations(opts) when is_list(opts) do
-    search_query = Keyword.get(opts, :search_query)
+  def list_webhook_conversations(opts \\ []) when is_list(opts) do
     livemode = Keyword.get(opts, :livemode)
-    filters = Keyword.get(opts, :filters)
-    pagination = Keyword.get(opts, :pagination)
+
+    filters = Keyword.get(opts, :filters, []) |> Map.put(:livemode, livemode)
+    search_query = Keyword.get(opts, :search_query)
+
+    page_number = Keyword.get(opts, :page_number, @default_page_number)
+    page_size = Keyword.get(opts, :page_size, @default_page_size)
 
     query =
       WebhookConversationQueryable.queryable()
@@ -21,43 +26,19 @@ defmodule CaptainHook.WebhookConversations do
 
     count = query |> CaptainHook.repo().aggregate(:count, :id)
 
-    query =
-      if pagination do
-        {page_number, page_size} = pagination
-        query |> WebhookConversationQueryable.paginate(page_number, page_size)
-      else
-        query
-      end
-
-    webhook_conversations = query |> CaptainHook.repo().all()
+    webhook_conversations =
+      query
+      |> WebhookConversationQueryable.paginate(page_number, page_size)
+      |> CaptainHook.repo().all()
 
     %{total: count, data: webhook_conversations}
   end
 
-  @spec list_webhook_conversations(
-          binary | {binary, binary, binary} | CaptainHook.WebhookEndpoints.WebhookEndpoint.t(),
-          keyword
-        ) :: %{data: any, total: any}
-  def list_webhook_conversations(filter, opts \\ [])
-
-  def list_webhook_conversations(%WebhookEndpoint{id: webhook_endpoint_id}, opts) do
-    opts
-    |> Keyword.put(:filters, webhook_endpoint_id: webhook_endpoint_id)
-    |> list_webhook_conversations()
-  end
-
-  def list_webhook_conversations(notification_id, opts) when is_binary(notification_id) do
-    opts
-    |> Keyword.put(:filters, notification_id: notification_id)
-    |> list_webhook_conversations()
-  end
-
-  def list_webhook_conversations({webhook, livemode, resource_type, resource_id}, opts)
+  def list_webhook_conversations({webhook, resource_type, resource_id}, opts)
       when is_binary(webhook) and is_binary(resource_type) and is_binary(resource_id) do
     opts
     |> Keyword.put(:filters, resource_type: resource_type, resource_id: resource_id)
     |> Keyword.put(:search_query, webhook)
-    |> Keyword.put(:livemode, livemode)
     |> list_webhook_conversations()
   end
 
