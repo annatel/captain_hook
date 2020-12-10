@@ -19,18 +19,18 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
     )
   end
 
-  @spec filter_by_status(
-          Ecto.Queryable.t(),
-          nil | AntlUtilsEcto.Query.status() | list(AntlUtilsEcto.Query.status()),
-          DateTime.t()
-        ) ::
-          Ecto.Queryable.t()
-  def filter_by_status(queryable, nil, _) do
+  defp filter_by_field({:ended_at, %DateTime{} = datetime}, queryable) do
     queryable
+    |> AntlUtilsEcto.Query.where_period_status(:ended, :started_at, :ended_at, datetime)
   end
 
-  def filter_by_status(queryable, status, %DateTime{} = datetime) do
+  defp filter_by_field({:ongoing_at, %DateTime{} = datetime}, queryable) do
     queryable
-    |> AntlUtilsEcto.Query.where_period_status(status, :started_at, :ended_at, datetime)
+    |> AntlUtilsEcto.Query.where_period_status(:ongoing, :started_at, :ended_at, datetime)
+  end
+
+  defp filter_by_field({:scheduled_at, %DateTime{} = datetime}, queryable) do
+    queryable
+    |> AntlUtilsEcto.Query.where_period_status(:scheduled, :started_at, :ended_at, datetime)
   end
 end

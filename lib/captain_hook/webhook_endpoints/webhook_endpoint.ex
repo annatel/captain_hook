@@ -27,14 +27,14 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   @spec create_changeset(WebhookEndpoint.t(), map()) :: Ecto.Changeset.t()
   def create_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
-    |> cast(attrs, [:webhook, :started_at, :livemode, :url, :metadata, :headers, :allow_insecure])
+    |> cast(attrs, [:webhook, :started_at, :livemode, :allow_insecure, :headers, :metadata, :url])
     |> validate_required([:webhook, :livemode, :started_at, :url])
   end
 
   @spec update_changeset(WebhookEndpoint.t(), map()) :: Ecto.Changeset.t()
   def update_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
-    |> cast(attrs, [:url, :metadata, :headers, :allow_insecure])
+    |> cast(attrs, [:allow_insecure, :headers, :metadata, :url])
   end
 
   @spec remove_changeset(WebhookEndpoint.t(), map()) :: Ecto.Changeset.t()

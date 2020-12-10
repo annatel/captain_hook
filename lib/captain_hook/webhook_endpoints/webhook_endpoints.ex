@@ -6,15 +6,9 @@ defmodule CaptainHook.WebhookEndpoints do
   alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, WebhookEndpointQueryable}
   alias CaptainHook.WebhookSecrets
 
-  def list_webhook_endpoints(
-        webhook,
-        livemode?,
-        status \\ :ongoing,
-        datetime \\ DateTime.utc_now()
-      ) do
-    WebhookEndpointQueryable.queryable()
-    |> WebhookEndpointQueryable.filter(webhook: webhook, livemode: livemode?)
-    |> WebhookEndpointQueryable.filter_by_status(status, datetime)
+  def list_webhook_endpoints(opts \\ []) do
+    opts
+    |> webhook_endpoint_queryable()
     |> order_by(asc: :started_at)
     |> CaptainHook.repo().all()
   end
@@ -90,5 +84,13 @@ defmodule CaptainHook.WebhookEndpoints do
       {:ok, %{webhook_endpoint: webhook_endpoint}} -> {:ok, webhook_endpoint}
       {:error, _, failed_value, _} -> {:error, failed_value}
     end
+  end
+
+  @spec webhook_endpoint_queryable(keyword) :: Ecto.Queryable.t()
+  def webhook_endpoint_queryable(opts \\ []) do
+    filters = Keyword.get(opts, :filters, [])
+
+    WebhookEndpointQueryable.queryable()
+    |> WebhookEndpointQueryable.filter(filters)
   end
 end
