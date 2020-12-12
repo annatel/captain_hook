@@ -6,6 +6,7 @@ defmodule CaptainHook.WebhookEndpoints do
   alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, WebhookEndpointQueryable}
   alias CaptainHook.WebhookSecrets
 
+  @spec list_webhook_endpoints(keyword) :: [WebhookEndpoint.t()]
   def list_webhook_endpoints(opts \\ []) do
     opts
     |> webhook_endpoint_queryable()
