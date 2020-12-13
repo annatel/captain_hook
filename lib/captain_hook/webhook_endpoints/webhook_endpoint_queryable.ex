@@ -12,34 +12,30 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
     end)
   end
 
-  defp with_preload(queryable, :main_secret) do
-    queryable |> preload_main_secret()
+  defp with_preload(queryable, :secret) do
+    queryable |> preload_secret()
   end
-
-  defp with_preload(queryable, :secrets) do
-    queryable |> preload_secrets()
-  esnd
 
   defp with_preload(queryable, :enabled_notification_types) do
     queryable |> preload_enabled_notification_types()
   end
 
-  @spec preload_main_secret(Ecto.Queryable.t()) :: Ecto.Queryable.t()
-  def preload_main_secret(queryable) do
+  @spec preload_secret(Ecto.Queryable.t()) :: Ecto.Queryable.t()
+  def preload_secret(queryable) do
     queryable
     |> select_merge(
       [webhook_endpoint],
       %{
         secret:
           fragment(
-            "SELECT secret FROM captain_hook_webhook_secrets WHERE webhook_endpoint_id = ? and is_main = true ORDER BY started_at DESC LIMIT 1",
+            "SELECT secret FROM captain_hook_webhook_endpoint_secrets WHERE webhook_endpoint_id = ? and is_main = true ORDER BY started_at DESC LIMIT 1",
             webhook_endpoint.id
           )
       }
     )
   end
 
-  defp preload_enabled_notification_types(queryable) do
+  def preload_enabled_notification_types(queryable) do
     queryable |> preload(:enabled_notification_types)
   end
 

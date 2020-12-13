@@ -1,74 +1,80 @@
-defmodule CaptainHook.WebhookSecrets do
+defmodule CaptainHook.WebhookEndpoints.Secrets do
   import Ecto.Changeset, only: [add_error: 3, fetch_field!: 2, prepare_changes: 2]
 
   alias Ecto.Multi
 
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
-  alias CaptainHook.WebhookSecrets.{WebhookSecret, WebhookSecretQueryable}
+  alias CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecret
 
   @secret_length 32
   @secret_prefix "whsec"
   @one_day_in_seconds 24 * 3600
   @buffer_time_in_seconds 100
 
-  @spec list_webhook_secrets(
-          WebhookEndpoint.t(),
-          nil | :ended | :scheduled | :ongoing,
-          DateTime.t()
-        ) :: [WebhookSecret.t()]
-  def list_webhook_secrets(
-        %WebhookEndpoint{} = webhook_endpoint,
-        status \\ :ongoing,
-        datetime \\ DateTime.utc_now()
-      ) do
-    WebhookSecretQueryable.queryable()
-    |> WebhookSecretQueryable.filter(webhook_endpoint_id: webhook_endpoint.id)
-    |> WebhookSecretQueryable.filter_by_status(status, datetime)
+  @spec list_webhook_endpoint_secrets(WebhookEndpoint.t()) :: [WebhookEndpointSecret.t()]
+  def list_webhook_endpoint_secrets(%WebhookEndpoint{} = webhook_endpoint) do
+    WebhookEndpointSecret
+    |> AntlUtilsEcto.Query.where(:webhook_endpoint_id, webhook_endpoint.id)
+    |> AntlUtilsEcto.Query.where_period_status(
+      :ongoing,
+      :started_at,
+      :ended_at,
+      DateTime.utc_now()
+    )
     |> CaptainHook.repo().all()
   end
 
-  @spec create_webhook_secret(WebhookEndpoint.t(), DateTime.t()) ::
-          {:ok, WebhookSecret.t()} | {:error, Ecto.Changeset.t()}
-  def create_webhook_secret(%WebhookEndpoint{} = webhook_endpoint, %DateTime{} = started_at) do
+  @spec create_webhook_endpoint_secret(WebhookEndpoint.t(), DateTime.t()) ::
+          {:ok, WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
+  def create_webhook_endpoint_secret(
+        %WebhookEndpoint{} = webhook_endpoint,
+        %DateTime{} = started_at
+      ) do
     attrs = %{webhook_endpoint_id: webhook_endpoint.id, started_at: started_at, is_main: true}
 
-    %WebhookSecret{}
-    |> WebhookSecret.create_changeset(attrs)
+    %WebhookEndpointSecret{}
+    |> WebhookEndpointSecret.create_changeset(attrs)
     |> validate_create_changes()
     |> CaptainHook.repo().insert()
   end
 
-  @spec remove_webhook_secret(WebhookSecret.t(), DateTime.t()) ::
-          {:ok, WebhookSecret.t()} | {:error, Ecto.Changeset.t()}
-  def remove_webhook_secret(%WebhookSecret{} = webhook_secret, %DateTime{} = ended_at) do
+  @spec remove_webhook_endpoint_secret(WebhookEndpointSecret.t(), DateTime.t()) ::
+          {:ok, WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
+  def remove_webhook_endpoint_secret(
+        %WebhookEndpointSecret{} = webhook_secret,
+        %DateTime{} = ended_at
+      ) do
     webhook_secret
-    |> WebhookSecret.remove_changeset(%{is_main: false, ended_at: ended_at})
+    |> WebhookEndpointSecret.remove_changeset(%{is_main: false, ended_at: ended_at})
     |> validate_remove_changes()
     |> CaptainHook.repo().update()
   end
 
   @spec roll(WebhookEndpoint.t(), DateTime.t()) ::
-          {:ok, WebhookSecret.t()} | {:error, Ecto.Changeset.t()}
+          {:ok, WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
   def roll(
         %WebhookEndpoint{} = webhook_endpoint,
         %DateTime{} = expires_at \\ DateTime.utc_now()
       ) do
     [main_webhook_secret] =
       webhook_endpoint
-      |> list_webhook_secrets()
+      |> list_webhook_endpoint_secrets()
       |> Enum.filter(& &1.is_main)
 
     Multi.new()
-    |> Multi.run(:remove_current_main_webhook_secret, fn _, %{} ->
-      remove_webhook_secret(main_webhook_secret, expires_at)
+    |> Multi.run(:remove_current_main_webhook_endpoint_secret, fn _, %{} ->
+      remove_webhook_endpoint_secret(main_webhook_secret, expires_at)
     end)
-    |> Multi.run(:create_webhook_secret, fn _, %{} ->
-      create_webhook_secret(webhook_endpoint, DateTime.utc_now())
+    |> Multi.run(:create_webhook_endpoint_secret, fn _, %{} ->
+      create_webhook_endpoint_secret(webhook_endpoint, DateTime.utc_now())
     end)
     |> CaptainHook.repo().transaction()
     |> case do
-      {:ok, %{create_webhook_secret: %WebhookSecret{} = webhook_secret}} -> {:ok, webhook_secret}
-      {:error, _, changeset, _} -> {:error, changeset}
+      {:ok, %{create_webhook_endpoint_secret: %WebhookEndpointSecret{} = webhook_secret}} ->
+        {:ok, webhook_secret}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
     end
   end
 
@@ -92,11 +98,12 @@ defmodule CaptainHook.WebhookSecrets do
     "#{@secret_prefix}#{prefix_separator}#{secret}"
   end
 
-  defp has_main_secret_ongoing?(webhook_endpoint_id, %DateTime{} = datetime)
+  defp has_main_webhook_endpoint_secret_ongoing?(webhook_endpoint_id, %DateTime{} = datetime)
        when is_binary(webhook_endpoint_id) do
-    WebhookSecretQueryable.queryable()
-    |> WebhookSecretQueryable.filter(webhook_endpoint_id: webhook_endpoint_id, is_main: true)
-    |> WebhookSecretQueryable.filter_by_status(:ongoing, datetime)
+    WebhookEndpointSecret
+    |> AntlUtilsEcto.Query.where(:webhook_endpoint_id, webhook_endpoint_id)
+    |> AntlUtilsEcto.Query.where(:is_main, true)
+    |> AntlUtilsEcto.Query.where_period_status(:ongoing, :started_at, :ended_at, datetime)
     |> CaptainHook.repo().exists?()
   end
 
@@ -121,7 +128,7 @@ defmodule CaptainHook.WebhookSecrets do
     webhook_endpoint_id = fetch_field!(changeset, :webhook_endpoint_id)
     started_at = fetch_field!(changeset, :started_at)
 
-    if has_main_secret_ongoing?(webhook_endpoint_id, started_at) do
+    if has_main_webhook_endpoint_secret_ongoing?(webhook_endpoint_id, started_at) do
       changeset |> add_error(:is_main, "already exists")
     else
       changeset

@@ -48,4 +48,11 @@ defmodule CaptainHook.DataCase do
       end)
     end)
   end
+
+  def associations_on(fields, schema) do
+    fields
+    |> Enum.map(fn field ->
+      schema |> Kernel.get_in(List.wrap(field))
+    end)
+  end
 end

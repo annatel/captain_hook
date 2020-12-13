@@ -7,12 +7,9 @@ defmodule CaptainHook.Migrations.V2 do
     alter_table_webhook_endpoints_add_livemode_column()
 
     create_sequences_table()
-
     create_webhook_notifications_table()
-
-    alter_table_webhook_conversations_add_sequence_column()
-    alter_table_webhook_conversations_add_reference_to_webhook_notifications()
-    alter_table_webhook_conversations_remove_columns_of_webhook_notifications()
+    rename_webhook_conversations_to_old_webhook_conversations()
+    create_webhook_conversations_table()
 
     create_webhook_endpoint_secrets_table()
     create_webhook_endpoint_enabled_notification_types_table()
@@ -24,10 +21,8 @@ defmodule CaptainHook.Migrations.V2 do
     drop_sequences_table()
 
     drop_webhook_notifications_table()
-
-    alter_table_webhook_conversations_remove_sequence_column()
-    alter_table_webhook_conversations_remove_reference_to_webhook_notifications()
-    alter_table_webhook_conversations_revert_remove_columns_of_webhook_notifications()
+    drop_webhook_conversations_table()
+    rename_old_webhook_conversations_to_webhook_conversations()
 
     drop_webhook_endpoint_secrets_table()
     drop_webhook_endpoint_enabled_notification_types_table()
@@ -66,15 +61,9 @@ defmodule CaptainHook.Migrations.V2 do
       if count_of_webhook_conversations > 0, do: count_of_webhook_conversations - 1, else: 0
 
     execute(
-      "INSERT into captain_hook_sequences(`webhook_conversations`, `inserted_at`, `updated_at`) VALUE (#{
+      "INSERT into captain_hook_sequences(`webhook_conversations`, `webhook_notifications`, `inserted_at`, `updated_at`) VALUE (#{
         start_sequence_value
-      }, '#{utc_now}', '#{utc_now}');"
-    )
-
-    execute(
-      "INSERT into captain_hook_sequences(`webhook_notifications`, `inserted_at`, `updated_at`) VALUE (1, '#{
-        utc_now
-      }', '#{utc_now}');"
+      }, 1, '#{utc_now}', '#{utc_now}');"
     )
   end
 
@@ -111,60 +100,44 @@ defmodule CaptainHook.Migrations.V2 do
     create(index(:captain_hook_webhook_notifications, [:type]))
   end
 
-  defp alter_table_webhook_conversations_add_sequence_column() do
-    execute(
-      "ALTER TABLE captain_hook_webhook_conversations ADD COLUMN sequence BIGINT unsigned NOT NULL AFTER id;"
+  defp rename_webhook_conversations_to_old_webhook_conversations() do
+    rename(table(:captain_hook_webhook_conversations),
+      to: table(:captain_hook_old_webhook_conversations)
     )
-
-    create(index(:captain_hook_webhook_conversations, [:sequence]))
-    flush()
-    seed_webhook_conversation_sequence()
   end
 
-  defp seed_webhook_conversation_sequence() do
-    %{rows: ids} =
-      repo().query!("SELECT id FROM captain_hook_webhook_conversations ORDER BY inserted_at ASC")
+  defp create_webhook_conversations_table() do
+    create table(:captain_hook_webhook_conversations, primary_key: false) do
+      add(:id, :binary_id, primary_key: true)
 
-    ids
-    |> Enum.with_index()
-    |> Enum.each(fn {[id], sequence} ->
-      id = Ecto.UUID.cast!(id) |> String.replace("-", "") |> String.upcase()
-
-      execute(
-        "UPDATE captain_hook_webhook_conversations SET `sequence` = #{sequence} where `id` = UNHEX('#{
-          id
-        }')"
+      add(
+        :webhook_notification_id,
+        references(:captain_hook_webhook_notifications, on_delete: :nothing, type: :binary_id),
+        null: false
       )
-    end)
-  end
 
-  defp alter_table_webhook_conversations_add_reference_to_webhook_notifications() do
-    execute(
-      "ALTER TABLE captain_hook_webhook_conversations ADD COLUMN webhook_notification_id BINARY(16) NOT NULL AFTER id;"
-    )
+      add(:sequence, :integer, null: false)
+      add(:requested_at, :utc_datetime, null: false)
 
-    execute(
-      "ALTER TABLE captain_hook_webhook_conversations ADD CONSTRAINT fk_webhook_notification_id FOREIGN KEY (webhook_notification_id) REFERENCES webhook_notifications(id);"
-    )
-  end
+      add(:request_url, :string, null: false)
+      add(:request_headers, :map, null: true)
+      add(:request_body, :text, null: true)
 
-  defp alter_table_webhook_conversations_remove_columns_of_webhook_notifications() do
-    alter table(:captain_hook_webhook_conversations) do
-      remove(:webhook_endpoint_id)
-      remove(:resource_type)
-      remove(:resource_id)
-      remove(:request_id)
+      add(:http_status, :integer, null: true)
+      add(:response_body, :text, null: true)
+      add(:client_error_message, :text, null: true)
+
+      add(:status, :string, null: true)
+
+      timestamps()
     end
 
-    drop(index(:captain_hook_webhook_conversations, [:resource_type]))
-    drop(index(:captain_hook_webhook_conversations, [:resource_id]))
-    drop(index(:captain_hook_webhook_conversations, [:request_id]))
+    create(index(:captain_hook_webhook_conversations, [:sequence]))
+    create(index(:captain_hook_webhook_conversations, [:status]))
   end
 
   defp create_webhook_endpoint_secrets_table do
-    create table(:captain_hook_webhook_endpoint_secrets, primary_key: false) do
-      add(:id, :uuid, primary_key: true)
-
+    create table(:captain_hook_webhook_endpoint_secrets) do
       add(
         :webhook_endpoint_id,
         references(:captain_hook_webhook_endpoints, on_delete: :delete_all, type: :binary_id),
@@ -204,7 +177,7 @@ defmodule CaptainHook.Migrations.V2 do
       now = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_naive()
 
       execute(
-        "INSERT INTO captain_hook_webhook_endpoint_secrets(webhook_endpoint_id, started_at, main, secrect, inserted_at, updated_at) VALUES ('#{
+        "INSERT INTO captain_hook_webhook_endpoint_secrets(webhook_endpoint_id, started_at, is_main, secrect, inserted_at, updated_at) VALUES ('#{
           webhook_endpoint_id
         }', '#{started_at}', 1, '#{secret}', '#{now}', '#{now}')"
       )
@@ -215,7 +188,11 @@ defmodule CaptainHook.Migrations.V2 do
     create table(:captain_hook_webhook_endpoint_enabled_notification_types) do
       add(
         :webhook_endpoint_id,
-        references(:captain_hook_webhook_endpoints, on_delete: :delete_all, type: :binary_id),
+        references(:captain_hook_webhook_endpoints,
+          on_delete: :delete_all,
+          type: :binary_id,
+          name: "ch_we_enabled_notification_types_webhook_endpoint_id_fkey"
+        ),
         null: false
       )
 
@@ -224,7 +201,11 @@ defmodule CaptainHook.Migrations.V2 do
       timestamps()
     end
 
-    create(index(:captain_hook_webhook_endpoint_notification_types, [:name]))
+    create(
+      index(:captain_hook_webhook_endpoint_enabled_notification_types, [:name],
+        name: "ch_we_endpoint_enabled_notification_types_name_index"
+      )
+    )
   end
 
   defp alter_table_webhook_endpoints_remove_livemode_column() do
@@ -241,33 +222,12 @@ defmodule CaptainHook.Migrations.V2 do
     drop(table(:captain_hook_webhook_notifications))
   end
 
-  defp alter_table_webhook_conversations_remove_sequence_column() do
-    alter table(:captain_hook_webhook_conversations) do
-      remove(:sequence)
-    end
+  defp drop_webhook_conversations_table() do
+    drop(table(:captain_hook_webhook_conversations))
   end
 
-  defp alter_table_webhook_conversations_remove_reference_to_webhook_notifications() do
-    alter table(:captain_hook_webhook_conversations) do
-      remove(:webhook_notification_id)
-    end
-  end
-
-  defp alter_table_webhook_conversations_revert_remove_columns_of_webhook_notifications() do
-    alter table(:captain_hook_webhook_conversations) do
-      add(:request_id, :binary_id, null: false)
-      add(:resource_id, :string, null: true)
-      add(:resource_type, :string, null: true)
-    end
-
-    create(index(:captain_hook_webhook_conversations, [:request_id]))
-    create(index(:captain_hook_webhook_conversations, [:resource_id]))
-
-    create(
-      index(:captain_hook_webhook_conversations, [:resource_type, :resource_id],
-        name: "captain_hook_webhook_conversations_rt_ri_index"
-      )
-    )
+  defp rename_old_webhook_conversations_to_webhook_conversations() do
+    rename(table(:old_webhook_conversations), to: table(:webhook_conversations))
   end
 
   defp drop_webhook_endpoint_secrets_table do
