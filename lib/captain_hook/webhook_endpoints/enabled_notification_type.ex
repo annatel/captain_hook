@@ -14,6 +14,13 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationType do
   end
 
   @spec changeset(EnabledNotificationType.t(), map()) :: Ecto.Changeset.t()
+  def changeset(%__MODULE__{} = enabled_notification_type, attrs) when is_struct(attrs) do
+    attrs = Map.from_struct(attrs)
+
+    enabled_notification_type
+    |> changeset(attrs)
+  end
+
   def changeset(%__MODULE__{} = enabled_notification_type, attrs) when is_map(attrs) do
     enabled_notification_type
     |> cast(attrs, [:webhook_endpoint_id, :name])

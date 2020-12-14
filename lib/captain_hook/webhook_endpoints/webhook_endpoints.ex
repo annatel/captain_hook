@@ -35,7 +35,7 @@ defmodule CaptainHook.WebhookEndpoints do
     Multi.new()
     |> Multi.insert(
       :webhook_endpoint,
-      %WebhookEndpoint{} |> WebhookEndpoint.create_changeset(attrs)
+      WebhookEndpoint.create_changeset(%WebhookEndpoint{}, attrs)
     )
     |> Multi.run(:create_webhook_endpoint_secret, fn _, %{webhook_endpoint: webhook_endpoint} ->
       Secrets.create_webhook_endpoint_secret(webhook_endpoint, webhook_endpoint.started_at)
@@ -83,6 +83,10 @@ defmodule CaptainHook.WebhookEndpoints do
     end
   end
 
+  defdelegate list_webhook_endpoint_secrets(opts), to: Secrets
+  defdelegate roll_secret(webhook_endpoint), to: Secrets, as: :roll
+  defdelegate roll_secret(webhook_endpoint, expires_at), to: Secrets, as: :roll
+
   @spec enable_notification_type(WebhookEndpoint.t(), binary | [binary]) :: WebhookEndpoint.t()
   def enable_notification_type(%WebhookEndpoint{} = webhook_endpoint, notification_type) do
     %{enabled_notification_types: enabled_notification_types} =
@@ -109,7 +113,7 @@ defmodule CaptainHook.WebhookEndpoints do
 
     enabled_notification_types =
       enabled_notification_types
-      |> Enum.filter(&(&1.name in notification_types))
+      |> Enum.reject(&(&1.name in notification_types))
 
     webhook_endpoint
     |> update_webhook_endpoint(%{enabled_notification_types: enabled_notification_types})

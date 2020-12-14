@@ -71,11 +71,7 @@ defmodule CaptainHook.Migrations.V2 do
     create table(:captain_hook_webhook_notifications, primary_key: false) do
       add(:id, :uuid, primary_key: true)
 
-      add(
-        :webhook_endpoint_id,
-        references(:captain_hook_webhook_endpoints, on_delete: :delete_all, type: :binary_id),
-        null: false
-      )
+      add(:webhook, :string, null: false)
 
       add(:created_at, :utc_datetime, null: false)
       add(:data, :map, null: true)
@@ -87,6 +83,7 @@ defmodule CaptainHook.Migrations.V2 do
       timestamps()
     end
 
+    create(index(:captain_hook_webhook_notifications, [:webhook]))
     create(index(:captain_hook_webhook_notifications, [:created_at]))
     create(index(:captain_hook_webhook_notifications, [:resource_id]))
 
