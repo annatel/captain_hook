@@ -5,6 +5,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     only: [assoc_constraint: 2, cast: 3, validate_inclusion: 3, validate_required: 2]
 
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
+  alias CaptainHook.WebhookNotifications.WebhookNotification
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wc"}
   @foreign_key_type :binary_id
@@ -12,11 +13,9 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
   schema "captain_hook_webhook_conversations" do
     belongs_to(:webhook_endpoint, WebhookEndpoint, type: Shortcode.Ecto.UUID, prefix: "we")
 
+    belongs_to(:webhook_notification, WebhookNotification, type: Shortcode.Ecto.UUID, prefix: "wn")
+
     field(:sequence, :integer)
-    field(:notification_id, Shortcode.Ecto.UUID, prefix: "not")
-    field(:notification_type, :string)
-    field(:resource_id, :string)
-    field(:resource_type, :string)
     field(:requested_at, :utc_datetime)
     field(:request_url, :string)
     field(:request_headers, :map)
@@ -36,11 +35,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     webhook_conversation
     |> cast(attrs, [
       :webhook_endpoint_id,
+      :webhook_notification_id,
       :sequence,
-      :notification_type,
-      :notification_id,
-      :resource_type,
-      :resource_id,
       :requested_at,
       :request_url,
       :request_headers,
@@ -52,9 +48,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     ])
     |> validate_required([
       :webhook_endpoint_id,
+      :webhook_notification_id,
       :sequence,
-      :notification_type,
-      :notification_id,
       :requested_at,
       :request_url,
       :request_body,
@@ -62,6 +57,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     ])
     |> validate_inclusion(:status, Map.values(status()))
     |> assoc_constraint(:webhook_endpoint)
+    |> assoc_constraint(:webhook_notification)
   end
 
   @spec status :: %{failed: binary(), success: binary()}

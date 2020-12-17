@@ -2,7 +2,7 @@ defmodule CaptainHook.Sequences do
   @moduledoc false
 
   @spec next(:webhook_conversations) :: integer
-  def next(table_name) when table_name in [:webhook_conversations] do
+  def next(table_name) when table_name in [:webhook_conversations, :webhook_notifications] do
     Ecto.Adapters.SQL.query!(
       CaptainHook.repo(),
       "UPDATE `captain_hook_sequences` SET #{table_name} = LAST_INSERT_ID(#{table_name}+1)"

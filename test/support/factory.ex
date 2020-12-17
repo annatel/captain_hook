@@ -2,6 +2,7 @@ defmodule CaptainHook.Factory do
   use CaptainHook.Factory.WebhookEndpoint
   use CaptainHook.Factory.WebhookEndpointSecret
   use CaptainHook.Factory.WebhookConversation
+  use CaptainHook.Factory.WebhookNotification
 
   alias CaptainHook.TestRepo
 

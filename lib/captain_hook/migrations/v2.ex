@@ -54,16 +54,10 @@ defmodule CaptainHook.Migrations.V2 do
   defp seed_captain_hook_sequence() do
     utc_now = DateTime.utc_now() |> DateTime.to_naive()
 
-    %{rows: [[count_of_webhook_conversations]]} =
-      repo().query!("SELECT COUNT(*) FROM captain_hook_webhook_conversations")
-
-    start_sequence_value =
-      if count_of_webhook_conversations > 0, do: count_of_webhook_conversations - 1, else: 0
-
     execute(
-      "INSERT into captain_hook_sequences(`webhook_conversations`, `webhook_notifications`, `inserted_at`, `updated_at`) VALUE (#{
-        start_sequence_value
-      }, 1, '#{utc_now}', '#{utc_now}');"
+      "INSERT into captain_hook_sequences(`webhook_conversations`, `webhook_notifications`, `inserted_at`, `updated_at`) VALUE (0, 0, '#{
+        utc_now
+      }', '#{utc_now}');"
     )
   end
 
@@ -72,6 +66,7 @@ defmodule CaptainHook.Migrations.V2 do
       add(:id, :uuid, primary_key: true)
 
       add(:webhook, :string, null: false)
+      add(:livemode, :boolean, null: false)
 
       add(:created_at, :utc_datetime, null: false)
       add(:data, :map, null: true)
@@ -84,6 +79,7 @@ defmodule CaptainHook.Migrations.V2 do
     end
 
     create(index(:captain_hook_webhook_notifications, [:webhook]))
+    create(index(:captain_hook_webhook_notifications, [:livemode]))
     create(index(:captain_hook_webhook_notifications, [:created_at]))
     create(index(:captain_hook_webhook_notifications, [:resource_id]))
 
@@ -101,11 +97,64 @@ defmodule CaptainHook.Migrations.V2 do
     rename(table(:captain_hook_webhook_conversations),
       to: table(:captain_hook_old_webhook_conversations)
     )
+
+    execute("SET FOREIGN_KEY_CHECKS=0;")
+
+    execute(
+      "ALTER TABLE captain_hook_old_webhook_conversations DROP FOREIGN KEY captain_hook_webhook_conversations_webhook_endpoint_id_fkey;"
+    )
+
+    execute(
+      "ALTER TABLE captain_hook_old_webhook_conversations ADD CONSTRAINT captain_hook_old_webhook_conversations_webhook_endpoint_id_fkey FOREIGN KEY (webhook_endpoint_id) REFERENCES webhook_endpoint(id);"
+    )
+
+    [
+      %{
+        column: "resource_id",
+        old_index: "captain_hook_webhook_conversations_resource_id_index",
+        new_index: "captain_hook_old_webhook_conversations_resource_id_index"
+      },
+      %{
+        column: "resource_type, resource_id",
+        old_index: "captain_hook_webhook_conversations_rt_ri_index",
+        new_index: "captain_hook_old_webhook_conversations_rt_ri_index"
+      },
+      %{
+        column: "request_id",
+        old_index: "captain_hook_webhook_conversations_request_id_index",
+        new_index: "captain_hook_old_webhook_conversations_request_id_index"
+      },
+      %{
+        column: "status",
+        old_index: "captain_hook_webhook_conversations_status_index",
+        new_index: "captain_hook_old_webhook_conversations_status_index"
+      },
+      %{
+        column: "inserted_at",
+        old_index: "captain_hook_webhook_conversations_inserted_at_index",
+        new_index: "captain_hook_old_webhook_conversations_inserted_at_index"
+      }
+    ]
+    |> Enum.each(fn %{column: column, old_index: old_index, new_index: new_index} ->
+      execute("ALTER TABLE captain_hook_old_webhook_conversations DROP INDEX #{old_index};")
+
+      execute(
+        "ALTER TABLE captain_hook_old_webhook_conversations ADD INDEX #{new_index} (#{column});"
+      )
+    end)
+
+    execute("SET FOREIGN_KEY_CHECKS=1;")
   end
 
   defp create_webhook_conversations_table() do
     create table(:captain_hook_webhook_conversations, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
+
+      add(
+        :webhook_endpoint_id,
+        references(:captain_hook_webhook_endpoints, on_delete: :nothing, type: :binary_id),
+        null: false
+      )
 
       add(
         :webhook_notification_id,
@@ -170,7 +219,7 @@ defmodule CaptainHook.Migrations.V2 do
       webhook_endpoint_id =
         Ecto.UUID.cast!(webhook_endpoint_id) |> String.replace("-", "") |> String.upcase()
 
-      secret = CaptainHook.WebhookSecrets.generate_secret()
+      secret = CaptainHook.WebhookEndpoints.Secrets.generate_secret()
       now = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_naive()
 
       execute(

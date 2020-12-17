@@ -6,7 +6,11 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationTest do
 
   describe "changeset/2" do
     test "only permitted_keys are casted" do
-      webhook_conversation_params = params_for(:webhook_conversation)
+      webhook_conversation_params =
+        params_for(:webhook_conversation,
+          webhook_endpoint_id: uuid(),
+          webhook_notification_id: uuid()
+        )
 
       changeset =
         WebhookConversation.changeset(
@@ -17,11 +21,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationTest do
       changes_keys = changeset.changes |> Map.keys()
 
       assert :webhook_endpoint_id in changes_keys
+      assert :webhook_notification_id in changes_keys
       assert :sequence in changes_keys
-      assert :notification_type in changes_keys
-      assert :notification_id in changes_keys
-      assert :resource_type in changes_keys
-      assert :resource_id in changes_keys
       assert :requested_at in changes_keys
       assert :request_url in changes_keys
       assert :request_headers in changes_keys
@@ -38,8 +39,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationTest do
 
       refute changeset.valid?
       assert %{webhook_endpoint_id: ["can't be blank"]} = errors_on(changeset)
-      assert %{notification_id: ["can't be blank"]} = errors_on(changeset)
-      assert %{notification_type: ["can't be blank"]} = errors_on(changeset)
+      assert %{webhook_notification_id: ["can't be blank"]} = errors_on(changeset)
       assert %{requested_at: ["can't be blank"]} = errors_on(changeset)
       assert %{request_url: ["can't be blank"]} = errors_on(changeset)
       assert %{request_body: ["can't be blank"]} = errors_on(changeset)
@@ -47,8 +47,15 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationTest do
     end
 
     test "when params are valid, return a valid changeset" do
+      webhook_endpoint = insert!(:webhook_endpoint)
+      webhook_notification = insert!(:webhook_notification)
+
       webhook_conversation_params =
-        params_for(:webhook_conversation, client_error_message: "client_error_message")
+        params_for(:webhook_conversation,
+          webhook_endpoint_id: webhook_endpoint.id,
+          webhook_notification_id: webhook_notification.id,
+          client_error_message: "client_error_message"
+        )
 
       changeset =
         WebhookConversation.changeset(%WebhookConversation{}, webhook_conversation_params)
@@ -58,13 +65,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationTest do
       assert get_field(changeset, :webhook_endpoint_id) ==
                webhook_conversation_params.webhook_endpoint_id
 
-      assert get_field(changeset, :notification_id) == webhook_conversation_params.notification_id
-
-      assert get_field(changeset, :notification_type) ==
-               webhook_conversation_params.notification_type
-
-      assert get_field(changeset, :resource_id) == webhook_conversation_params.resource_id
-      assert get_field(changeset, :resource_type) == webhook_conversation_params.resource_type
+      assert get_field(changeset, :webhook_notification_id) ==
+               webhook_conversation_params.webhook_notification_id
 
       assert get_field(changeset, :requested_at) == webhook_conversation_params.requested_at
       assert get_field(changeset, :request_url) == webhook_conversation_params.request_url

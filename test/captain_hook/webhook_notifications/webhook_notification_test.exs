@@ -4,12 +4,9 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
 
   alias CaptainHook.WebhookNotifications.WebhookNotification
 
-  @datetime_1 DateTime.from_naive!(~N[2018-05-24 12:27:48], "Etc/UTC")
-  @datetime_2 DateTime.from_naive!(~N[2018-06-24 12:27:48], "Etc/UTC")
-
   describe "changeset/2" do
     test "only permitted_keys are casted" do
-      webhook_notification_params = params_for(:webhook_notification, allow_insecure: true)
+      webhook_notification_params = params_for(:webhook_notification)
 
       changeset =
         WebhookNotification.changeset(
@@ -22,6 +19,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
       assert :webhook in changes_keys
       assert :created_at in changes_keys
       assert :data in changes_keys
+      assert :livemode in changes_keys
       assert :resource_id in changes_keys
       assert :resource_type in changes_keys
       assert :sequence in changes_keys
@@ -37,8 +35,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
       assert %{webhook: ["can't be blank"]} = errors_on(changeset)
       assert %{created_at: ["can't be blank"]} = errors_on(changeset)
       assert %{data: ["can't be blank"]} = errors_on(changeset)
-      assert %{resource_id: ["can't be blank"]} = errors_on(changeset)
-      assert %{resource_type: ["can't be blank"]} = errors_on(changeset)
+      assert %{livemode: ["can't be blank"]} = errors_on(changeset)
       assert %{sequence: ["can't be blank"]} = errors_on(changeset)
       assert %{type: ["can't be blank"]} = errors_on(changeset)
     end
@@ -53,6 +50,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
       assert get_field(changeset, :webhook) == webhook_notification_params.webhook
       assert get_field(changeset, :created_at) == webhook_notification_params.created_at
       assert get_field(changeset, :data) == webhook_notification_params.data
+      assert get_field(changeset, :livemode) == webhook_notification_params.livemode
       assert get_field(changeset, :resource_id) == webhook_notification_params.resource_id
       assert get_field(changeset, :resource_type) == webhook_notification_params.resource_type
       assert get_field(changeset, :sequence) == webhook_notification_params.sequence

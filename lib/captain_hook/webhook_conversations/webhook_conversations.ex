@@ -8,21 +8,12 @@ defmodule CaptainHook.WebhookConversations do
   @default_page_number 1
   @default_page_size 100
 
-  @spec list_webhook_conversations(keyword) :: %{data: any, total: any}
+  @spec list_webhook_conversations(keyword) :: %{data: [WebhookConversation.t()], total: integer}
   def list_webhook_conversations(opts \\ []) when is_list(opts) do
-    livemode = Keyword.get(opts, :livemode)
-
-    filters = Keyword.get(opts, :filters, []) |> Map.put(:livemode, livemode)
-    search_query = Keyword.get(opts, :search_query)
-
     page_number = Keyword.get(opts, :page_number, @default_page_number)
     page_size = Keyword.get(opts, :page_size, @default_page_size)
 
-    query =
-      WebhookConversationQueryable.queryable()
-      |> WebhookConversationQueryable.search(search_query, livemode: livemode)
-      |> WebhookConversationQueryable.filter(filters)
-      |> order_by([:sequence])
+    query = opts |> webhook_conversation_queryable() |> order_by(desc: :sequence)
 
     count = query |> CaptainHook.repo().aggregate(:count, :id)
 
@@ -32,14 +23,6 @@ defmodule CaptainHook.WebhookConversations do
       |> CaptainHook.repo().all()
 
     %{total: count, data: webhook_conversations}
-  end
-
-  def list_webhook_conversations({webhook, resource_type, resource_id}, opts)
-      when is_binary(webhook) and is_binary(resource_type) and is_binary(resource_id) do
-    opts
-    |> Keyword.put(:filters, resource_type: resource_type, resource_id: resource_id)
-    |> Keyword.put(:search_query, webhook)
-    |> list_webhook_conversations()
   end
 
   @spec get_webhook_conversation(binary()) :: WebhookConversation.t()
@@ -69,5 +52,15 @@ defmodule CaptainHook.WebhookConversations do
   @spec conversation_succeeded?(WebhookConversation.t()) :: boolean
   def conversation_succeeded?(%WebhookConversation{status: status}) do
     status == WebhookConversation.status().success
+  end
+
+  @spec webhook_conversation_queryable(keyword) :: Ecto.Queryable.t()
+  def webhook_conversation_queryable(opts) when is_list(opts) do
+    filters = Keyword.get(opts, :filters, [])
+    includes = Keyword.get(opts, :includes, [])
+
+    WebhookConversationQueryable.queryable()
+    |> WebhookConversationQueryable.filter(filters)
+    |> WebhookConversationQueryable.with_preloads(includes)
   end
 end

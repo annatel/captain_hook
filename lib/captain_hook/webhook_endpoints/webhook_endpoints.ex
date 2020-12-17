@@ -83,8 +83,15 @@ defmodule CaptainHook.WebhookEndpoints do
     end
   end
 
+  @spec list_webhook_endpoint_secrets(WebhookEndpoint.t()) :: [Secrets.WebhookEndpointSecret.t()]
   defdelegate list_webhook_endpoint_secrets(opts), to: Secrets
+
+  @spec roll_secret(WebhookEndpoint.t()) ::
+          {:ok, Secrets.WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
   defdelegate roll_secret(webhook_endpoint), to: Secrets, as: :roll
+
+  @spec roll_secret(WebhookEndpoint.t(), DateTime.t()) ::
+          {:ok, Secrets.WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
   defdelegate roll_secret(webhook_endpoint, expires_at), to: Secrets, as: :roll
 
   @spec enable_notification_type(WebhookEndpoint.t(), binary | [binary]) :: WebhookEndpoint.t()
