@@ -4,68 +4,68 @@ defmodule CaptainHook do
   alias CaptainHook.Notifier
   alias CaptainHook.WebhookEndpoints
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
+  alias CaptainHook.WebhookNotifications
+  alias CaptainHook.WebhookNotifications.WebhookNotification
   alias CaptainHook.WebhookConversations
   alias CaptainHook.WebhookConversations.WebhookConversation
-  alias CaptainHook.WebhookSecrets
-  alias CaptainHook.WebhookSecrets.WebhookSecret
 
-  def notify(
-        webhook,
-        livemode?,
-        notification_type,
-        {resource_type, _resource_id} = resource,
-        data,
-        opts \\ []
-      )
-      when is_binary(webhook) and is_boolean(livemode?) and is_binary(notification_type) and
-             is_atom(resource_type) and
-             is_map(data) do
-    webhook_endpoints = webhook |> list_webhook_endpoints(livemode?)
+  @spec notify(binary, boolean, binary, map, keyword) ::
+          {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
+  defdelegate notify(webhook, livemode?, notification_type, data, opts \\ []), to: Notifier
 
-    if length(webhook_endpoints) == 0 do
-      {:error, :no_webhook_endpoint_found}
-    else
-      webhook_endpoints
-      |> Enum.each(&Notifier.enqueue_event(&1, notification_type, resource, data, opts))
-    end
-  end
+  @spec list_webhook_endpoints(keyword) :: [WebhookEndpoint.t()]
+  defdelegate list_webhook_endpoints(opts \\ []), to: WebhookEndpoints
 
-  @spec list_webhook_endpoints(binary, boolean) :: [WebhookEndpoint.t()]
-  defdelegate list_webhook_endpoints(webhook, livemode?), to: WebhookEndpoints
+  @spec get_webhook_endpoint(binary, keyword) :: WebhookEndpoint.t() | nil
+  defdelegate get_webhook_endpoint(id, opts \\ []), to: WebhookEndpoints
 
-  @spec get_webhook_endpoint(binary) :: WebhookEndpoint.t()
-  defdelegate get_webhook_endpoint(id), to: WebhookEndpoints
+  @spec get_webhook_endpoint!(binary, keyword) :: WebhookEndpoint.t()
+  defdelegate get_webhook_endpoint!(id, opts \\ []), to: WebhookEndpoints
 
-  @spec get_webhook_endpoint(binary, boolean) :: WebhookEndpoint.t()
-  defdelegate get_webhook_endpoint(id, include_secret?), to: WebhookEndpoints
-
-  @spec create_webhook_endpoint(map) :: WebhookEndpoint.t()
+  @spec create_webhook_endpoint(map()) ::
+          {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
   defdelegate create_webhook_endpoint(attrs), to: WebhookEndpoints
 
-  @spec update_webhook_endpoint(WebhookEndpoint.t(), map) :: WebhookEndpoint.t()
+  @spec update_webhook_endpoint(WebhookEndpoint.t(), map()) ::
+          {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
   defdelegate update_webhook_endpoint(webhook_endpoint, attrs), to: WebhookEndpoints
 
-  @spec delete_webhook_endpoint(WebhookEndpoint.t()) :: WebhookEndpoint.t()
+  @spec delete_webhook_endpoint(WebhookEndpoint.t()) ::
+          {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
   def delete_webhook_endpoint(webhook_endpoint) do
     utc_now = DateTime.utc_now()
     WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint, utc_now)
   end
 
   @spec roll_webhook_endpoint_secret(WebhookEndpoint.t(), DateTime.t()) ::
-          {:ok, WebhookSecret.t()} | {:error, Ecto.Changeset.t()}
-  defdelegate roll_webhook_endpoint_secret(webhook_endpoint, expires_at),
-    to: WebhookSecrets,
-    as: :roll
+          {:ok, Secrets.WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
+  defdelegate roll_webhook_endpoint_secret(webhook_endpoint, expires_at \\ DateTime.utc_now()),
+    to: WebhookEndpoints
 
-  @spec list_webhook_conversations(
-          binary | {binary, binary, binary} | WebhookEndpoint.t(),
-          keyword
-        ) :: %{data: [WebhookConversation.t()], total: integer}
-  defdelegate list_webhook_conversations(filters, opts), to: WebhookConversations
+  @spec enable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+          {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
+  defdelegate enable_notification_type(webhook_endpoint, notification_type), to: WebhookEndpoints
 
-  @spec get_webhook_conversation(binary) :: WebhookConversation.t()
+  @spec disable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+          {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
+  defdelegate disable_notification_type(webhook_endpoint, notification_type), to: WebhookEndpoints
+
+  @spec list_webhook_notifications(keyword) :: %{data: [WebhookNotification.t()], total: integer}
+  defdelegate list_webhook_notifications(opts \\ []), to: WebhookNotifications
+
+  @spec get_webhook_notification(binary, keyword) :: WebhookNotification.t() | nil
+  defdelegate get_webhook_notification(id, opts \\ []), to: WebhookNotifications
+
+  @spec get_webhook_notification!(binary, keyword) :: WebhookNotification.t()
+  defdelegate get_webhook_notification!(id, opts \\ []), to: WebhookNotifications
+
+  @spec list_webhook_conversations(keyword) :: %{data: [WebhookConversation.t()], total: integer}
+  defdelegate list_webhook_conversations(opts \\ []), to: WebhookConversations
+
+  @spec get_webhook_conversation(binary) :: WebhookConversation.t() | nil
   defdelegate get_webhook_conversation(id), to: WebhookConversations
 
+  @spec repo :: module
   def repo() do
     Application.fetch_env!(:captain_hook, :repo)
   end

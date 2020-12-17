@@ -75,7 +75,7 @@ defmodule CaptainHook.Migrations.V2 do
       add(:sequence, :integer, null: false)
       add(:type, :string, null: false)
 
-      timestamps()
+      timestamps(updated_at: false)
     end
 
     create(index(:captain_hook_webhook_notifications, [:webhook]))
@@ -175,7 +175,7 @@ defmodule CaptainHook.Migrations.V2 do
 
       add(:status, :string, null: true)
 
-      timestamps()
+      timestamps(updated_at: false)
     end
 
     create(index(:captain_hook_webhook_conversations, [:sequence]))

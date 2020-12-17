@@ -14,7 +14,7 @@ defmodule CaptainHook.WebhookEndpoints do
     |> CaptainHook.repo().all()
   end
 
-  @spec get_webhook_endpoint(binary, keyword) :: WebhookEndpoint.t()
+  @spec get_webhook_endpoint(binary, keyword) :: WebhookEndpoint.t() | nil
   def get_webhook_endpoint(id, opts \\ []) when is_binary(id) do
     opts
     |> Keyword.put(:filters, id: id)
@@ -30,7 +30,8 @@ defmodule CaptainHook.WebhookEndpoints do
     |> CaptainHook.repo().one!()
   end
 
-  @spec create_webhook_endpoint(map()) :: WebhookEndpoint.t()
+  @spec create_webhook_endpoint(map()) ::
+          {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
   def create_webhook_endpoint(attrs) when is_map(attrs) do
     Multi.new()
     |> Multi.insert(
@@ -47,7 +48,8 @@ defmodule CaptainHook.WebhookEndpoints do
     end
   end
 
-  @spec update_webhook_endpoint(WebhookEndpoint.t(), map()) :: WebhookEndpoint.t()
+  @spec update_webhook_endpoint(WebhookEndpoint.t(), map()) ::
+          {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
   def update_webhook_endpoint(%WebhookEndpoint{id: _id} = webhook_endpoint, attrs)
       when is_map(attrs) do
     webhook_endpoint
@@ -55,7 +57,8 @@ defmodule CaptainHook.WebhookEndpoints do
     |> CaptainHook.repo().update()
   end
 
-  @spec delete_webhook_endpoint(WebhookEndpoint.t(), DateTime.t()) :: WebhookEndpoint.t()
+  @spec delete_webhook_endpoint(WebhookEndpoint.t(), DateTime.t()) ::
+          {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
   def delete_webhook_endpoint(
         %WebhookEndpoint{ended_at: nil} = webhook_endpoint,
         %DateTime{} = ended_at
@@ -86,18 +89,17 @@ defmodule CaptainHook.WebhookEndpoints do
   @spec list_webhook_endpoint_secrets(WebhookEndpoint.t()) :: [Secrets.WebhookEndpointSecret.t()]
   defdelegate list_webhook_endpoint_secrets(opts), to: Secrets
 
-  @spec roll_secret(WebhookEndpoint.t()) ::
+  @spec roll_webhook_endpoint_secret(WebhookEndpoint.t(), DateTime.t()) ::
           {:ok, Secrets.WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
-  defdelegate roll_secret(webhook_endpoint), to: Secrets, as: :roll
+  defdelegate roll_webhook_endpoint_secret(webhook_endpoint, expires_at \\ DateTime.utc_now()),
+    to: Secrets,
+    as: :roll
 
-  @spec roll_secret(WebhookEndpoint.t(), DateTime.t()) ::
-          {:ok, Secrets.WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
-  defdelegate roll_secret(webhook_endpoint, expires_at), to: Secrets, as: :roll
-
-  @spec enable_notification_type(WebhookEndpoint.t(), binary | [binary]) :: WebhookEndpoint.t()
+  @spec enable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+          {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
   def enable_notification_type(%WebhookEndpoint{} = webhook_endpoint, notification_type) do
     %{enabled_notification_types: enabled_notification_types} =
-      webhook_endpoint |> CaptainHook.repo().preload(:enabled_notification_types)
+      webhook_endpoint |> CaptainHook.repo().preload(:enabled_notification_types, force: true)
 
     enabled_notification_types =
       notification_type
@@ -111,12 +113,13 @@ defmodule CaptainHook.WebhookEndpoints do
     |> update_webhook_endpoint(%{enabled_notification_types: enabled_notification_types})
   end
 
-  @spec disable_notification_type(WebhookEndpoint.t(), binary | [binary]) :: WebhookEndpoint.t()
+  @spec disable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+          {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
   def disable_notification_type(%WebhookEndpoint{} = webhook_endpoint, notification_type) do
     notification_types = notification_type |> List.wrap()
 
     %{enabled_notification_types: enabled_notification_types} =
-      webhook_endpoint |> CaptainHook.repo().preload(:enabled_notification_types)
+      webhook_endpoint |> CaptainHook.repo().preload(:enabled_notification_types, force: true)
 
     enabled_notification_types =
       enabled_notification_types

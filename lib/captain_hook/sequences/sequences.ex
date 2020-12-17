@@ -1,7 +1,7 @@
 defmodule CaptainHook.Sequences do
   @moduledoc false
 
-  @spec next(:webhook_conversations) :: integer
+  @spec next(:webhook_conversations | :webhook_notifications) :: integer
   def next(table_name) when table_name in [:webhook_conversations, :webhook_notifications] do
     Ecto.Adapters.SQL.query!(
       CaptainHook.repo(),

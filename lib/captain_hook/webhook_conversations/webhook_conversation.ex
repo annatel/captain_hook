@@ -27,7 +27,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
 
     field(:status, :string)
 
-    timestamps()
+    timestamps(updated_at: false)
   end
 
   @spec changeset(WebhookConversation.t(), map()) :: Ecto.Changeset.t()

@@ -16,7 +16,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
     field(:type, :string)
     field(:webhook, :string)
 
-    timestamps()
+    timestamps(updated_at: false)
   end
 
   @spec changeset(WebhookNotification.t(), map()) :: Ecto.Changeset.t()

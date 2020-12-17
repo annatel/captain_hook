@@ -25,7 +25,7 @@ defmodule CaptainHook.WebhookNotifications do
     %{total: count, data: webhook_notifications}
   end
 
-  @spec get_webhook_notification(binary, keyword) :: WebhookNotification.t()
+  @spec get_webhook_notification(binary, keyword) :: WebhookNotification.t() | nil
   def get_webhook_notification(id, opts \\ []) when is_binary(id) do
     opts
     |> Keyword.put(:filters, id: id)

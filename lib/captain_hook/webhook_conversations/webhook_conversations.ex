@@ -25,10 +25,11 @@ defmodule CaptainHook.WebhookConversations do
     %{total: count, data: webhook_conversations}
   end
 
-  @spec get_webhook_conversation(binary()) :: WebhookConversation.t()
-  def get_webhook_conversation(id) when is_binary(id) do
-    WebhookConversationQueryable.queryable()
-    |> WebhookConversationQueryable.filter(id: id)
+  @spec get_webhook_conversation(binary, keyword) :: WebhookConversation.t() | nil
+  def get_webhook_conversation(id, opts \\ []) when is_binary(id) do
+    opts
+    |> Keyword.put(:filters, id: id)
+    |> webhook_conversation_queryable()
     |> CaptainHook.repo().one()
   end
 

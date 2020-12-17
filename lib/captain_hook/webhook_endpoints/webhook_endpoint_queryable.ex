@@ -4,6 +4,11 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
 
   import Ecto.Query, only: [preload: 2, select_merge: 3, where: 2]
 
+  @includes [:enabled_notification_types, :secret]
+
+  @spec includes() :: [atom]
+  def includes(), do: @includes
+
   @spec with_preloads(Ecto.Queryable.t(), list) :: Ecto.Queryable.t()
   def with_preloads(queryable, includes) when is_list(includes) do
     includes
@@ -20,6 +25,10 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
     queryable |> preload_enabled_notification_types()
   end
 
+  defp preload_enabled_notification_types(queryable) do
+    queryable |> preload(:enabled_notification_types)
+  end
+
   @spec preload_secret(Ecto.Queryable.t()) :: Ecto.Queryable.t()
   def preload_secret(queryable) do
     queryable
@@ -33,10 +42,6 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
           )
       }
     )
-  end
-
-  def preload_enabled_notification_types(queryable) do
-    queryable |> preload(:enabled_notification_types)
   end
 
   defp filter_by_field({:ended_at, %DateTime{} = datetime}, queryable) do
