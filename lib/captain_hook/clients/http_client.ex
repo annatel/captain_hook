@@ -2,6 +2,7 @@ defmodule CaptainHook.Clients.HttpClient do
   require Logger
 
   alias CaptainHook.Clients.Response
+  alias CaptainHook.Signature
 
   @pool_timeout 5_000
   @receive_timeout 15_000
@@ -10,7 +11,7 @@ defmodule CaptainHook.Clients.HttpClient do
   def call(url, body, headers, opts \\ [])
       when is_binary(url) and is_map(body) and is_map(headers) do
     secrets = Keyword.get(opts, :secrets)
-    _allow_insecure = Keyword.get(opts, :allow_insecure)
+    allow_insecure = Keyword.get(opts, :allow_insecure)
 
     encoded_body = Jason.encode!(body)
 
@@ -20,23 +21,21 @@ defmodule CaptainHook.Clients.HttpClient do
       headers
       |> Recase.Enumerable.convert_keys(&Recase.to_header/1)
       |> Map.put("Content-Type", "application/json")
-      |> Map.put("User-Agent", "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)")
+      |> Map.put_new("User-Agent", "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)")
 
     headers =
       if secrets,
         do:
           headers
-          |> Map.put("Signature", build_signature(encoded_body, DateTime.to_unix(now), secrets)),
+          |> Map.put("Signature", Signature.sign(encoded_body, DateTime.to_unix(now), secrets)),
         else: headers
 
-    # request_options =
-    #   if Keyword.get(options, :allow_insecure),
-    #     do: [{:hackney, [:insecure]} | request_options],
-    #     else: request_options
+    finch_instance_name =
+      unless allow_insecure, do: CaptainHookFinch, else: CaptainHookFinchInsecure
 
     response =
       Finch.build(:post, url, Map.to_list(headers), encoded_body)
-      |> Finch.request(CaptainHookFinch,
+      |> Finch.request(finch_instance_name,
         pool_timeout: @pool_timeout,
         receive_timeout: @receive_timeout
       )
@@ -65,7 +64,7 @@ defmodule CaptainHook.Clients.HttpClient do
     }
   end
 
-  defp process_http_call_response(
+  defp process_response(
          {:ok, %Finch.Response{status: status, body: response_body}},
          request_url,
          request_headers,
@@ -82,7 +81,7 @@ defmodule CaptainHook.Clients.HttpClient do
     }
   end
 
-  defp process_http_call_response(
+  defp process_response(
          {:error, error},
          url,
          request_headers,
@@ -96,22 +95,5 @@ defmodule CaptainHook.Clients.HttpClient do
       requested_at: requested_at,
       client_error_message: Exception.message(error)
     }
-  end
-
-  def build_signature(body, timestamp, secrets) when is_binary(body) and length(secrets) > 0 do
-    signature = "t=#{timestamp},"
-
-    secrets
-    |> Enum.reduce(signature, fn secret, acc ->
-      acc <> "v1=#{signature(body, timestamp, secret)},"
-    end)
-    |> String.trim(",")
-  end
-
-  defp signature(body, timestamp, secret) do
-    signed_payload = "#{timestamp}.#{body}"
-
-    :crypto.mac(:hmac, :sha256, secret, signed_payload)
-    |> Base.encode16(case: :lower)
   end
 end

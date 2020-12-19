@@ -13,7 +13,23 @@ defmodule CaptainHook.Supervisor do
   def init(_opts) do
     children = [
       CaptainHook.Queue,
-      {Finch, name: CaptainHookFinch}
+      %{
+        id: CaptainHookFinch,
+        start: {Finch, :start_link, [[name: CaptainHookFinch]]}
+      },
+      %{
+        id: CaptainHookFinchInsecure,
+        start:
+          {Finch, :start_link,
+           [
+             [
+               name: CaptainHookFinchInsecure,
+               pools: %{
+                 default: [conn_opts: [transport_opts: [verify: :verify_none]]]
+               }
+             ]
+           ]}
+      }
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

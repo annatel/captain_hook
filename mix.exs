@@ -35,7 +35,8 @@ defmodule CaptainHook.MixProject do
       {:antl_utils_elixir, "~> 0.2.0"},
       {:antl_utils_ecto, "~> 1.1.1"},
       {:queuetopia, "~> 1.1.3"},
-      {:finch, "~> 0.5"},
+      {:finch, "~> 0.6.0"},
+      {:plug_crypto, "~> 1.1"},
       {:recase, "~> 0.7"},
       {:shortcode, "~> 0.5.0"}
     ]
