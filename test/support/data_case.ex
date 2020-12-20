@@ -22,6 +22,10 @@ defmodule CaptainHook.DataCase do
       import CaptainHook.DataCase
 
       import CaptainHook.Factory
+
+      import Mox
+
+      setup :verify_on_exit!
     end
   end
 

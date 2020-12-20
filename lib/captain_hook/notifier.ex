@@ -72,8 +72,8 @@ defmodule CaptainHook.Notifier do
       })
   end
 
-  @spec notify(map, pos_integer) :: {:ok, WebhookConversation.t()} | {:error, binary()}
-  def notify(
+  @spec send_notification(map, pos_integer) :: {:ok, WebhookConversation.t()} | {:error, binary()}
+  def send_notification(
         %{
           webhook_endpoint_id: webhook_endpoint_id,
           webhook_notification_id: webhook_notification_id,
@@ -91,7 +91,7 @@ defmodule CaptainHook.Notifier do
     secrets = webhook_endpoint |> build_secrets()
 
     HttpClient.call(url, body, headers, secrets: secrets, allow_insecure: allow_insecure)
-    |> to_webhook_conversation_attrs(webhook_endpoint, webhook_notification.data)
+    |> to_webhook_conversation_attrs(webhook_endpoint, webhook_notification)
     |> WebhookConversations.create_webhook_conversation()
     |> case do
       {:ok, webhook_conversation} ->
@@ -155,13 +155,13 @@ defmodule CaptainHook.Notifier do
 
   defp build_body(
          %WebhookEndpoint{livemode: livemode?, metadata: metadata},
-         %WebhookNotification{} = webook_notification
+         %WebhookNotification{} = webhook_notification
        ) do
     %{
-      id: webook_notification.id,
-      type: webook_notification.type,
+      id: webhook_notification.id,
+      type: webhook_notification.type,
       livemode: livemode?,
-      data: webook_notification.data,
+      data: webhook_notification.data,
       metadata: metadata
     }
   end
