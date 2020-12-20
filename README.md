@@ -72,7 +72,9 @@ CaptainHook.notify(
   "my_webhook_name", true, "notification_type", %{"my" => "data", "to" => "report"}
 )
 
-# Resend a notification - Be aware it is a synchronous action and do not send the notification according to its order in the queue. It can be usefull for testing purpose or to send notifications who did not have webhook_endpoint configured.
+# Resend a notification - 
+# Be aware it is a synchronous action and then it does not send the notification according to its order in the queue. 
+# It can be usefull for testing purpose or to send notifications who did not have webhook_endpoint configured.
 {:ok, CatptainHook.WebhookConversation{}} = CaptainHook.send_notification(webhook_endpoint, webhook_notification)
 ```
 
