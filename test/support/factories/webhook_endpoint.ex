@@ -11,7 +11,6 @@ defmodule CaptainHook.Factory.WebhookEndpoint do
           allow_insecure: false,
           enabled_notification_types: [build(:enabled_notification_type)],
           headers: %{},
-          metadata: %{},
           url: "url_#{System.unique_integer()}"
         }
       end

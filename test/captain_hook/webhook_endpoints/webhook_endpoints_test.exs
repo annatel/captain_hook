@@ -155,7 +155,6 @@ defmodule CaptainHook.WebhookEndpointsTest do
       assert webhook_endpoint.webhook == webhook_endpoint_params.webhook
       assert webhook_endpoint.started_at == webhook_endpoint_params.started_at
       assert webhook_endpoint.url == webhook_endpoint_params.url
-      assert webhook_endpoint.metadata == webhook_endpoint_params.metadata
       assert is_nil(webhook_endpoint.ended_at)
 
       assert [enabled_notification_type] = webhook_endpoint.enabled_notification_types
@@ -175,10 +174,10 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
       assert {:ok, webhook_endpoint} =
                WebhookEndpoints.update_webhook_endpoint(webhook_endpoint_factory, %{
-                 metadata: %{key: "new_value"}
+                 headers: %{key: "new_value"}
                })
 
-      assert webhook_endpoint.metadata == %{key: "new_value"}
+      assert webhook_endpoint.headers == %{key: "new_value"}
       assert is_nil(webhook_endpoint.ended_at)
     end
   end

@@ -119,9 +119,10 @@ defmodule CaptainHook.Clients.HttpClientTest do
              request_body: ^encoded_body,
              status: nil,
              response_body: nil,
-             client_error_message:
-               "TLS client: In state certify at ssl_handshake.erl:1870 generated CLIENT ALERT: Fatal - Certificate Expired\n"
+             client_error_message: client_error_message
            } = HttpClient.call("https://expired.badssl.com/", body, headers)
+
+    assert client_error_message =~ "CLIENT ALERT: Fatal - Certificate Expired"
   end
 
   test "when allow_insecure is true and the ssl is expired, returns a success Response" do

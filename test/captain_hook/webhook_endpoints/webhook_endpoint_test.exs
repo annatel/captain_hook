@@ -25,7 +25,6 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       assert :allow_insecure in changes_keys
       assert :enabled_notification_types in changes_keys
       assert :headers in changes_keys
-      assert :metadata in changes_keys
       assert :url in changes_keys
       refute :ended_at in changes_keys
       refute :new_key in changes_keys
@@ -58,7 +57,6 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
                Map.get(enabled_notification_type, :name)
 
       assert get_field(changeset, :headers) == webhook_endpoint_params.headers
-      assert get_field(changeset, :metadata) == webhook_endpoint_params.metadata
       assert get_field(changeset, :url) == webhook_endpoint_params.url
     end
   end
@@ -72,8 +70,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
           started_at: @datetime_1,
           ended_at: @datetime_2,
           allow_insecure: true,
-          headers: %{"Authorization" => "Basic bG9naW46cGFzc3dvcmQ="},
-          metadata: %{key: "value"}
+          headers: %{"Authorization" => "Basic bG9naW46cGFzc3dvcmQ="}
         )
 
       changeset =
@@ -89,7 +86,6 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       refute :started_at in changes_keys
       assert :allow_insecure in changes_keys
       assert :headers in changes_keys
-      assert :metadata in changes_keys
       assert :url in changes_keys
       refute :ended_at in changes_keys
       refute :new_key in changes_keys
@@ -99,21 +95,18 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       webhook_endpoint = insert!(:webhook_endpoint)
 
       new_headers = %{"Authorization" => "Basic bG9naW46cGFzc3dvcmQ="}
-      new_metadata = %{key: "value"}
       new_url = "new_url"
 
       changeset =
         WebhookEndpoint.update_changeset(webhook_endpoint, %{
           allow_insecure: true,
           headers: new_headers,
-          metadata: new_metadata,
           url: new_url
         })
 
       assert changeset.valid?
       assert get_field(changeset, :allow_insecure) == true
       assert get_field(changeset, :headers) == new_headers
-      assert get_field(changeset, :metadata) == new_metadata
       assert get_field(changeset, :url) == new_url
     end
   end
@@ -125,8 +118,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       webhook_endpoint_params =
         params_for(:webhook_endpoint,
           started_at: @datetime_1,
-          ended_at: @datetime_2,
-          metadata: %{key: "value"}
+          ended_at: @datetime_2
         )
 
       changeset =
@@ -142,7 +134,6 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       refute :started_at in changes_keys
       refute :allow_insecure in changes_keys
       refute :headers in changes_keys
-      refute :metadata in changes_keys
       refute :url in changes_keys
       assert :ended_at in changes_keys
       refute :new_key in changes_keys

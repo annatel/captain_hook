@@ -5,6 +5,7 @@ defmodule CaptainHook.Migrations.V2 do
 
   def up do
     alter_table_webhook_endpoints_add_livemode_column()
+    alter_table_webhook_endpoints_remove_metada_column()
 
     create_sequences_table()
     create_webhook_notifications_table()
@@ -17,6 +18,7 @@ defmodule CaptainHook.Migrations.V2 do
 
   def down do
     alter_table_webhook_endpoints_remove_livemode_column()
+    alter_table_webhook_endpoints_add_metada_column()
 
     drop_sequences_table()
 
@@ -36,6 +38,12 @@ defmodule CaptainHook.Migrations.V2 do
     create(index(:captain_hook_webhook_endpoints, [:livemode]))
 
     execute("UPDATE captain_hook_webhook_endpoints SET livemode = 1")
+  end
+
+  defp alter_table_webhook_endpoints_remove_metada_column() do
+    alter table(:captain_hook_webhook_endpoints) do
+      remove(:metadata)
+    end
   end
 
   defp create_sequences_table do
@@ -257,6 +265,12 @@ defmodule CaptainHook.Migrations.V2 do
   defp alter_table_webhook_endpoints_remove_livemode_column() do
     alter table(:captain_hook_webhook_endpoints) do
       remove(:livemode)
+    end
+  end
+
+  defp alter_table_webhook_endpoints_add_metada_column() do
+    alter table(:captain_hook_webhook_endpoints) do
+      add(:metadata, :map, null: true)
     end
   end
 

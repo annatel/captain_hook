@@ -22,7 +22,6 @@ defmodule CaptainHook.NotifierTest do
       webhook_endpoint =
         insert!(:webhook_endpoint,
           url: endpoint_url(bypass.port),
-          metadata: %{key: "value"},
           headers: %{key: "value"}
         )
 
@@ -47,8 +46,7 @@ defmodule CaptainHook.NotifierTest do
                  id: webhook_notification.id,
                  type: webhook_notification.type,
                  livemode: webhook_endpoint.livemode,
-                 data: webhook_notification.data,
-                 metadata: webhook_endpoint.metadata
+                 data: webhook_notification.data
                })
 
       assert webhook_conversation.status == WebhookConversation.status().success
@@ -64,8 +62,7 @@ defmodule CaptainHook.NotifierTest do
         Plug.Conn.resp(conn, 200, "")
       end)
 
-      webhook_endpoint =
-        insert!(:webhook_endpoint, url: endpoint_url(bypass.port), metadata: %{"key" => "value"})
+      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
 
       webhook_notification = insert!(:webhook_notification)
 

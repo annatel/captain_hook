@@ -154,15 +154,14 @@ defmodule CaptainHook.Notifier do
   end
 
   defp build_body(
-         %WebhookEndpoint{livemode: livemode?, metadata: metadata},
+         %WebhookEndpoint{livemode: livemode?},
          %WebhookNotification{} = webhook_notification
        ) do
     %{
       id: webhook_notification.id,
       type: webhook_notification.type,
       livemode: livemode?,
-      data: webhook_notification.data,
-      metadata: metadata
+      data: webhook_notification.data
     }
   end
 
