@@ -1,15 +1,19 @@
 defmodule CaptainHook.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/annatel/captain_hook"
+  @version "0.7.0"
+
   def project do
     [
       app: :captain_hook,
-      version: "0.6.1",
-      elixir: "~> 1.8",
+      version: @version,
+      elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
       deps: deps(),
+      docs: docs(),
       elixirc_paths: elixirc_paths(Mix.env()),
       aliases: aliases()
     ]
@@ -24,15 +28,17 @@ defmodule CaptainHook.MixProject do
   defp deps do
     [
       {:mox, "~> 0.4", only: :test},
+      {:bypass, "~> 2.1.0", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:ex_machina, "~> 2.3", only: :test},
       {:myxql, "~> 0.4.0"},
-      {:ecto_sql, "~> 3.0"},
+      {:ecto_sql, "~> 3.5"},
       {:antl_utils_elixir, "~> 0.2.0"},
-      {:antl_utils_ecto, "~> 0.7.0"},
-      {:queuetopia, "~> 0.6.3"},
-      {:httpoison, "~> 1.7"},
-      {:recase, "~> 0.7"}
+      {:antl_utils_ecto, "~> 1.1.1"},
+      {:queuetopia, "~> 1.1.3"},
+      {:finch, "~> 0.6.0"},
+      {:plug_crypto, "~> 1.1"},
+      {:recase, "~> 0.7"},
+      {:shortcode, "~> 0.5.0"}
     ]
   end
 
@@ -41,7 +47,12 @@ defmodule CaptainHook.MixProject do
 
   defp aliases do
     [
-      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: ["ecto.setup", "test"],
+      "ecto.setup": [
+        "ecto.create --quiet -r CaptainHook.TestRepo",
+        "ecto.migrate -r CaptainHook.TestRepo"
+      ],
+      "ecto.reset": ["ecto.drop -r CaptainHook.TestRepo", "ecto.setup"]
     ]
   end
 
@@ -52,7 +63,17 @@ defmodule CaptainHook.MixProject do
   defp package() do
     [
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/annatel/captain_hook"}
+      links: %{"GitHub" => @source_url}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      source_url: @source_url,
+      extras: [
+        "README.md"
+      ]
     ]
   end
 end

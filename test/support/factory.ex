@@ -1,44 +1,40 @@
 defmodule CaptainHook.Factory do
-  use ExMachina.Ecto, repo: CaptainHook.TestRepo
+  use CaptainHook.Factory.WebhookEndpoint
+  use CaptainHook.Factory.WebhookEndpointSecret
+  use CaptainHook.Factory.WebhookConversation
+  use CaptainHook.Factory.WebhookNotification
 
-  alias CaptainHook.WebhookEndpoints.WebhookEndpoint
-  alias CaptainHook.WebhookConversations.WebhookConversation
+  alias CaptainHook.TestRepo
 
   @spec uuid :: <<_::288>>
   def uuid() do
     Ecto.UUID.generate()
   end
 
-  def webhook_endpoint_factory do
-    %WebhookEndpoint{
-      webhook: sequence("webhook_"),
-      started_at: DateTime.utc_now() |> DateTime.truncate(:second),
-      url: sequence("url_"),
-      metadata: %{},
-      headers: %{},
-      allow_insecure: false
-    }
+  def utc_now() do
+    DateTime.utc_now() |> DateTime.truncate(:second)
   end
 
-  def webhook_conversation_factory(attrs) do
-    webhook_endpoint_id =
-      Map.get(attrs, :webhook_endpoint_id) || Map.get(insert(:webhook_endpoint), :id)
+  def params_for(%_{} = schema) when is_map(schema) do
+    schema
+    |> AntlUtilsEcto.map_from_struct()
+    |> Enum.filter(fn {_, v} -> v end)
+    |> Enum.into(%{})
+  end
 
-    webhook_conversation = %WebhookConversation{
-      webhook_endpoint_id: webhook_endpoint_id,
-      resource_type: sequence("resource_type_"),
-      resource_id: CaptainHook.Factory.uuid(),
-      request_id: CaptainHook.Factory.uuid(),
-      requested_at: DateTime.utc_now() |> DateTime.truncate(:second),
-      request_url: sequence("request_url_"),
-      request_headers: %{"Header-Key" => "header value"},
-      request_body: sequence("request_body_"),
-      http_status: 200,
-      response_body: sequence("response_body_"),
-      client_error_message: sequence("client_error_message_"),
-      status: WebhookConversation.status().success
-    }
+  def params_for(factory_name, attributes \\ []) when is_atom(factory_name) do
+    factory_name
+    |> build(attributes)
+    |> AntlUtilsEcto.map_from_struct()
+    |> Enum.filter(fn {_, v} -> v end)
+    |> Enum.into(%{})
+  end
 
-    merge_attributes(webhook_conversation, attrs)
+  def build(factory_name, attributes) do
+    factory_name |> build() |> struct!(attributes)
+  end
+
+  def insert!(factory_name, attributes \\ []) do
+    factory_name |> build(attributes) |> TestRepo.insert!()
   end
 end

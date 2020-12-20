@@ -1,95 +1,99 @@
 defmodule CaptainHook.Clients.HttpClient do
-  @behaviour CaptainHook.Clients.Behaviour
-
-  @http_adapter Application.get_env(:captain_hook, :http_adapter, HTTPoison)
-
-  @timeout 2_000
-  @rcv_timeout 5_000
-
   require Logger
 
   alias CaptainHook.Clients.Response
+  alias CaptainHook.Signature
 
-  @impl true
+  @pool_timeout 5_000
+  @receive_timeout 15_000
+
   @spec call(binary, map(), map(), keyword) :: Response.t()
-  def call(url, params, headers, options \\ [])
-      when is_binary(url) and is_map(params) and is_map(headers) do
-    encoded_params = Jason.encode!(params)
+  def call(url, body, headers, opts \\ [])
+      when is_binary(url) and is_map(body) and is_map(headers) do
+    secrets = Keyword.get(opts, :secrets)
+    allow_insecure = Keyword.get(opts, :allow_insecure)
 
-    Logger.debug("#{inspect(url)} #{inspect(encoded_params)}")
+    encoded_body = Jason.encode!(body)
 
-    utc_now = DateTime.utc_now()
+    now = DateTime.utc_now()
 
     headers =
       headers
       |> Recase.Enumerable.convert_keys(&Recase.to_header/1)
       |> Map.put("Content-Type", "application/json")
-      |> Map.put("User-Agent", "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)")
-      |> Map.to_list()
+      |> Map.put_new("User-Agent", "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)")
 
-    request_options = [timeout: @timeout, recv_timeout: @rcv_timeout]
+    headers =
+      if secrets,
+        do:
+          headers
+          |> Map.put("Signature", Signature.sign(encoded_body, DateTime.to_unix(now), secrets)),
+        else: headers
 
-    request_options =
-      if Keyword.get(options, :allow_insecure),
-        do: [{:hackney, [:insecure]} | request_options],
-        else: request_options
+    finch_instance_name =
+      unless allow_insecure, do: CaptainHookFinch, else: CaptainHookFinchInsecure
 
-    http_result = @http_adapter.post(url, encoded_params, headers, request_options)
+    response =
+      Finch.build(:post, url, Map.to_list(headers), encoded_body)
+      |> Finch.request(finch_instance_name,
+        pool_timeout: @pool_timeout,
+        receive_timeout: @receive_timeout
+      )
 
-    Logger.debug("#{inspect(http_result)}")
+    Logger.debug("#{inspect(response)}")
 
-    http_result
-    |> process_http_call_response(url, Enum.into(headers, %{}), encoded_params, utc_now)
+    response
+    |> process_response(url, Enum.into(headers, %{}), encoded_body, now)
   end
 
-  defp process_http_call_response(
-         {:ok, %HTTPoison.Response{status_code: status_code, body: response_body}},
-         url,
+  defp process_response(
+         {:ok, %Finch.Response{status: status, body: response_body}},
+         request_url,
          request_headers,
-         request_body,
+         encoded_request_body,
          %DateTime{} = requested_at
        )
-       when status_code in 200..299 do
+       when status in 200..299 do
     %Response{
-      requested_at: requested_at,
-      request_url: url,
+      request_url: request_url,
       request_headers: request_headers,
-      request_body: request_body,
-      status_code: status_code,
+      request_body: encoded_request_body,
+      requested_at: requested_at,
+      status: status,
       response_body: response_body
     }
   end
 
-  defp process_http_call_response(
-         {:ok, %HTTPoison.Response{status_code: status_code, body: response_body}},
+  defp process_response(
+         {:ok, %Finch.Response{status: status, body: response_body}},
+         request_url,
+         request_headers,
+         encoded_request_body,
+         %DateTime{} = requested_at
+       ) do
+    %Response{
+      request_url: request_url,
+      request_headers: request_headers,
+      request_body: encoded_request_body,
+      requested_at: requested_at,
+      status: status,
+      response_body: response_body
+    }
+  end
+
+  defp process_response(
+         {:error, error},
          url,
          request_headers,
          request_body,
          %DateTime{} = requested_at
        ) do
     %Response{
-      requested_at: requested_at,
       request_url: url,
       request_headers: request_headers,
       request_body: request_body,
-      status_code: status_code,
-      response_body: response_body
-    }
-  end
-
-  defp process_http_call_response(
-         {:error, %HTTPoison.Error{} = httpoison_error},
-         url,
-         request_headers,
-         request_body,
-         %DateTime{} = requested_at
-       ) do
-    %Response{
       requested_at: requested_at,
-      request_url: url,
-      request_headers: request_headers,
-      request_body: request_body,
-      client_error_message: HTTPoison.Error.message(httpoison_error)
+      client_error_message: Exception.message(error)
     }
   end
 end

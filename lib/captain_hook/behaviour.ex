@@ -1,27 +1,37 @@
 defmodule CaptainHook.Behaviour do
-  @callback list_webhook_endpoints(binary) :: [WebhookEndpoint.t()]
-  @callback get_webhook_endpoint(binary, binary) :: WebhookEndpoint.t()
-  @callback get_webhook_endpoint!(binary, binary) :: WebhookEndpoint.t()
-  @callback create_webhook_endpoint(binary, map()) :: WebhookEndpoint.t()
-  @callback update_webhook_endpoint(WebhookEndpoint.t(), map()) :: WebhookEndpoint.t()
-  @callback delete_webhook_endpoint(WebhookEndpoint.t()) :: WebhookEndpoint.t()
+  alias CaptainHook.WebhookEndpoints.WebhookEndpoint
+  alias CaptainHook.WebhookNotifications.WebhookNotification
+  alias CaptainHook.WebhoookConversations.WebhookConversation
 
-  @callback list_webhook_conversations(
-              binary,
-              binary | {binary, binary} | CaptainHook.WebhookEndpoints.WebhookEndpoint.t(),
-              %{opts: keyword, page: number}
-            ) :: %{items: [WebhookConversation.t()], total: integer}
-  @callback list_webhook_conversations(
-              binary,
-              binary | {binary, binary} | CaptainHook.WebhookEndpoints.WebhookEndpoint.t()
-            ) :: %{items: [WebhookConversation.t()], total: integer}
-  @optional_callbacks list_webhook_conversations: 2, list_webhook_conversations: 3
+  @callback notify(binary, boolean, binary, map, keyword) ::
+              {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
 
-  @callback get_webhook_conversation(binary(), binary()) :: WebhookConversation.t()
+  @callback list_webhook_endpoints(keyword) :: [WebhookEndpoint.t()]
+  @callback get_webhook_endpoint(binary, keyword) :: WebhookEndpoint.t() | nil
+  @callback get_webhook_endpoint!(binary, keyword) :: WebhookEndpoint.t()
+  @callback create_webhook_endpoint(map()) ::
+              {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
+  @callback update_webhook_endpoint(WebhookEndpoint.t(), map()) ::
+              {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
+  @callback delete_webhook_endpoint(WebhookEndpoint.t()) ::
+              {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
+  @callback roll_webhook_endpoint_secret(WebhookEndpoint.t(), DateTime.t()) ::
+              {:ok, Secrets.WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
+  @callback enable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+              {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
+  @callback disable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+              {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
 
-  @callback notify(binary, binary, {atom, binary}, map(), keyword()) ::
-              :ok | {:error, :no_webhook_endpoint_found | Ecto.Changeset.t()}
-  @callback notify(binary, binary, {atom, binary}, map()) ::
-              :ok | {:error, :no_webhook_endpoint_found | Ecto.Changeset.t()}
-  @optional_callbacks notify: 5, notify: 4
+  @callback list_webhook_notifications(keyword) :: %{
+              data: [WebhookNotification.t()],
+              total: integer
+            }
+  @callback get_webhook_notification(binary, keyword) :: WebhookNotification.t() | nil
+  @callback get_webhook_notification!(binary, keyword) :: WebhookNotification.t()
+
+  @callback list_webhook_conversations(keyword) :: %{
+              data: [WebhookConversation.t()],
+              total: integer
+            }
+  @callback get_webhook_conversation(binary) :: WebhookConversation.t() | nil
 end

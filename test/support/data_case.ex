@@ -22,6 +22,10 @@ defmodule CaptainHook.DataCase do
       import CaptainHook.DataCase
 
       import CaptainHook.Factory
+
+      import Mox
+
+      setup :verify_on_exit!
     end
   end
 
@@ -46,6 +50,13 @@ defmodule CaptainHook.DataCase do
       Enum.reduce(opts, message, fn {key, value}, acc ->
         String.replace(acc, "%{#{key}}", to_string(value))
       end)
+    end)
+  end
+
+  def associations_on(fields, schema) do
+    fields
+    |> Enum.map(fn field ->
+      schema |> Kernel.get_in(List.wrap(field))
     end)
   end
 end

@@ -1,17 +1,52 @@
 defmodule CaptainHook.WebhookConversations.WebhookConversationQueryable do
   use AntlUtilsEcto.Queryable,
-    base_schema: CaptainHook.WebhookConversations.WebhookConversation,
-    searchable_fields: [:webhook]
+    base_schema: CaptainHook.WebhookConversations.WebhookConversation
 
-  alias CaptainHook.WebhookEndpoints
+  import Ecto.Query, only: [preload: 2, where: 3]
 
-  defp search_by_field({:webhook, value}, dynamic) do
-    webhook_endpoint_ids =
-      WebhookEndpoints.list_webhook_endpoints(value) |> Enum.map(& &1.id) |> Enum.uniq()
+  alias CaptainHook.WebhookNotifications
 
-    dynamic(
+  @includes [:webhook_endpoint, :webhook_notification]
+
+  @spec includes() :: [atom]
+  def includes(), do: @includes
+
+  @spec with_preloads(Ecto.Queryable.t(), keyword) :: Ecto.Queryable.t()
+  def with_preloads(queryable, includes) when is_list(includes) do
+    includes
+    |> Enum.reduce(queryable, fn include, queryable ->
+      queryable |> with_preload(include)
+    end)
+  end
+
+  defp with_preload(queryable, :webhook_endpoint) do
+    queryable |> preload_webhook_endpoint()
+  end
+
+  defp with_preload(queryable, :webhook_notification) do
+    queryable |> preload_webhook_notification()
+  end
+
+  defp filter_by_field({:webhook, value}, queryable) do
+    webhook_notification_ids_query =
+      WebhookNotifications.webhook_notification_queryable(
+        filters: [webhook: value],
+        fields: [:id]
+      )
+      |> Ecto.Queryable.to_query()
+
+    queryable
+    |> where(
       [webhook_conversation],
-      ^dynamic or webhook_conversation.webhook_endpoint_id in ^webhook_endpoint_ids
+      webhook_conversation.webhook_notification_id in subquery(webhook_notification_ids_query)
     )
+  end
+
+  defp preload_webhook_endpoint(queryable) do
+    queryable |> preload(:webhook_endpoint)
+  end
+
+  defp preload_webhook_notification(queryable) do
+    queryable |> preload(:webhook_notification)
   end
 end

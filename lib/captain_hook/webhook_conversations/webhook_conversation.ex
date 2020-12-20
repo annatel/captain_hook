@@ -5,19 +5,18 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     only: [assoc_constraint: 2, cast: 3, validate_inclusion: 3, validate_required: 2]
 
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
+  alias CaptainHook.WebhookNotifications.WebhookNotification
 
-  @primary_key {:id, :binary_id, autogenerate: true}
+  @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wc"}
   @foreign_key_type :binary_id
 
   schema "captain_hook_webhook_conversations" do
-    belongs_to(:webhook_endpoint, WebhookEndpoint)
+    belongs_to(:webhook_endpoint, WebhookEndpoint, type: Shortcode.Ecto.UUID, prefix: "we")
 
-    field(:resource_type, :string)
-    field(:resource_id, :string)
-    field(:request_id, :binary_id)
+    belongs_to(:webhook_notification, WebhookNotification, type: Shortcode.Ecto.UUID, prefix: "wn")
 
+    field(:sequence, :integer)
     field(:requested_at, :utc_datetime)
-
     field(:request_url, :string)
     field(:request_headers, :map)
     field(:request_body, :string)
@@ -28,7 +27,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
 
     field(:status, :string)
 
-    timestamps()
+    timestamps(updated_at: false)
   end
 
   @spec changeset(WebhookConversation.t(), map()) :: Ecto.Changeset.t()
@@ -36,9 +35,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     webhook_conversation
     |> cast(attrs, [
       :webhook_endpoint_id,
-      :resource_type,
-      :resource_id,
-      :request_id,
+      :webhook_notification_id,
+      :sequence,
       :requested_at,
       :request_url,
       :request_headers,
@@ -50,7 +48,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     ])
     |> validate_required([
       :webhook_endpoint_id,
-      :request_id,
+      :webhook_notification_id,
+      :sequence,
       :requested_at,
       :request_url,
       :request_body,
@@ -58,6 +57,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     ])
     |> validate_inclusion(:status, Map.values(status()))
     |> assoc_constraint(:webhook_endpoint)
+    |> assoc_constraint(:webhook_notification)
   end
 
   @spec status :: %{failed: binary(), success: binary()}

@@ -1,84 +1,53 @@
 defmodule CaptainHook.WebhookConversations do
   import Ecto.Query, only: [order_by: 2]
 
-  alias CaptainHook.WebhookEndpoints.WebhookEndpoint
+  alias Ecto.Multi
+  alias CaptainHook.Sequences
   alias CaptainHook.WebhookConversations.{WebhookConversation, WebhookConversationQueryable}
 
-  @spec list_webhook_conversations(
-          binary,
-          binary | {binary, binary} | CaptainHook.WebhookEndpoints.WebhookEndpoint.t(),
-          %{opts: keyword, page: number}
-        ) :: %{items: [WebhookConversation.t()], total: integer}
-  def list_webhook_conversations(
-        webhook,
-        filter,
-        pagination \\ %{page: 1, opts: [per_page: 100]}
-      )
+  @default_page_number 1
+  @default_page_size 100
 
-  def list_webhook_conversations(
-        webhook,
-        %WebhookEndpoint{id: webhook_endpoint_id},
-        %{page: page, opts: opts} = _pagination
-      )
-      when is_binary(webhook) do
-    query = list_webhook_conversations_query(webhook, webhook_endpoint_id: webhook_endpoint_id)
+  @spec list_webhook_conversations(keyword) :: %{data: [WebhookConversation.t()], total: integer}
+  def list_webhook_conversations(opts \\ []) when is_list(opts) do
+    page_number = Keyword.get(opts, :page_number, @default_page_number)
+    page_size = Keyword.get(opts, :page_size, @default_page_size)
 
-    conversations_count = query |> CaptainHook.repo().aggregate(:count, :id)
+    query = opts |> webhook_conversation_queryable() |> order_by(desc: :sequence)
 
-    conversations =
-      query |> WebhookConversationQueryable.paginate(page, opts) |> CaptainHook.repo().all()
+    count = query |> CaptainHook.repo().aggregate(:count, :id)
 
-    %{total: conversations_count, items: conversations}
+    webhook_conversations =
+      query
+      |> WebhookConversationQueryable.paginate(page_number, page_size)
+      |> CaptainHook.repo().all()
+
+    %{total: count, data: webhook_conversations}
   end
 
-  def list_webhook_conversations(webhook, request_id, %{page: page, opts: opts} = _pagination)
-      when is_binary(webhook) and is_binary(request_id) do
-    query = list_webhook_conversations_query(webhook, request_id: request_id)
-
-    conversations_count = query |> CaptainHook.repo().aggregate(:count, :id)
-
-    conversations =
-      query |> WebhookConversationQueryable.paginate(page, opts) |> CaptainHook.repo().all()
-
-    %{total: conversations_count, items: conversations}
-  end
-
-  def list_webhook_conversations(
-        webhook,
-        {resource_type, resource_id},
-        %{page: page, opts: opts} = _pagination
-      )
-      when is_binary(webhook) and is_binary(resource_type) and is_binary(resource_id) do
-    query =
-      list_webhook_conversations_query(webhook,
-        resource_type: resource_type,
-        resource_id: resource_id
-      )
-
-    conversations_count = query |> CaptainHook.repo().aggregate(:count, :id)
-
-    conversations =
-      query |> WebhookConversationQueryable.paginate(page, opts) |> CaptainHook.repo().all()
-
-    %{total: conversations_count, items: conversations}
-  end
-
-  @spec get_webhook_conversation(binary(), binary()) :: WebhookConversation.t()
-  def get_webhook_conversation(webhook, id) when is_binary(webhook) and is_binary(id) do
-    WebhookConversationQueryable.queryable()
-    |> WebhookConversationQueryable.search(webhook)
-    |> WebhookConversationQueryable.filter(id: id)
+  @spec get_webhook_conversation(binary, keyword) :: WebhookConversation.t() | nil
+  def get_webhook_conversation(id, opts \\ []) when is_binary(id) do
+    opts
+    |> Keyword.put(:filters, id: id)
+    |> webhook_conversation_queryable()
     |> CaptainHook.repo().one()
   end
 
-  @spec create_webhook_conversation(WebhookEndpoint.t(), map()) :: WebhookConversation.t()
-  def create_webhook_conversation(%WebhookEndpoint{id: webhook_endpoint_id}, attrs)
-      when is_map(attrs) do
-    attrs = attrs |> Map.put(:webhook_endpoint_id, webhook_endpoint_id)
-
-    %WebhookConversation{}
-    |> WebhookConversation.changeset(attrs)
-    |> CaptainHook.repo().insert()
+  @spec create_webhook_conversation(map()) :: WebhookConversation.t()
+  def create_webhook_conversation(attrs) when is_map(attrs) do
+    Multi.new()
+    |> Multi.run(:sequence, fn _repo, %{} ->
+      {:ok, Sequences.next(:webhook_conversations)}
+    end)
+    |> Multi.insert(:webhook_conversation, fn %{sequence: sequence} ->
+      %WebhookConversation{}
+      |> WebhookConversation.changeset(attrs |> Map.put(:sequence, sequence))
+    end)
+    |> CaptainHook.repo().transaction()
+    |> case do
+      {:ok, %{webhook_conversation: webhook_conversation}} -> {:ok, webhook_conversation}
+      {:error, :webhook_conversation, error, _} -> {:error, error}
+    end
   end
 
   @spec conversation_succeeded?(WebhookConversation.t()) :: boolean
@@ -86,11 +55,13 @@ defmodule CaptainHook.WebhookConversations do
     status == WebhookConversation.status().success
   end
 
-  defp list_webhook_conversations_query(webhook, filters)
-       when is_binary(webhook) and is_list(filters) do
+  @spec webhook_conversation_queryable(keyword) :: Ecto.Queryable.t()
+  def webhook_conversation_queryable(opts) when is_list(opts) do
+    filters = Keyword.get(opts, :filters, [])
+    includes = Keyword.get(opts, :includes, [])
+
     WebhookConversationQueryable.queryable()
-    |> WebhookConversationQueryable.search(webhook)
     |> WebhookConversationQueryable.filter(filters)
-    |> order_by([:inserted_at])
+    |> WebhookConversationQueryable.with_preloads(includes)
   end
 end
