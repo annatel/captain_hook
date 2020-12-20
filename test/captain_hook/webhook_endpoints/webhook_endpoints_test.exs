@@ -299,4 +299,32 @@ defmodule CaptainHook.WebhookEndpointsTest do
     test "disable a disabled notification type, ignore it and return the webhook_endpoint" do
     end
   end
+
+  describe "notification_type_enabled?/2" do
+    test "when the notification type is enabled, return true" do
+      %{enabled_notification_types: [enabled_notification_type]} =
+        webhook_endpoint =
+        insert!(:webhook_endpoint, enabled_notification_types: [build(:enabled_notification_type)])
+
+      assert WebhookEndpoints.notification_type_enabled?(
+               webhook_endpoint,
+               enabled_notification_type.name
+             )
+    end
+
+    test "when the notification type is not enabled, return false" do
+      webhook_endpoint = insert!(:webhook_endpoint, enabled_notification_types: [])
+
+      refute WebhookEndpoints.notification_type_enabled?(webhook_endpoint, "notification_type")
+    end
+
+    test "when the webhook_endpoint has the wildcard enabled, return true" do
+      webhook_endpoint =
+        insert!(:webhook_endpoint,
+          enabled_notification_types: [build(:enabled_notification_type) |> catch_all_events()]
+        )
+
+      assert WebhookEndpoints.notification_type_enabled?(webhook_endpoint, "notification_type")
+    end
+  end
 end

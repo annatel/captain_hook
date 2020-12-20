@@ -2,7 +2,7 @@
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/annatel/captain_hook/CI?cacheSeconds=3600&style=flat-square)](https://github.com/annatel/captain_hook/actions) [![GitHub issues](https://img.shields.io/github/issues-raw/annatel/captain_hook?style=flat-square&cacheSeconds=3600)](https://github.com/annatel/captain_hook/issues) [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?cacheSeconds=3600?style=flat-square)](http://opensource.org/licenses/MIT) [![Hex.pm](https://img.shields.io/hexpm/v/captain_hook?style=flat-square)](https://hex.pm/packages/captain_hook) [![Hex.pm](https://img.shields.io/hexpm/dt/captain_hook?style=flat-square)](https://hex.pm/packages/captain_hook)
 
-Ordered webhooks notification
+Ordered signed webhook notifications. Support multiple endpoints for each webhook.
 
 ## Installation
 
@@ -12,7 +12,7 @@ The package can be installed by adding `captain_hook` to your list of dependenci
 ```elixir
 def deps do
   [
-    {:captain_hook, "~> 0.6.0"}
+    {:captain_hook, "~> 1.0.0"}
   ]
 end
 ```
@@ -51,6 +51,29 @@ Now, run the migration to create the table:
 
 ```sh
 mix ecto.migrate
+```
+
+## Usage
+
+```elixir
+webhook_endpoint = CaptainHook.create_webhook_endpoint(%{
+  webhook: "my_webhook_name", 
+  url: "https://webhook.site/538bb308-4dd8-4008-a19b-4e4a5758ef29",
+  livemode: true,
+  enabled_notification_types: %{name: "*"}
+})
+
+# Get secret to verify the webhook signature
+%CaptainHook.WebhookEndpoint{secret: secret} = CaptainHook.get_webhook_endpoint(webhook_endpoint.id, includes: [:secret])
+
+# Notify - it will enqueue the notification and send it in its turn
+{:ok, CaptainHook.WebhookNotification{} = webhook_notification}
+CaptainHook.notify(
+  "my_webhook_name", true, "notification_type", %{"my" => "data", "to" => "report"}
+)
+
+# Resend a notification - Be aware it is a synchronous action and do not send the notification according to its order in the queue. It can be usefull for testing purpose or to send notifications who did not have webhook_endpoint configured.
+{:ok, CatptainHook.WebhookConversation{}} = CaptainHook.send_notification(webhook_endpoint, webhook_notification)
 ```
 
 The docs can be found at [https://hexdocs.pm/captain_hook](https://hexdocs.pm/captain_hook).

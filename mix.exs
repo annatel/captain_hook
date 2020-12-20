@@ -2,7 +2,7 @@ defmodule CaptainHook.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/annatel/captain_hook"
-  @version "0.7.0"
+  @version "1.0.0"
 
   def project do
     [
@@ -57,7 +57,7 @@ defmodule CaptainHook.MixProject do
   end
 
   defp description() do
-    "Ordered webhook notifications"
+    "Ordered signed webhook notifications"
   end
 
   defp package() do

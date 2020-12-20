@@ -9,7 +9,7 @@ defmodule CaptainHook.Factory.WebhookEndpoint do
           started_at: utc_now(),
           livemode: true,
           allow_insecure: false,
-          enabled_notification_types: [build(:enabled_notification_type)],
+          enabled_notification_types: [build(:enabled_notification_type) |> catch_all_events()],
           headers: %{},
           url: "url_#{System.unique_integer()}"
         }
@@ -23,6 +23,10 @@ defmodule CaptainHook.Factory.WebhookEndpoint do
         %EnabledNotificationType{
           name: "name_#{System.unique_integer()}"
         }
+      end
+
+      def catch_all_events(%EnabledNotificationType{} = enabled_notification_type) do
+        %{enabled_notification_type | name: "*"}
       end
     end
   end

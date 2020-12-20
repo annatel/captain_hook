@@ -33,7 +33,8 @@ defmodule CaptainHook.WebhookConversations do
     |> CaptainHook.repo().one()
   end
 
-  @spec create_webhook_conversation(map()) :: WebhookConversation.t()
+  @spec create_webhook_conversation(map()) ::
+          {:ok, WebhookConversation.t()} | {:error, Ecto.Changeset.t()}
   def create_webhook_conversation(attrs) when is_map(attrs) do
     Multi.new()
     |> Multi.run(:sequence, fn _repo, %{} ->

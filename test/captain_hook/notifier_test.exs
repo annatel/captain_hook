@@ -2,6 +2,7 @@ defmodule CaptainHook.NotifierTest do
   use ExUnit.Case, async: false
   use CaptainHook.DataCase
 
+  alias CaptainHook.WebhookNotifications.WebhookNotification
   alias CaptainHook.WebhookConversations.WebhookConversation
   alias CaptainHook.Notifier
 
@@ -10,7 +11,112 @@ defmodule CaptainHook.NotifierTest do
     {:ok, bypass: bypass}
   end
 
+  describe "notify/5" do
+    test "when no webhook_endpoints exists for the webhook, creates a webhook_notification without enqueuing it" do
+      assert {:ok, %WebhookNotification{}} =
+               Notifier.notify("webhook", true, "notification_type", %{})
+
+      # Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queue)
+    end
+
+    test "when no ongoing webhook_endpoints exists for the webhook, creates a webhook_notification without enqueuing it" do
+      webhook_endpoint = insert!(:webhook_endpoint, started_at: utc_now(), ended_at: utc_now())
+
+      assert {:ok, %WebhookNotification{}} =
+               Notifier.notify(webhook_endpoint.webhook, true, "notification_type", %{})
+
+      # Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queue)
+    end
+
+    test "when the webhhok has webhook_endpoints, creates a webhook_notification and enqueue them" do
+      webhook_endpoint = insert!(:webhook_endpoint)
+
+      assert {:ok, %WebhookNotification{} = webhook_notification} =
+               Notifier.notify(webhook_endpoint.webhook, true, "notification_type", %{})
+
+      Queuetopia.Test.Assertions.assert_job_created(
+        CaptainHook.Queue,
+        "#{webhook_endpoint.webhook}_#{webhook_endpoint.id}",
+        %{
+          params: %{
+            "webhook_endpoint_id" => webhook_endpoint.id,
+            "webhook_notification_id" => webhook_notification.id,
+            "webhook_result_handler" => nil
+          }
+        }
+      )
+    end
+
+    test "when the webhook has multiple webhook_endpoints, creates a webhook_notification and enqueue them" do
+      webhook_endpoint_1 = insert!(:webhook_endpoint, webhook: "webhook")
+      webhook_endpoint_2 = insert!(:webhook_endpoint, webhook: "webhook")
+
+      assert {:ok, %WebhookNotification{} = webhook_notification} =
+               Notifier.notify(webhook_endpoint_1.webhook, true, "notification_type", %{})
+
+      Queuetopia.Test.Assertions.assert_job_created(
+        CaptainHook.Queue,
+        "#{webhook_endpoint_1.webhook}_#{webhook_endpoint_1.id}",
+        %{
+          params: %{
+            "webhook_endpoint_id" => webhook_endpoint_1.id,
+            "webhook_notification_id" => webhook_notification.id,
+            "webhook_result_handler" => nil
+          }
+        }
+      )
+
+      Queuetopia.Test.Assertions.assert_job_created(
+        CaptainHook.Queue,
+        "#{webhook_endpoint_2.webhook}_#{webhook_endpoint_2.id}",
+        %{
+          params: %{
+            "webhook_endpoint_id" => webhook_endpoint_2.id,
+            "webhook_notification_id" => webhook_notification.id,
+            "webhook_result_handler" => nil
+          }
+        }
+      )
+    end
+
+    test "when the webhhok has webhook_endpoints and the webhook_result_handler is specified, creates a webhook_notification and enqueue it with the webhook_result_handler" do
+      webhook_endpoint = insert!(:webhook_endpoint)
+
+      assert {:ok, %WebhookNotification{} = webhook_notification} =
+               Notifier.notify(webhook_endpoint.webhook, true, "notification_type", %{},
+                 webhook_result_handler: CaptainHook.WebhookResultHandlerMock
+               )
+
+      Queuetopia.Test.Assertions.assert_job_created(
+        CaptainHook.Queue,
+        "#{webhook_endpoint.webhook}_#{webhook_endpoint.id}",
+        %{
+          params: %{
+            "webhook_endpoint_id" => webhook_endpoint.id,
+            "webhook_notification_id" => webhook_notification.id,
+            "webhook_result_handler" => to_string(CaptainHook.WebhookResultHandlerMock)
+          }
+        }
+      )
+    end
+  end
+
   describe "send_notification/2" do
+    test "when the webhook_endpoint does not have the notification_type enabled, returns an ok noop tuple" do
+      webhook_endpoint = insert!(:webhook_endpoint, enabled_notification_types: [])
+      webhook_notification = insert!(:webhook_notification)
+
+      assert {:ok, :noop} =
+               Notifier.send_notification(
+                 %{
+                   webhook_endpoint_id: webhook_endpoint.id,
+                   webhook_notification_id: webhook_notification.id,
+                   webhook_result_handler: nil
+                 },
+                 0
+               )
+    end
+
     test "when the conversation success, returns a ok names tuple with the webhook_conversation",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
@@ -19,14 +125,18 @@ defmodule CaptainHook.NotifierTest do
         Plug.Conn.resp(conn, 200, "")
       end)
 
+      webhook_notification = insert!(:webhook_notification)
+
       webhook_endpoint =
         insert!(:webhook_endpoint,
           url: endpoint_url(bypass.port),
-          headers: %{key: "value"}
+          headers: %{key: "value"},
+          enabled_notification_types: [
+            build(:enabled_notification_type, name: webhook_notification.type)
+          ]
         )
 
       insert!(:webhook_endpoint_secret, webhook_endpoint_id: webhook_endpoint.id)
-      webhook_notification = insert!(:webhook_notification)
 
       assert {:ok, %WebhookConversation{} = webhook_conversation} =
                Notifier.send_notification(
@@ -54,7 +164,7 @@ defmodule CaptainHook.NotifierTest do
       assert Map.get(webhook_conversation.request_headers, "Key") == "value"
     end
 
-    test "when the webhook does not have a webhook_endpoint_secret, the http_client is called with secrets: nil",
+    test "when the webhook does not have a webhook_endpoint_secret, http_client is called with secrets: nil",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
 
@@ -62,7 +172,13 @@ defmodule CaptainHook.NotifierTest do
         Plug.Conn.resp(conn, 200, "")
       end)
 
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
+      webhook_endpoint =
+        insert!(:webhook_endpoint,
+          url: endpoint_url(bypass.port),
+          enabled_notification_types: [
+            build(:enabled_notification_type, name: "*")
+          ]
+        )
 
       webhook_notification = insert!(:webhook_notification)
 

@@ -13,6 +13,10 @@ defmodule CaptainHook do
           {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
   defdelegate notify(webhook, livemode?, notification_type, data, opts \\ []), to: Notifier
 
+  @spec send_notification(WebhookEndpoint.t(), WebhookNotification.t()) ::
+          {:ok, WebhookConversation.t()} | {:error, Ecto.Changeset.t()}
+  defdelegate send_notification(webhook_endpoint, webhook_notification), to: Notifier
+
   @spec list_webhook_endpoints(keyword) :: [WebhookEndpoint.t()]
   defdelegate list_webhook_endpoints(opts \\ []), to: WebhookEndpoints
 

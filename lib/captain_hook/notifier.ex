@@ -3,8 +3,6 @@ defmodule CaptainHook.Notifier do
   alias CaptainHook.Queue
 
   alias CaptainHook.Clients.HttpClient
-
-  alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.Clients.Response
 
   alias CaptainHook.WebhookEndpoints
@@ -13,16 +11,17 @@ defmodule CaptainHook.Notifier do
   alias CaptainHook.WebhookNotifications.WebhookNotification
   alias CaptainHook.WebhookConversations
   alias CaptainHook.WebhookConversations.WebhookConversation
-  alias CaptainHook.WebhookEndpoints
 
   @spec notify(binary, boolean, binary, map, keyword) ::
           {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
   def notify(webhook, livemode?, notification_type, data, opts \\ [])
       when is_binary(webhook) and is_boolean(livemode?) and is_binary(notification_type) and
              is_map(data) and is_list(opts) do
+    utc_now = DateTime.utc_now()
+
     webhook_endpoints =
       WebhookEndpoints.list_webhook_endpoints(
-        filters: [webhook: webhook, livemode: livemode?, ongoing_at: DateTime.utc_now()]
+        filters: [webhook: webhook, livemode: livemode?, ongoing_at: utc_now]
       )
 
     webhook_result_handler = Keyword.get(opts, :webhook_result_handler)
@@ -30,7 +29,9 @@ defmodule CaptainHook.Notifier do
     Multi.new()
     |> Multi.run(:webhook_notification, fn _repo, %{} ->
       WebhookNotifications.create_webhook_notification(%{
+        created_at: utc_now,
         data: data,
+        livemode: livemode?,
         resource_id: Keyword.get(opts, :resource_id),
         resource_type: Keyword.get(opts, :resource_type),
         type: notification_type,
@@ -72,7 +73,8 @@ defmodule CaptainHook.Notifier do
       })
   end
 
-  @spec send_notification(map, pos_integer) :: {:ok, WebhookConversation.t()} | {:error, binary()}
+  @spec send_notification(map | WebhookEndpoint.t(), pos_integer | WebhookNotification.t()) ::
+          {:ok, binary | WebhookConversation.t()} | {:error, binary() | Ecto.Changeset.t()}
   def send_notification(
         %{
           webhook_endpoint_id: webhook_endpoint_id,
@@ -81,10 +83,42 @@ defmodule CaptainHook.Notifier do
         },
         attempt_number
       ) do
-    %{url: url, allow_insecure: allow_insecure} =
-      webhook_endpoint = WebhookEndpoints.get_webhook_endpoint!(webhook_endpoint_id)
+    webhook_endpoint =
+      WebhookEndpoints.get_webhook_endpoint!(webhook_endpoint_id,
+        includes: [:enabled_notification_types]
+      )
 
     webhook_notification = WebhookNotifications.get_webhook_notification!(webhook_notification_id)
+
+    unless WebhookEndpoints.notification_type_enabled?(
+             webhook_endpoint,
+             webhook_notification.type
+           ) do
+      {:ok, :noop}
+    else
+      webhook_endpoint
+      |> send_notification(webhook_notification)
+      |> case do
+        {:ok, webhook_conversation} ->
+          if WebhookConversations.conversation_succeeded?(webhook_conversation) do
+            {:ok, webhook_conversation}
+          else
+            handle_failure(webhook_result_handler, webhook_conversation, attempt_number)
+            {:error, inspect(webhook_conversation)}
+          end
+
+        {:error, changeset} ->
+          error = changeset |> AntlUtilsEcto.Changeset.errors_on() |> inspect()
+          {:error, error}
+      end
+    end
+  end
+
+  def send_notification(
+        %WebhookEndpoint{} = webhook_endpoint,
+        %WebhookNotification{} = webhook_notification
+      ) do
+    %{url: url, allow_insecure: allow_insecure} = webhook_endpoint
 
     headers = webhook_endpoint |> build_headers()
     body = webhook_endpoint |> build_body(webhook_notification)
@@ -93,19 +127,6 @@ defmodule CaptainHook.Notifier do
     HttpClient.call(url, body, headers, secrets: secrets, allow_insecure: allow_insecure)
     |> to_webhook_conversation_attrs(webhook_endpoint, webhook_notification)
     |> WebhookConversations.create_webhook_conversation()
-    |> case do
-      {:ok, webhook_conversation} ->
-        if WebhookConversations.conversation_succeeded?(webhook_conversation) do
-          {:ok, webhook_conversation}
-        else
-          handle_failure(webhook_result_handler, webhook_conversation, attempt_number)
-          {:error, inspect(webhook_conversation)}
-        end
-
-      {:error, changeset} ->
-        error = changeset |> AntlUtilsEcto.Changeset.errors_on() |> inspect()
-        {:error, error}
-    end
   end
 
   defp to_webhook_conversation_attrs(

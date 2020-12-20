@@ -6,6 +6,8 @@ defmodule CaptainHook.WebhookEndpoints do
   alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, WebhookEndpointQueryable}
   alias CaptainHook.WebhookEndpoints.Secrets
 
+  @all_events_wildcard "*"
+
   @spec list_webhook_endpoints(keyword) :: [WebhookEndpoint.t()]
   def list_webhook_endpoints(opts \\ []) do
     opts
@@ -97,17 +99,16 @@ defmodule CaptainHook.WebhookEndpoints do
 
   @spec enable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
           {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
-  def enable_notification_type(%WebhookEndpoint{} = webhook_endpoint, notification_type) do
+  def enable_notification_type(%WebhookEndpoint{} = webhook_endpoint, notification_types) do
     %{enabled_notification_types: enabled_notification_types} =
       webhook_endpoint |> CaptainHook.repo().preload(:enabled_notification_types, force: true)
 
+    notification_types = notification_types |> List.wrap() |> Enum.map(&%{name: &1})
+
     enabled_notification_types =
-      notification_type
-      |> List.wrap()
-      |> Enum.map(&%{name: &1})
-      |> Enum.concat(enabled_notification_types)
-      |> Enum.reverse()
-      |> Enum.uniq_by(fn %{name: name} -> name end)
+      enabled_notification_types
+      |> Enum.concat(notification_types)
+      |> Enum.uniq_by(& &1.name)
 
     webhook_endpoint
     |> update_webhook_endpoint(%{enabled_notification_types: enabled_notification_types})
@@ -127,6 +128,18 @@ defmodule CaptainHook.WebhookEndpoints do
 
     webhook_endpoint
     |> update_webhook_endpoint(%{enabled_notification_types: enabled_notification_types})
+  end
+
+  @spec notification_type_enabled?(WebhookEndpoint.t(), binary) :: boolean
+  def notification_type_enabled?(
+        %WebhookEndpoint{enabled_notification_types: enabled_notification_types},
+        notification_type
+      )
+      when is_list(enabled_notification_types) and is_binary(notification_type) do
+    enabled_notification_type_names = enabled_notification_types |> Enum.map(& &1.name)
+
+    Enum.member?(enabled_notification_type_names, @all_events_wildcard) ||
+      Enum.member?(enabled_notification_type_names, notification_type)
   end
 
   @spec webhook_endpoint_queryable(keyword) :: Ecto.Queryable.t()
