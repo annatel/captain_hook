@@ -63,19 +63,18 @@ webhook_endpoint = CaptainHook.create_webhook_endpoint(%{
   enabled_notification_types: %{name: "*"}
 })
 
-# Get secret to verify the webhook signature
-%CaptainHook.WebhookEndpoint{secret: secret} = CaptainHook.get_webhook_endpoint(webhook_endpoint.id, includes: [:secret])
+# Get the webhook_endpoint secret in order to verify the webhook signature
+%CaptainHook.WebhookEndpoint{secret: secret} = 
+  CaptainHook.get_webhook_endpoint(webhook_endpoint.id, includes: [:secret])
 
 # Notify - it will enqueue the notification and send it in its turn
-{:ok, CaptainHook.WebhookNotification{} = webhook_notification}
-CaptainHook.notify(
-  "my_webhook_name", true, "notification_type", %{"my" => "data", "to" => "report"}
-)
-
-# Resend a notification - 
-# Be aware it is a synchronous action and then it does not send the notification according to its order in the queue. 
-# It can be usefull for testing purpose or to send notifications who did not have webhook_endpoint configured.
-{:ok, CatptainHook.WebhookConversation{}} = CaptainHook.send_notification(webhook_endpoint, webhook_notification)
+{:ok, CaptainHook.WebhookNotification{} = webhook_notification} = 
+  CaptainHook.notify(
+    "my_webhook_name", 
+    true, 
+    "notification_type", 
+    %{"my" => "data", "to" => "report"}
+  )
 ```
 
 The docs can be found at [https://hexdocs.pm/captain_hook](https://hexdocs.pm/captain_hook).
