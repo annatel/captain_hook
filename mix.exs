@@ -28,7 +28,7 @@ defmodule CaptainHook.MixProject do
   defp deps do
     [
       {:mox, "~> 0.4", only: :test},
-      {:bypass, "~> 1.0", only: :test},
+      {:bypass, "~> 2.1.0", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:myxql, "~> 0.4.0"},
       {:ecto_sql, "~> 3.5"},
