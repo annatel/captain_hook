@@ -8,7 +8,7 @@ defmodule CaptainHook.MixProject do
     [
       app: :captain_hook,
       version: @version,
-      elixir: "~> 1.8",
+      elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
