@@ -24,7 +24,7 @@ defmodule CaptainHook.Notifier do
         filters: [webhook: webhook, livemode: livemode?, ongoing_at: utc_now]
       )
 
-    webhook_result_handler = Keyword.get(opts, :webhook_result_handler)
+    webhook_result_handler = Keyword.get(opts, :webhook_result_handler) |> to_string()
 
     Multi.new()
     |> Multi.run(:webhook_notification, fn _repo, %{} ->
@@ -32,8 +32,8 @@ defmodule CaptainHook.Notifier do
         created_at: utc_now,
         data: data,
         livemode: livemode?,
-        resource_id: Keyword.get(opts, :resource_id),
-        resource_type: Keyword.get(opts, :resource_type),
+        resource_id: Keyword.get(opts, :resource_id) |> to_string(),
+        resource_type: Keyword.get(opts, :resource_type) |> to_string(),
         type: notification_type,
         webhook: webhook
       })
