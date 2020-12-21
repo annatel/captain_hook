@@ -3,6 +3,19 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
 
   import Ecto.Changeset, only: [cast: 3, validate_required: 2]
 
+  @type t :: %__MODULE__{
+          id: binary,
+          created_at: DateTime.t(),
+          data: map,
+          livemode: boolean,
+          resource_id: binary | nil,
+          resource_type: binary | nil,
+          sequence: integer,
+          type: binary,
+          webhook: binary,
+          inserted_at: DateTime.t()
+        }
+
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wn"}
   @foreign_key_type :binary_id
 

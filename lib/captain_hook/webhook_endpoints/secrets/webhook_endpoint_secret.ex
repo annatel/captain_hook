@@ -5,14 +5,24 @@ defmodule CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecret do
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.WebhookEndpoints.Secrets
 
+  @type t :: %__MODULE__{
+          id: integer,
+          started_at: DateTime.t(),
+          ended_at: DateTime.t() | nil,
+          is_main: boolean,
+          secret: binary,
+          inserted_at: DateTime.t(),
+          updated_at: DateTime.t()
+        }
+
   schema "captain_hook_webhook_endpoint_secrets" do
     belongs_to(:webhook_endpoint, WebhookEndpoint, type: Shortcode.Ecto.UUID, prefix: "we")
 
     field(:started_at, :utc_datetime)
     field(:ended_at, :utc_datetime)
 
-    field(:secret, :string)
     field(:is_main, :boolean)
+    field(:secret, :string)
 
     timestamps()
   end

@@ -5,6 +5,14 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationType do
 
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
 
+  @type t :: %__MODULE__{
+          id: integer,
+          webhook_endpoint_id: binary,
+          name: binary,
+          inserted_at: DateTime.t(),
+          updated_at: DateTime.t()
+        }
+
   schema "captain_hook_webhook_endpoint_enabled_notification_types" do
     belongs_to(:webhook_endpoint, WebhookEndpoint, type: Shortcode.Ecto.UUID, prefix: "we")
 

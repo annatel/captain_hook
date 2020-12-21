@@ -7,6 +7,22 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.WebhookNotifications.WebhookNotification
 
+  @type t :: %__MODULE__{
+          id: binary,
+          webhook_endpoint_id: binary,
+          webhook_notification_id: binary,
+          client_error_message: binary,
+          http_status: integer,
+          request_body: binary,
+          request_headers: map,
+          request_url: binary,
+          requested_at: DateTime.t(),
+          response_body: binary,
+          sequence: integer,
+          status: binary,
+          inserted_at: DateTime.t()
+        }
+
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wc"}
   @foreign_key_type :binary_id
 
@@ -15,16 +31,14 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
 
     belongs_to(:webhook_notification, WebhookNotification, type: Shortcode.Ecto.UUID, prefix: "wn")
 
-    field(:sequence, :integer)
-    field(:requested_at, :utc_datetime)
-    field(:request_url, :string)
-    field(:request_headers, :map)
-    field(:request_body, :string)
-
-    field(:http_status, :integer)
-    field(:response_body, :string)
     field(:client_error_message, :string)
-
+    field(:http_status, :integer)
+    field(:request_body, :string)
+    field(:request_headers, :map)
+    field(:request_url, :string)
+    field(:requested_at, :utc_datetime)
+    field(:response_body, :string)
+    field(:sequence, :integer)
     field(:status, :string)
 
     timestamps(updated_at: false)

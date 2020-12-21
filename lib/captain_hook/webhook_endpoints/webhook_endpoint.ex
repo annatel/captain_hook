@@ -8,6 +8,21 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "we"}
   @foreign_key_type :binary_id
 
+  @type t :: %__MODULE__{
+          id: binary,
+          webhook: binary,
+          started_at: DateTime.t(),
+          ended_at: DateTime.t() | nil,
+          livemode: boolean,
+          allow_insecure: boolean,
+          enabled_notification_types: [EnabledNotificationType.t()],
+          headers: map | nil,
+          url: binary,
+          secret: binary | nil,
+          inserted_at: DateTime.t(),
+          updated_at: DateTime.t()
+        }
+
   schema "captain_hook_webhook_endpoints" do
     field(:webhook, :string)
 
