@@ -1,4 +1,6 @@
 defmodule CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecret do
+  @moduledoc false
+
   use Ecto.Schema
   import Ecto.Changeset, only: [assoc_constraint: 2, cast: 3, put_change: 3, validate_required: 2]
 
@@ -27,7 +29,7 @@ defmodule CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecret do
     timestamps()
   end
 
-  @spec create_changeset(WebhookEndpointSecret.t(), map()) :: Ecto.Changeset.t()
+  @spec create_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def create_changeset(%__MODULE__{} = webhook_secret, attrs) when is_map(attrs) do
     webhook_secret
     |> cast(attrs, [:webhook_endpoint_id, :started_at, :is_main])
@@ -36,7 +38,7 @@ defmodule CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecret do
     |> assoc_constraint(:webhook_endpoint)
   end
 
-  @spec remove_changeset(WebhookEndpointSecret.t(), map()) :: Ecto.Changeset.t()
+  @spec remove_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def remove_changeset(%__MODULE__{} = webhook_secret, attrs) when is_map(attrs) do
     webhook_secret
     |> cast(attrs, [:ended_at, :is_main])

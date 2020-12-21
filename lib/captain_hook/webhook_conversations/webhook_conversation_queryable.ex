@@ -1,4 +1,6 @@
 defmodule CaptainHook.WebhookConversations.WebhookConversationQueryable do
+  @moduledoc false
+
   use AntlUtilsEcto.Queryable,
     base_schema: CaptainHook.WebhookConversations.WebhookConversation
 

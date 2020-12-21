@@ -7,6 +7,7 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationType do
 
   @type t :: %__MODULE__{
           id: integer,
+          webhook_endpoint: WebhookEndpoint.t(),
           webhook_endpoint_id: binary,
           name: binary,
           inserted_at: DateTime.t(),
@@ -21,7 +22,8 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationType do
     timestamps()
   end
 
-  @spec changeset(EnabledNotificationType.t(), map()) :: Ecto.Changeset.t()
+  @doc false
+  @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = enabled_notification_type, attrs) when is_struct(attrs) do
     attrs = Map.from_struct(attrs)
 

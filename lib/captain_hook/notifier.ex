@@ -1,4 +1,6 @@
 defmodule CaptainHook.Notifier do
+  @moduledoc false
+
   alias Ecto.Multi
   alias CaptainHook.Queue
 
@@ -79,7 +81,7 @@ defmodule CaptainHook.Notifier do
           map | WebhookEndpoint.t(),
           pos_integer | WebhookNotification.t()
         ) ::
-          {:ok, binary | WebhookConversation.t()} | {:error, binary() | Ecto.Changeset.t()}
+          {:ok, binary | WebhookConversation.t()} | {:error, binary | Ecto.Changeset.t()}
   def send_webhook_notification(
         %{
           "webhook_endpoint_id" => webhook_endpoint_id,

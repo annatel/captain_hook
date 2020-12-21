@@ -1,4 +1,6 @@
 defmodule CaptainHook.WebhookEndpoints do
+  @moduledoc false
+
   import Ecto.Query, only: [order_by: 2]
 
   alias Ecto.Multi

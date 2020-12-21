@@ -1,4 +1,6 @@
 defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
+  @moduledoc false
+
   use AntlUtilsEcto.Queryable,
     base_schema: CaptainHook.WebhookEndpoints.WebhookEndpoint
 

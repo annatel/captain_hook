@@ -40,7 +40,8 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     timestamps()
   end
 
-  @spec create_changeset(WebhookEndpoint.t(), map()) :: Ecto.Changeset.t()
+  @doc false
+  @spec create_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def create_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
     |> cast(attrs, [:webhook, :started_at, :livemode, :allow_insecure, :headers, :url])
@@ -48,14 +49,16 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     |> cast_assoc(:enabled_notification_types)
   end
 
-  @spec update_changeset(WebhookEndpoint.t(), map()) :: Ecto.Changeset.t()
+  @doc false
+  @spec update_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def update_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
     |> cast(attrs, [:allow_insecure, :headers, :url])
     |> cast_assoc(:enabled_notification_types)
   end
 
-  @spec remove_changeset(WebhookEndpoint.t(), map()) :: Ecto.Changeset.t()
+  @doc false
+  @spec remove_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def remove_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
     |> cast(attrs, [:ended_at])

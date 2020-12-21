@@ -32,7 +32,8 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
     timestamps(updated_at: false)
   end
 
-  @spec changeset(WebhookNotification.t(), map()) :: Ecto.Changeset.t()
+  @doc false
+  @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = webhook_notification, attrs) when is_map(attrs) do
     webhook_notification
     |> cast(attrs, [

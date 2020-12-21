@@ -124,6 +124,7 @@ defmodule CaptainHook do
   @spec get_webhook_conversation(binary) :: WebhookConversation.t() | nil
   defdelegate get_webhook_conversation(id), to: WebhookConversations
 
+  @doc false
   @spec repo :: module
   def repo() do
     Application.fetch_env!(:captain_hook, :repo)

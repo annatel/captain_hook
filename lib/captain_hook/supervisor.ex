@@ -1,7 +1,5 @@
 defmodule CaptainHook.Supervisor do
-  @moduledoc """
-  Documentation for CaptainHook.Supervisor
-  """
+  @moduledoc false
 
   use Supervisor
 

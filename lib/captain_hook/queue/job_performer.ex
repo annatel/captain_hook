@@ -1,4 +1,6 @@
 defmodule CaptainHook.Queue.JobPerformer do
+  @moduledoc false
+
   @behaviour Queuetopia.Jobs.Performer
 
   alias Queuetopia.Jobs.Job

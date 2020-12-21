@@ -1,4 +1,6 @@
 defmodule CaptainHook.WebhookNotifications.WebhookNotificationQueryable do
+  @moduledoc false
+
   use AntlUtilsEcto.Queryable,
     base_schema: CaptainHook.WebhookNotifications.WebhookNotification
 

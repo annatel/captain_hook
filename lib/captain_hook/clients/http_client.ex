@@ -1,4 +1,6 @@
 defmodule CaptainHook.Clients.HttpClient do
+  @moduledoc false
+
   require Logger
 
   alias CaptainHook.Clients.Response

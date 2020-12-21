@@ -10,7 +10,9 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
   @type t :: %__MODULE__{
           id: binary,
           webhook_endpoint_id: binary,
+          webhook_endpoint: WebhookEndpoint.t(),
           webhook_notification_id: binary,
+          webhook_notification: WebhookNotification.t(),
           client_error_message: binary,
           http_status: integer,
           request_body: binary,
@@ -44,7 +46,8 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     timestamps(updated_at: false)
   end
 
-  @spec changeset(WebhookConversation.t(), map()) :: Ecto.Changeset.t()
+  @doc false
+  @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = webhook_conversation, attrs) when is_map(attrs) do
     webhook_conversation
     |> cast(attrs, [

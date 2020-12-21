@@ -1,4 +1,6 @@
 defmodule CaptainHook.WebhookEndpoints.Secrets do
+  @moduledoc false
+
   import Ecto.Changeset, only: [add_error: 3, fetch_field!: 2, prepare_changes: 2]
 
   alias Ecto.Multi

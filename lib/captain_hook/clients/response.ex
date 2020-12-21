@@ -1,4 +1,6 @@
 defmodule CaptainHook.Clients.Response do
+  @moduledoc false
+
   defstruct client_error_message: nil,
             request_body: nil,
             request_headers: nil,
@@ -8,11 +10,12 @@ defmodule CaptainHook.Clients.Response do
             response_body: nil
 
   @type t :: %__MODULE__{
-          client_error_message: binary,
-          request_body: binary,
-          request_headers: map,
-          request_url: binary,
-          requested_at: DateTime.t(),
-          status: binary
+          client_error_message: binary | nil,
+          request_body: binary | nil,
+          request_headers: map | nil,
+          request_url: binary | nil,
+          requested_at: DateTime.t() | nil,
+          status: binary | nil,
+          response_body: binary | nil
         }
 end
