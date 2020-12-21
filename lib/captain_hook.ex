@@ -9,6 +9,59 @@ defmodule CaptainHook do
   alias CaptainHook.WebhookConversations
   alias CaptainHook.WebhookConversations.WebhookConversation
 
+  defmacro __using__(_opts) do
+    quote do
+      @behaviour CaptainHook.Behaviour
+
+      def notify(webhook, livemode?, notification_type, data, opts \\ []),
+        do: unquote(__MODULE__).notify(webhook, livemode?, notification_type, data, opts)
+
+      def send_notification(webhook_endpoint, webhook_notification),
+        do: unquote(__MODULE__).send_notification(webhook_endpoint, webhook_notification)
+
+      def list_webhook_endpoints(opts \\ []),
+        do: unquote(__MODULE__).list_webhook_endpoints(opts)
+
+      def get_webhook_endpoint(id, opts \\ []),
+        do: unquote(__MODULE__).get_webhook_endpoint(id, opts)
+
+      def get_webhook_endpoint!(id, opts \\ []),
+        do: unquote(__MODULE__).get_webhook_endpoint!(id, opts)
+
+      def create_webhook_endpoint(attrs), do: unquote(__MODULE__).create_webhook_endpoint(attrs)
+
+      def update_webhook_endpoint(webhook_endpoint, attrs),
+        do: unquote(__MODULE__).update_webhook_endpoint(webhook_endpoint, attrs)
+
+      def delete_webhook_endpoint(webhook_endpoint),
+        do: unquote(__MODULE__).delete_webhook_endpoint(webhook_endpoint)
+
+      def roll_webhook_endpoint_secret(webhook_endpoint, expires_at \\ DateTime.utc_now()),
+        do: unquote(__MODULE__).roll_webhook_endpoint_secret(webhook_endpoint, expires_at)
+
+      def enable_notification_type(webhook_endpoint, notification_type),
+        do: unquote(__MODULE__).enable_notification_type(webhook_endpoint, notification_type)
+
+      def disable_notification_type(webhook_endpoint, notification_type),
+        do: unquote(__MODULE__).disable_notification_type(webhook_endpoint, notification_type)
+
+      def list_webhook_notifications(opts \\ []),
+        do: unquote(__MODULE__).list_webhook_notifications(opts)
+
+      def get_webhook_notification(id, opts \\ []),
+        do: unquote(__MODULE__).get_webhook_notification(id, opts)
+
+      def get_webhook_notification!(id, opts \\ []),
+        do: unquote(__MODULE__).get_webhook_notification!(id, opts)
+
+      def list_webhook_conversations(opts \\ []),
+        do: unquote(__MODULE__).list_webhook_conversations(opts)
+
+      def get_webhook_conversation(id),
+        do: unquote(__MODULE__).get_webhook_conversation(id)
+    end
+  end
+
   @spec notify(binary, boolean, binary, map, keyword) ::
           {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
   defdelegate notify(webhook, livemode?, notification_type, data, opts \\ []), to: Notifier
