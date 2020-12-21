@@ -109,9 +109,9 @@ defmodule CaptainHook.NotifierTest do
       assert {:ok, :noop} =
                Notifier.send_webhook_notification(
                  %{
-                   webhook_endpoint_id: webhook_endpoint.id,
-                   webhook_notification_id: webhook_notification.id,
-                   webhook_result_handler: nil
+                   "webhook_endpoint_id" => webhook_endpoint.id,
+                   "webhook_notification_id" => webhook_notification.id,
+                   "webhook_result_handler" => nil
                  },
                  0
                )
@@ -143,9 +143,9 @@ defmodule CaptainHook.NotifierTest do
       assert {:ok, %WebhookConversation{} = webhook_conversation} =
                Notifier.send_webhook_notification(
                  %{
-                   webhook_endpoint_id: webhook_endpoint.id,
-                   webhook_notification_id: webhook_notification.id,
-                   webhook_result_handler: nil
+                   "webhook_endpoint_id" => webhook_endpoint.id,
+                   "webhook_notification_id" => webhook_notification.id,
+                   "webhook_result_handler" => nil
                  },
                  0
                )
@@ -190,9 +190,9 @@ defmodule CaptainHook.NotifierTest do
       assert {:ok, %WebhookConversation{} = webhook_conversation} =
                Notifier.send_webhook_notification(
                  %{
-                   webhook_endpoint_id: webhook_endpoint.id,
-                   webhook_notification_id: webhook_notification.id,
-                   webhook_result_handler: nil
+                   "webhook_endpoint_id" => webhook_endpoint.id,
+                   "webhook_notification_id" => webhook_notification.id,
+                   "webhook_result_handler" => nil
                  },
                  0
                )
@@ -219,9 +219,9 @@ defmodule CaptainHook.NotifierTest do
       assert {:error, _webhook_conversation_as_string} =
                Notifier.send_webhook_notification(
                  %{
-                   webhook_endpoint_id: webhook_endpoint.id,
-                   webhook_notification_id: webhook_notification.id,
-                   webhook_result_handler: nil
+                   "webhook_endpoint_id" => webhook_endpoint.id,
+                   "webhook_notification_id" => webhook_notification.id,
+                   "webhook_result_handler" => nil
                  },
                  0
                )
@@ -238,9 +238,9 @@ defmodule CaptainHook.NotifierTest do
       assert_raise Ecto.NoResultsError, fn ->
         Notifier.send_webhook_notification(
           %{
-            webhook_endpoint_id: "webhook_endpoint_id",
-            webhook_notification_id: webhook_notification.id,
-            webhook_result_handler: nil
+            "webhook_endpoint_id" => "webhook_endpoint_id",
+            "webhook_notification_id" => webhook_notification.id,
+            "webhook_result_handler" => nil
           },
           0
         )
@@ -253,9 +253,9 @@ defmodule CaptainHook.NotifierTest do
       assert_raise Ecto.NoResultsError, fn ->
         Notifier.send_webhook_notification(
           %{
-            webhook_endpoint_id: webhook_endpoint.id,
-            webhook_notification_id: "webhook_notification_id",
-            webhook_result_handler: nil
+            "webhook_endpoint_id" => webhook_endpoint.id,
+            "webhook_notification_id" => "webhook_notification_id",
+            "webhook_result_handler" => nil
           },
           0
         )
@@ -292,9 +292,9 @@ defmodule CaptainHook.NotifierTest do
       assert {:error, _webhook_conversation_as_string} =
                Notifier.send_webhook_notification(
                  %{
-                   webhook_endpoint_id: webhook_endpoint.id,
-                   webhook_notification_id: webhook_notification.id,
-                   webhook_result_handler: nil
+                   "webhook_endpoint_id" => webhook_endpoint.id,
+                   "webhook_notification_id" => webhook_notification.id,
+                   "webhook_result_handler" => nil
                  },
                  0
                )
@@ -327,9 +327,9 @@ defmodule CaptainHook.NotifierTest do
       assert {:error, _webhook_conversation_as_string} =
                Notifier.send_webhook_notification(
                  %{
-                   webhook_endpoint_id: webhook_endpoint.id,
-                   webhook_notification_id: webhook_notification.id,
-                   webhook_result_handler: CaptainHook.WebhookResultHandlerMock |> to_string()
+                   "webhook_endpoint_id" => webhook_endpoint.id,
+                   "webhook_notification_id" => webhook_notification.id,
+                   "webhook_result_handler" => CaptainHook.WebhookResultHandlerMock |> to_string()
                  },
                  0
                )

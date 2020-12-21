@@ -24,7 +24,9 @@ defmodule CaptainHook.Notifier do
         filters: [webhook: webhook, livemode: livemode?, ongoing_at: utc_now]
       )
 
-    webhook_result_handler = Keyword.get(opts, :webhook_result_handler) |> to_string()
+    webhook_result_handler =
+      Keyword.get(opts, :webhook_result_handler)
+      |> to_string_unless_nil()
 
     Multi.new()
     |> Multi.run(:webhook_notification, fn _repo, %{} ->
@@ -32,8 +34,8 @@ defmodule CaptainHook.Notifier do
         created_at: utc_now,
         data: data,
         livemode: livemode?,
-        resource_id: Keyword.get(opts, :resource_id) |> to_string(),
-        resource_type: Keyword.get(opts, :resource_type) |> to_string(),
+        resource_id: Keyword.get(opts, :resource_id) |> to_string_unless_nil(),
+        resource_type: Keyword.get(opts, :resource_type) |> to_string_unless_nil(),
         type: notification_type,
         webhook: webhook
       })
@@ -80,9 +82,9 @@ defmodule CaptainHook.Notifier do
           {:ok, binary | WebhookConversation.t()} | {:error, binary() | Ecto.Changeset.t()}
   def send_webhook_notification(
         %{
-          webhook_endpoint_id: webhook_endpoint_id,
-          webhook_notification_id: webhook_notification_id,
-          webhook_result_handler: webhook_result_handler
+          "webhook_endpoint_id" => webhook_endpoint_id,
+          "webhook_notification_id" => webhook_notification_id,
+          "webhook_result_handler" => webhook_result_handler
         },
         attempt_number
       ) do
@@ -203,4 +205,7 @@ defmodule CaptainHook.Notifier do
         |> Enum.map(& &1.secret)
     end
   end
+
+  defp to_string_unless_nil(nil), do: nil
+  defp to_string_unless_nil(value), do: to_string(value)
 end
