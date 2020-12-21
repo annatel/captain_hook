@@ -6,6 +6,9 @@ defmodule CaptainHook.Behaviour do
   @callback notify(binary, boolean, binary, map, keyword) ::
               {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
 
+  @callback send_notification(WebhookEndpoint.t(), WebhookNotification.t()) ::
+              {:ok, WebhookConversation.t()} | {:error, Ecto.Changeset.t()}
+
   @callback list_webhook_endpoints(keyword) :: [WebhookEndpoint.t()]
   @callback get_webhook_endpoint(binary, keyword) :: WebhookEndpoint.t() | nil
   @callback get_webhook_endpoint!(binary, keyword) :: WebhookEndpoint.t()

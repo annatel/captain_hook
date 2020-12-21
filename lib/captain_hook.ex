@@ -59,6 +59,8 @@ defmodule CaptainHook do
 
       def get_webhook_conversation(id),
         do: unquote(__MODULE__).get_webhook_conversation(id)
+
+      defoverridable CaptainHook.Behaviour
     end
   end
 
