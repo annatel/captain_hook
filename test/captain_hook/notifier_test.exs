@@ -101,13 +101,13 @@ defmodule CaptainHook.NotifierTest do
     end
   end
 
-  describe "send_notification/2" do
+  describe "send_webhook_notification/2" do
     test "when the webhook_endpoint does not have the notification_type enabled, returns an ok noop tuple" do
       webhook_endpoint = insert!(:webhook_endpoint, enabled_notification_types: [])
       webhook_notification = insert!(:webhook_notification)
 
       assert {:ok, :noop} =
-               Notifier.send_notification(
+               Notifier.send_webhook_notification(
                  %{
                    webhook_endpoint_id: webhook_endpoint.id,
                    webhook_notification_id: webhook_notification.id,
@@ -125,10 +125,12 @@ defmodule CaptainHook.NotifierTest do
         Plug.Conn.resp(conn, 200, "")
       end)
 
-      webhook_notification = insert!(:webhook_notification)
+      webhook = "webhook"
+      webhook_notification = insert!(:webhook_notification, webhook: webhook)
 
       webhook_endpoint =
         insert!(:webhook_endpoint,
+          webhook: webhook,
           url: endpoint_url(bypass.port),
           headers: %{key: "value"},
           enabled_notification_types: [
@@ -139,7 +141,7 @@ defmodule CaptainHook.NotifierTest do
       insert!(:webhook_endpoint_secret, webhook_endpoint_id: webhook_endpoint.id)
 
       assert {:ok, %WebhookConversation{} = webhook_conversation} =
-               Notifier.send_notification(
+               Notifier.send_webhook_notification(
                  %{
                    webhook_endpoint_id: webhook_endpoint.id,
                    webhook_notification_id: webhook_notification.id,
@@ -172,18 +174,21 @@ defmodule CaptainHook.NotifierTest do
         Plug.Conn.resp(conn, 200, "")
       end)
 
+      webhook = "webhook"
+
       webhook_endpoint =
         insert!(:webhook_endpoint,
+          webhook: webhook,
           url: endpoint_url(bypass.port),
           enabled_notification_types: [
             build(:enabled_notification_type, name: "*")
           ]
         )
 
-      webhook_notification = insert!(:webhook_notification)
+      webhook_notification = insert!(:webhook_notification, webhook: webhook)
 
       assert {:ok, %WebhookConversation{} = webhook_conversation} =
-               Notifier.send_notification(
+               Notifier.send_webhook_notification(
                  %{
                    webhook_endpoint_id: webhook_endpoint.id,
                    webhook_notification_id: webhook_notification.id,
@@ -198,18 +203,21 @@ defmodule CaptainHook.NotifierTest do
     test "when allow_insecure is set for the webhook_endpoint, the http_client is called with allow_insecure: true" do
       start_supervised(CaptainHook.Supervisor)
 
+      webhook = "webhook"
+
       webhook_endpoint =
         insert!(:webhook_endpoint,
+          webhook: webhook,
           url: "https://expired.badssl.com/",
           allow_insecure: true
         )
 
-      webhook_notification = insert!(:webhook_notification)
+      webhook_notification = insert!(:webhook_notification, webhook: webhook)
 
       # Get an error since badssl does not support POST request.
       # The test is that we success to talk with the endpoint and didn't get a client error message.
       assert {:error, _webhook_conversation_as_string} =
-               Notifier.send_notification(
+               Notifier.send_webhook_notification(
                  %{
                    webhook_endpoint_id: webhook_endpoint.id,
                    webhook_notification_id: webhook_notification.id,
@@ -224,11 +232,11 @@ defmodule CaptainHook.NotifierTest do
       assert is_nil(webhook_conversation.client_error_message)
     end
 
-    test "when the webhook endpoint does not exists, raise a Ecto.NoResultsError" do
+    test "when the webhook endpoint does not exists, raises a Ecto.NoResultsError" do
       webhook_notification = insert!(:webhook_notification)
 
       assert_raise Ecto.NoResultsError, fn ->
-        Notifier.send_notification(
+        Notifier.send_webhook_notification(
           %{
             webhook_endpoint_id: "webhook_endpoint_id",
             webhook_notification_id: webhook_notification.id,
@@ -239,11 +247,11 @@ defmodule CaptainHook.NotifierTest do
       end
     end
 
-    test "when the webhook notification does not exists, raise a Ecto.NoResultsError" do
+    test "when the webhook notification does not exists, raises a Ecto.NoResultsError" do
       webhook_endpoint = insert!(:webhook_endpoint)
 
       assert_raise Ecto.NoResultsError, fn ->
-        Notifier.send_notification(
+        Notifier.send_webhook_notification(
           %{
             webhook_endpoint_id: webhook_endpoint.id,
             webhook_notification_id: "webhook_notification_id",
@@ -254,12 +262,25 @@ defmodule CaptainHook.NotifierTest do
       end
     end
 
+    test "when the webhook_endpoint and the webhook_notification do not have the same webhook, raises a FunctionClauseError" do
+      webhook_endpoint = insert!(:webhook_endpoint)
+      webhook_notification = insert!(:webhook_notification)
+
+      assert_raise FunctionClauseError, fn ->
+        Notifier.send_webhook_notification(webhook_endpoint, webhook_notification)
+      end
+    end
+
     test "when the conversation failed and a webhook_result_handler is not set, returns an error named tuple with the conversation and do not call the webhook_result_handler",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
 
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
-      webhook_notification = insert!(:webhook_notification)
+      webhook = "webhook"
+
+      webhook_endpoint =
+        insert!(:webhook_endpoint, webhook: webhook, url: endpoint_url(bypass.port))
+
+      webhook_notification = insert!(:webhook_notification, webhook: webhook)
 
       CaptainHook.WebhookResultHandlerMock
       |> expect(:handle_failure, 0, fn %WebhookConversation{}, 0 -> :ok end)
@@ -269,7 +290,7 @@ defmodule CaptainHook.NotifierTest do
       end)
 
       assert {:error, _webhook_conversation_as_string} =
-               Notifier.send_notification(
+               Notifier.send_webhook_notification(
                  %{
                    webhook_endpoint_id: webhook_endpoint.id,
                    webhook_notification_id: webhook_notification.id,
@@ -289,8 +310,12 @@ defmodule CaptainHook.NotifierTest do
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
 
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
-      webhook_notification = insert!(:webhook_notification)
+      webhook = "webhook"
+
+      webhook_endpoint =
+        insert!(:webhook_endpoint, webhook: webhook, url: endpoint_url(bypass.port))
+
+      webhook_notification = insert!(:webhook_notification, webhook: webhook)
 
       CaptainHook.WebhookResultHandlerMock
       |> expect(:handle_failure, 1, fn %WebhookConversation{}, 0 -> :ok end)
@@ -300,7 +325,7 @@ defmodule CaptainHook.NotifierTest do
       end)
 
       assert {:error, _webhook_conversation_as_string} =
-               Notifier.send_notification(
+               Notifier.send_webhook_notification(
                  %{
                    webhook_endpoint_id: webhook_endpoint.id,
                    webhook_notification_id: webhook_notification.id,

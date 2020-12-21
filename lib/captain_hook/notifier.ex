@@ -73,9 +73,12 @@ defmodule CaptainHook.Notifier do
       })
   end
 
-  @spec send_notification(map | WebhookEndpoint.t(), pos_integer | WebhookNotification.t()) ::
+  @spec send_webhook_notification(
+          map | WebhookEndpoint.t(),
+          pos_integer | WebhookNotification.t()
+        ) ::
           {:ok, binary | WebhookConversation.t()} | {:error, binary() | Ecto.Changeset.t()}
-  def send_notification(
+  def send_webhook_notification(
         %{
           webhook_endpoint_id: webhook_endpoint_id,
           webhook_notification_id: webhook_notification_id,
@@ -97,7 +100,7 @@ defmodule CaptainHook.Notifier do
       {:ok, :noop}
     else
       webhook_endpoint
-      |> send_notification(webhook_notification)
+      |> send_webhook_notification(webhook_notification)
       |> case do
         {:ok, webhook_conversation} ->
           if WebhookConversations.conversation_succeeded?(webhook_conversation) do
@@ -114,10 +117,11 @@ defmodule CaptainHook.Notifier do
     end
   end
 
-  def send_notification(
-        %WebhookEndpoint{} = webhook_endpoint,
-        %WebhookNotification{} = webhook_notification
-      ) do
+  def send_webhook_notification(
+        %WebhookEndpoint{webhook: webhook_of_webhook_endpoint} = webhook_endpoint,
+        %WebhookNotification{webhook: webhook_of_webhook_notification} = webhook_notification
+      )
+      when webhook_of_webhook_endpoint == webhook_of_webhook_notification do
     %{url: url, allow_insecure: allow_insecure} = webhook_endpoint
 
     headers = webhook_endpoint |> build_headers()

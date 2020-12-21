@@ -7,6 +7,6 @@ defmodule CaptainHook.Queue.JobPerformer do
   @impl true
   @spec perform(Job.t()) :: {:error, binary} | {:ok, any}
   def perform(%Job{action: "notify_endpoint", params: params, attempts: attempt_number}) do
-    Notifier.send_notification(params, attempt_number)
+    Notifier.send_webhook_notification(params, attempt_number)
   end
 end
