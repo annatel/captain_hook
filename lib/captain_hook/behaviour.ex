@@ -36,5 +36,5 @@ defmodule CaptainHook.Behaviour do
               data: [WebhookConversation.t()],
               total: integer
             }
-  @callback get_webhook_conversation(binary) :: WebhookConversation.t() | nil
+  @callback get_webhook_conversation(binary, keyword) :: WebhookConversation.t() | nil
 end
