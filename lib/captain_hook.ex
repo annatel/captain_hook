@@ -57,8 +57,8 @@ defmodule CaptainHook do
       def list_webhook_conversations(opts \\ []),
         do: unquote(__MODULE__).list_webhook_conversations(opts)
 
-      def get_webhook_conversation(id),
-        do: unquote(__MODULE__).get_webhook_conversation(id)
+      def get_webhook_conversation(id, opts \\ []),
+        do: unquote(__MODULE__).get_webhook_conversation(id, opts)
 
       defoverridable CaptainHook.Behaviour
     end
@@ -121,8 +121,8 @@ defmodule CaptainHook do
   @spec list_webhook_conversations(keyword) :: %{data: [WebhookConversation.t()], total: integer}
   defdelegate list_webhook_conversations(opts \\ []), to: WebhookConversations
 
-  @spec get_webhook_conversation(binary) :: WebhookConversation.t() | nil
-  defdelegate get_webhook_conversation(id), to: WebhookConversations
+  @spec get_webhook_conversation(binary, keyword) :: WebhookConversation.t() | nil
+  defdelegate get_webhook_conversation(id, opts \\ []), to: WebhookConversations
 
   @doc false
   @spec repo :: module
