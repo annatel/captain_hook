@@ -60,7 +60,7 @@ webhook_endpoint = CaptainHook.create_webhook_endpoint(%{
   webhook: "my_webhook_name", 
   url: "https://webhook.site/538bb308-4dd8-4008-a19b-4e4a5758ef29",
   livemode: true,
-  enabled_notification_types: %{name: "*"}
+  enabled_notification_types: [%{name: "*"}]
 })
 
 # Get the webhook_endpoint secret in order to verify the webhook signature
@@ -76,5 +76,9 @@ webhook_endpoint = CaptainHook.create_webhook_endpoint(%{
     %{"my" => "data", "to" => "report"}
   )
 ```
+
+## CaptainHook client
+
+Want to verify the authenticity of a captain_hook request ? you can use the[CaptainHookClient](https://github.com/annatel/captain_hook_client).
 
 The docs can be found at [https://hexdocs.pm/captain_hook](https://hexdocs.pm/captain_hook).
