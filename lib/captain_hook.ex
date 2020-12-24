@@ -64,7 +64,7 @@ defmodule CaptainHook do
     end
   end
 
-  @spec notify(binary, boolean, binary, map, keyword) ::
+  @spec notify(binary | [binary], boolean, binary, map, keyword) ::
           {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
   defdelegate notify(webhook, livemode?, notification_type, data, opts \\ []), to: Notifier
 
