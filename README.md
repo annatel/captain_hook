@@ -79,6 +79,6 @@ webhook_endpoint = CaptainHook.create_webhook_endpoint(%{
 
 ## CaptainHook client
 
-Want to verify the authenticity of a captain_hook request ? you can use the[CaptainHookClient](https://github.com/annatel/captain_hook_client).
+Want to verify the authenticity of a captain_hook request ? you can use the [CaptainHookClient](https://github.com/annatel/captain_hook_client).
 
 The docs can be found at [https://hexdocs.pm/captain_hook](https://hexdocs.pm/captain_hook).

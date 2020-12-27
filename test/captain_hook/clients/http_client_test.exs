@@ -30,14 +30,14 @@ defmodule CaptainHook.Clients.HttpClientTest do
              response_body: ""
            } = HttpClient.call(url, body, headers)
 
-    assert Map.get(headers, "Content-Type") == "application/json"
+    assert Map.get(headers, "content-type") == "application/json"
 
-    assert Map.get(headers, "User-Agent") ==
+    assert Map.get(headers, "user-agent") ==
              "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)"
 
-    assert Map.get(headers, "First-Header") == "value"
-    assert Map.get(headers, "Second-Header") == "value"
-    assert Map.get(headers, "Third-Header") == "value"
+    assert Map.get(headers, "first-header") == "value"
+    assert Map.get(headers, "second-header") == "value"
+    assert Map.get(headers, "third-header") == "value"
   end
 
   test "when secret is nil, do not add the signature header", %{bypass: bypass} do
@@ -68,7 +68,7 @@ defmodule CaptainHook.Clients.HttpClientTest do
     assert %Response{request_headers: headers} =
              HttpClient.call(endpoint_url(bypass.port), body, %{}, secrets: secret)
 
-    assert Map.has_key?(headers, "Signature")
+    assert Map.has_key?(headers, "signature")
   end
 
   test "http call return an http error", %{bypass: bypass} do

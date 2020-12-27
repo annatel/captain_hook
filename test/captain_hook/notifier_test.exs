@@ -162,8 +162,8 @@ defmodule CaptainHook.NotifierTest do
                })
 
       assert webhook_conversation.status == WebhookConversation.status().success
-      assert Map.has_key?(webhook_conversation.request_headers, "Signature")
-      assert Map.get(webhook_conversation.request_headers, "Key") == "value"
+      assert Map.has_key?(webhook_conversation.request_headers, "signature")
+      assert Map.get(webhook_conversation.request_headers, "key") == "value"
     end
 
     test "when the webhook does not have a webhook_endpoint_secret, http_client is called with secrets: nil",

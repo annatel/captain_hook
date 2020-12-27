@@ -21,15 +21,15 @@ defmodule CaptainHook.Clients.HttpClient do
 
     headers =
       headers
-      |> Recase.Enumerable.convert_keys(&Recase.to_header/1)
-      |> Map.put("Content-Type", "application/json")
-      |> Map.put_new("User-Agent", "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)")
+      |> Recase.Enumerable.convert_keys(&Recase.to_kebab/1)
+      |> Map.put("content-type", "application/json")
+      |> Map.put_new("user-agent", "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)")
 
     headers =
       if secrets,
         do:
           headers
-          |> Map.put("Signature", Signature.sign(encoded_body, DateTime.to_unix(now), secrets)),
+          |> Map.put("signature", Signature.sign(encoded_body, DateTime.to_unix(now), secrets)),
         else: headers
 
     finch_instance_name =
