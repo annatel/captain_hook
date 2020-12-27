@@ -3,7 +3,7 @@ defmodule CaptainHook.Behaviour do
   alias CaptainHook.WebhookNotifications.WebhookNotification
   alias CaptainHook.WebhoookConversations.WebhookConversation
 
-  @callback notify(binary, boolean, binary, map, keyword) ::
+  @callback notify(binary | [binary], boolean, binary, map, keyword) ::
               {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
 
   @callback send_webhook_notification(WebhookEndpoint.t(), WebhookNotification.t()) ::

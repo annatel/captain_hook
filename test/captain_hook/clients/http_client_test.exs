@@ -58,7 +58,7 @@ defmodule CaptainHook.Clients.HttpClientTest do
     body = %{}
     encoded_body = Jason.encode!(body)
     secret = "secret"
-    signature = CaptainHook.Signature.sign(encoded_body, System.system_time(:second), secret)
+    signature = CaptainHookSignature.sign(encoded_body, System.system_time(:second), secret)
 
     Bypass.expect_once(bypass, "POST", "/", fn conn ->
       assert signature == conn.req_headers |> Enum.into(%{}) |> Map.get("signature")

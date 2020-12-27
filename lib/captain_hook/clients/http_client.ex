@@ -4,7 +4,6 @@ defmodule CaptainHook.Clients.HttpClient do
   require Logger
 
   alias CaptainHook.Clients.Response
-  alias CaptainHook.Signature
 
   @pool_timeout 5_000
   @receive_timeout 15_000
@@ -29,7 +28,10 @@ defmodule CaptainHook.Clients.HttpClient do
       if secrets,
         do:
           headers
-          |> Map.put("signature", Signature.sign(encoded_body, DateTime.to_unix(now), secrets)),
+          |> Map.put(
+            "signature",
+            CaptainHookSignature.sign(encoded_body, DateTime.to_unix(now), secrets)
+          ),
         else: headers
 
     finch_instance_name =

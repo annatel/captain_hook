@@ -14,35 +14,68 @@ defmodule CaptainHook.Notifier do
   alias CaptainHook.WebhookConversations
   alias CaptainHook.WebhookConversations.WebhookConversation
 
-  @spec notify(binary, boolean, binary, map, keyword) ::
+  @spec notify(binary | [binary], boolean, binary, map, keyword) ::
           {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
   def notify(webhook, livemode?, notification_type, data, opts \\ [])
-      when is_binary(webhook) and is_boolean(livemode?) and is_binary(notification_type) and
+      when is_boolean(livemode?) and is_binary(notification_type) and
              is_map(data) and is_list(opts) do
     utc_now = DateTime.utc_now()
+    webhooks = webhook |> List.wrap() |> Enum.uniq()
 
+    webhooks
+    |> Enum.reduce(Multi.new(), fn webhook, acc ->
+      acc
+      |> notify_webhook_multi(webhook, livemode?, notification_type, data, utc_now, opts)
+    end)
+    |> CaptainHook.repo().transaction()
+    |> case do
+      {:ok, changes} ->
+        CaptainHook.Queue.send_poll()
+
+        webhooks
+        |> Enum.map(&Map.fetch!(changes, :"webhook_notification_#{&1}"))
+        |> case do
+          [webhook_notification] -> {:ok, webhook_notification}
+          webhook_notifications -> {:ok, webhook_notifications}
+        end
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  defp notify_webhook_multi(
+         %Ecto.Multi{} = multi,
+         webhook,
+         livemode?,
+         notification_type,
+         data,
+         %DateTime{} = created_at,
+         opts
+       )
+       when is_binary(webhook) do
     webhook_endpoints =
       WebhookEndpoints.list_webhook_endpoints(
-        filters: [webhook: webhook, livemode: livemode?, ongoing_at: utc_now]
+        filters: [webhook: webhook, livemode: livemode?, ongoing_at: created_at]
       )
 
-    webhook_result_handler =
-      Keyword.get(opts, :webhook_result_handler)
-      |> to_string_unless_nil()
+    webhook_result_handler = Keyword.get(opts, :webhook_result_handler) |> stringify()
 
-    Multi.new()
-    |> Multi.run(:webhook_notification, fn _repo, %{} ->
+    multi
+    |> Multi.run(:"webhook_notification_#{webhook}", fn _repo, %{} ->
       WebhookNotifications.create_webhook_notification(%{
-        created_at: utc_now,
+        created_at: created_at,
         data: data,
         livemode: livemode?,
-        resource_id: Keyword.get(opts, :resource_id) |> to_string_unless_nil(),
-        resource_type: Keyword.get(opts, :resource_type) |> to_string_unless_nil(),
+        resource_id: Keyword.get(opts, :resource_id) |> stringify(),
+        resource_type: Keyword.get(opts, :resource_type) |> stringify(),
         type: notification_type,
         webhook: webhook
       })
     end)
-    |> Multi.merge(fn %{webhook_notification: webhook_notification} ->
+    |> Multi.merge(fn changes ->
+      webhook_notification = Map.fetch!(changes, :"webhook_notification_#{webhook}")
+
       webhook_endpoints
       |> Enum.reduce(Multi.new(), fn webhook_endpoint, acc ->
         acc
@@ -51,15 +84,6 @@ defmodule CaptainHook.Notifier do
         end)
       end)
     end)
-    |> CaptainHook.repo().transaction()
-    |> case do
-      {:ok, %{webhook_notification: %WebhookNotification{} = webhook_notification}} ->
-        CaptainHook.Queue.send_poll()
-        {:ok, webhook_notification}
-
-      {:error, :webhook_notification, changeset, _} ->
-        {:error, changeset}
-    end
   end
 
   defp enqueue_notify_endpoint!(
@@ -208,6 +232,6 @@ defmodule CaptainHook.Notifier do
     end
   end
 
-  defp to_string_unless_nil(nil), do: nil
-  defp to_string_unless_nil(value), do: to_string(value)
+  defp stringify(nil), do: nil
+  defp stringify(value), do: to_string(value)
 end
