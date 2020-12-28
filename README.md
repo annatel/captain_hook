@@ -12,7 +12,7 @@ The package can be installed by adding `captain_hook` to your list of dependenci
 ```elixir
 def deps do
   [
-    {:captain_hook, "~> 1.4.0"}
+    {:captain_hook, "~> 1.5.0"}
   ]
 end
 ```
@@ -37,6 +37,7 @@ defmodule MyApp.Repo.Migrations.AddCaptainHookV2Tables do
 
   def up do
     CaptainHook.Migrations.V2.up()
+    CaptainHook.Migrations.V2Data.up()
   end
 
   def down do

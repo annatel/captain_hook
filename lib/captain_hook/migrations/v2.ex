@@ -37,7 +37,7 @@ defmodule CaptainHook.Migrations.V2 do
 
     create(index(:captain_hook_webhook_endpoints, [:livemode]))
 
-    execute("UPDATE captain_hook_webhook_endpoints SET livemode = 1")
+    # execute("UPDATE captain_hook_webhook_endpoints SET livemode = 1")
   end
 
   defp alter_table_webhook_endpoints_remove_metada_column() do
@@ -55,15 +55,11 @@ defmodule CaptainHook.Migrations.V2 do
     end
 
     create(index(:captain_hook_sequences, [:webhook_conversations]))
-    flush()
-    seed_captain_hook_sequence()
-  end
 
-  defp seed_captain_hook_sequence() do
     utc_now = DateTime.utc_now() |> DateTime.to_naive()
 
     execute(
-      "INSERT into captain_hook_sequences(`webhook_conversations`, `webhook_notifications`, `inserted_at`, `updated_at`) VALUE (0, 0, '#{
+      "INSERT INTO captain_hook_sequences(`webhook_conversations`, `webhook_notifications`, `inserted_at`, `updated_at`) VALUE (0, 0, '#{
         utc_now
       }', '#{utc_now}');"
     )
@@ -210,32 +206,6 @@ defmodule CaptainHook.Migrations.V2 do
     create(index(:captain_hook_webhook_endpoint_secrets, [:is_main]))
     create(index(:captain_hook_webhook_endpoint_secrets, [:started_at]))
     create(index(:captain_hook_webhook_endpoint_secrets, [:ended_at]))
-    flush()
-    seed_webhook_endpoint_secrets_for_each_webhook_endpoint()
-  end
-
-  defp seed_webhook_endpoint_secrets_for_each_webhook_endpoint() do
-    %{rows: rows} =
-      repo().query!(
-        "SELECT id, started_at FROM captain_hook_webhook_endpoints ORDER BY inserted_at ASC"
-      )
-
-    rows
-    |> Enum.each(fn [webhook_endpoint_id, started_at] ->
-      started_at = DateTime.from_naive!(started_at, "Etc/UTC")
-
-      webhook_endpoint_id =
-        Ecto.UUID.cast!(webhook_endpoint_id) |> String.replace("-", "") |> String.upcase()
-
-      secret = CaptainHook.WebhookEndpoints.Secrets.generate_secret()
-      now = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_naive()
-
-      execute(
-        "INSERT INTO captain_hook_webhook_endpoint_secrets(webhook_endpoint_id, started_at, is_main, secrect, inserted_at, updated_at) VALUES ('#{
-          webhook_endpoint_id
-        }', '#{started_at}', 1, '#{secret}', '#{now}', '#{now}')"
-      )
-    end)
   end
 
   defp create_webhook_endpoint_enabled_notification_types_table do
