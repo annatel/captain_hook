@@ -1,9 +1,5 @@
 import Config
 
-config :captain_hook, CaptainHook.Queue,
-  poll_interval: 60 * 1_000,
-  repoll_after_job_performed?: true
-
 if(Mix.env() == :test) do
   config :logger, level: System.get_env("EX_LOG_LEVEL", "warn") |> String.to_atom()
 

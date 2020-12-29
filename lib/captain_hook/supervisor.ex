@@ -3,14 +3,18 @@ defmodule CaptainHook.Supervisor do
 
   use Supervisor
 
+  @default_poll_interval 60 * 1_000
+
   def start_link(opts) when is_list(opts) do
     Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @impl true
-  def init(_opts) do
+  def init(opts) do
+    poll_interval = Keyword.get(opts, :poll_interval, @default_poll_interval)
+
     children = [
-      CaptainHook.Queue,
+      {CaptainHook.Queue, [poll_interval: poll_interval]},
       %{
         id: CaptainHookFinch,
         start: {Finch, :start_link, [[name: CaptainHookFinch]]}
