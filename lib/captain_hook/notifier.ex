@@ -207,13 +207,14 @@ defmodule CaptainHook.Notifier do
   end
 
   defp build_body(
-         %WebhookEndpoint{livemode: livemode?},
+         %WebhookEndpoint{id: webhook_endpoint_id, livemode: livemode?},
          %WebhookNotification{} = webhook_notification
        ) do
     %{
       id: webhook_notification.id,
       type: webhook_notification.type,
       livemode: livemode?,
+      endpoint_id: webhook_endpoint_id,
       data: webhook_notification.data
     }
   end

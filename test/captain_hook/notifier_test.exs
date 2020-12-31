@@ -211,6 +211,7 @@ defmodule CaptainHook.NotifierTest do
                  id: webhook_notification.id,
                  type: webhook_notification.type,
                  livemode: webhook_endpoint.livemode,
+                 endpoint_id: webhook_endpoint.id,
                  data: webhook_notification.data
                })
 
