@@ -96,8 +96,7 @@ defmodule CaptainHook.WebhookEndpoints do
   @spec roll_webhook_endpoint_secret(WebhookEndpoint.t(), DateTime.t()) ::
           {:ok, Secrets.WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
   defdelegate roll_webhook_endpoint_secret(webhook_endpoint, expires_at \\ DateTime.utc_now()),
-    to: Secrets,
-    as: :roll
+    to: Secrets
 
   @spec enable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
           {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}

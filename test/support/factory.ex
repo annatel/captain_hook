@@ -15,6 +15,10 @@ defmodule CaptainHook.Factory do
     DateTime.utc_now() |> DateTime.truncate(:second)
   end
 
+  def add(%DateTime{} = datetime, amount_to_add) do
+    datetime |> DateTime.add(amount_to_add, :second)
+  end
+
   def params_for(%_{} = schema) when is_map(schema) do
     schema
     |> AntlUtilsEcto.map_from_struct()

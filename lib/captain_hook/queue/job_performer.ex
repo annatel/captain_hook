@@ -1,9 +1,9 @@
-defmodule CaptainHook.Queue.JobPerformer do
+defmodule CaptainHook.Queuetopia.Performer do
   @moduledoc false
 
-  @behaviour Queuetopia.Jobs.Performer
+  @behaviour Queuetopia.Performer
 
-  alias Queuetopia.Jobs.Job
+  alias Queuetopia.Queue.Job
   alias CaptainHook.Notifier
 
   @impl true

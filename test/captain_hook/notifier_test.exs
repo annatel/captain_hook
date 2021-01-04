@@ -16,7 +16,7 @@ defmodule CaptainHook.NotifierTest do
       assert {:ok, %WebhookNotification{}} =
                Notifier.notify("webhook", true, "notification_type", %{})
 
-      # Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queue)
+      Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queuetopia)
     end
 
     test "when no ongoing webhook_endpoints exists for the webhook, creates a webhook_notification without enqueuing it" do
@@ -25,7 +25,7 @@ defmodule CaptainHook.NotifierTest do
       assert {:ok, %WebhookNotification{}} =
                Notifier.notify(webhook_endpoint.webhook, true, "notification_type", %{})
 
-      # Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queue)
+      Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queuetopia)
     end
 
     test "support notifying multiple webhooks the same notification, creates a webhook_notification for each webhook" do
@@ -34,7 +34,8 @@ defmodule CaptainHook.NotifierTest do
 
       assert webhook_notifications |> Enum.map(& &1.webhook) |> Enum.member?("webhook1")
       assert webhook_notifications |> Enum.map(& &1.webhook) |> Enum.member?("webhook2")
-      # Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queue)
+
+      Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queuetopia)
     end
 
     test "when the webhhok has one webhook_endpoint, creates a webhook_notification and enqueue it" do
@@ -44,7 +45,7 @@ defmodule CaptainHook.NotifierTest do
                Notifier.notify(webhook_endpoint.webhook, true, "notification_type", %{})
 
       Queuetopia.Test.Assertions.assert_job_created(
-        CaptainHook.Queue,
+        CaptainHook.Queuetopia,
         "#{webhook_endpoint.webhook}_#{webhook_endpoint.id}",
         %{
           params: %{
@@ -65,7 +66,7 @@ defmodule CaptainHook.NotifierTest do
                Notifier.notify(webhook, true, "notification_type", %{})
 
       Queuetopia.Test.Assertions.assert_job_created(
-        CaptainHook.Queue,
+        CaptainHook.Queuetopia,
         "#{webhook_endpoint_1.webhook}_#{webhook_endpoint_1.id}",
         %{
           params: %{
@@ -77,7 +78,7 @@ defmodule CaptainHook.NotifierTest do
       )
 
       Queuetopia.Test.Assertions.assert_job_created(
-        CaptainHook.Queue,
+        CaptainHook.Queuetopia,
         "#{webhook_endpoint_2.webhook}_#{webhook_endpoint_2.id}",
         %{
           params: %{
@@ -108,7 +109,7 @@ defmodule CaptainHook.NotifierTest do
         webhook_notifications |> Enum.filter(&(&1.webhook == webhook_endpoint_2.webhook))
 
       Queuetopia.Test.Assertions.assert_job_created(
-        CaptainHook.Queue,
+        CaptainHook.Queuetopia,
         "#{webhook_endpoint_1.webhook}_#{webhook_endpoint_1.id}",
         %{
           params: %{
@@ -120,7 +121,7 @@ defmodule CaptainHook.NotifierTest do
       )
 
       Queuetopia.Test.Assertions.assert_job_created(
-        CaptainHook.Queue,
+        CaptainHook.Queuetopia,
         "#{webhook_endpoint_2.webhook}_#{webhook_endpoint_2.id}",
         %{
           params: %{
@@ -141,7 +142,7 @@ defmodule CaptainHook.NotifierTest do
                )
 
       Queuetopia.Test.Assertions.assert_job_created(
-        CaptainHook.Queue,
+        CaptainHook.Queuetopia,
         "#{webhook_endpoint.webhook}_#{webhook_endpoint.id}",
         %{
           params: %{

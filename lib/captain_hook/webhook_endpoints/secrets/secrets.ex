@@ -10,8 +10,6 @@ defmodule CaptainHook.WebhookEndpoints.Secrets do
 
   @secret_length 32
   @secret_prefix "whsec"
-  @one_day_in_seconds 24 * 3600
-  @buffer_time_in_seconds 100
 
   @spec list_webhook_endpoint_secrets(WebhookEndpoint.t()) :: [WebhookEndpointSecret.t()]
   def list_webhook_endpoint_secrets(%WebhookEndpoint{} = webhook_endpoint) do
@@ -48,13 +46,12 @@ defmodule CaptainHook.WebhookEndpoints.Secrets do
       ) do
     webhook_secret
     |> WebhookEndpointSecret.remove_changeset(%{is_main: false, ended_at: ended_at})
-    |> validate_remove_changes()
     |> CaptainHook.repo().update()
   end
 
-  @spec roll(WebhookEndpoint.t(), DateTime.t()) ::
+  @spec roll_webhook_endpoint_secret(WebhookEndpoint.t(), DateTime.t()) ::
           {:ok, WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
-  def roll(
+  def roll_webhook_endpoint_secret(
         %WebhookEndpoint{} = webhook_endpoint,
         %DateTime{} = expires_at \\ DateTime.utc_now()
       ) do
@@ -119,30 +116,12 @@ defmodule CaptainHook.WebhookEndpoints.Secrets do
     end)
   end
 
-  defp validate_remove_changes(%Ecto.Changeset{valid?: false} = changeset), do: changeset
-
-  defp validate_remove_changes(%Ecto.Changeset{} = changeset) do
-    changeset
-    |> validate_not_ends_after_the_next_day()
-  end
-
   defp validate_uniq_main_webhook_secret(%Ecto.Changeset{} = changeset) do
     webhook_endpoint_id = fetch_field!(changeset, :webhook_endpoint_id)
     started_at = fetch_field!(changeset, :started_at)
 
     if has_main_webhook_endpoint_secret_ongoing?(webhook_endpoint_id, started_at) do
       changeset |> add_error(:is_main, "already exists")
-    else
-      changeset
-    end
-  end
-
-  defp validate_not_ends_after_the_next_day(%Ecto.Changeset{} = changeset) do
-    ended_at = fetch_field!(changeset, :ended_at)
-    utc_now = DateTime.utc_now()
-
-    if DateTime.diff(ended_at, utc_now) > @one_day_in_seconds + @buffer_time_in_seconds do
-      changeset |> add_error(:ended_at, "must be in the next 24 hours")
     else
       changeset
     end

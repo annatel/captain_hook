@@ -13,5 +13,5 @@ if(Mix.env() == :test) do
   config :captain_hook,
     repo: CaptainHook.TestRepo
 
-  config :captain_hook, CaptainHook.Queue, disable?: true
+  config :captain_hook, CaptainHook.Queuetopia, disable?: true
 end
