@@ -89,6 +89,22 @@ defmodule CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecretTest do
       refute :new_key in changes_keys
     end
 
+    test "when params are valid, return a valid changeset" do
+      webhook_endpoint = insert!(:webhook_endpoint)
+
+      webhook_endpoint_secret =
+        insert!(:webhook_endpoint_secret,
+          webhook_endpoint_id: webhook_endpoint.id,
+          started_at: @datetime_1
+        )
+
+      changeset =
+        WebhookEndpointSecret.remove_changeset(webhook_endpoint_secret, %{ended_at: @datetime_2})
+
+      assert changeset.valid?
+      assert get_field(changeset, :ended_at) == @datetime_2
+    end
+
     test "when required params are missing, returns an invalid changeset" do
       webhook_endpoint = insert!(:webhook_endpoint)
 
@@ -99,7 +115,8 @@ defmodule CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecretTest do
 
       refute changeset.valid?
       assert %{is_main: ["can't be blank"]} = errors_on(changeset)
-      assert %{ended_at: ["can't be blank"]} = errors_on(changeset)
+      assert %{ended_at: errors} = errors_on(changeset)
+      assert "can't be blank" in errors
     end
 
     test "when params are invalid, returns an invalid changeset" do
@@ -119,20 +136,32 @@ defmodule CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecretTest do
       assert %{ended_at: ["should be after or equal to started_at"]} = errors_on(changeset)
     end
 
-    test "when params are valid, return a valid changeset" do
+    test "when ended_at is after the max expiration time, returns a changeset error" do
       webhook_endpoint = insert!(:webhook_endpoint)
 
       webhook_endpoint_secret =
         insert!(:webhook_endpoint_secret,
           webhook_endpoint_id: webhook_endpoint.id,
-          started_at: @datetime_1
+          started_at: utc_now()
         )
 
-      changeset =
-        WebhookEndpointSecret.remove_changeset(webhook_endpoint_secret, %{ended_at: @datetime_2})
+      max_expiration_time = utc_now() |> add(7 * 24 * 3600 + 100)
 
-      assert changeset.valid?
-      assert get_field(changeset, :ended_at) == @datetime_2
+      over_max_expiration_time = max_expiration_time |> add(100)
+
+      webhook_endpoint_secret_params =
+        build(:webhook_endpoint_secret, ended_at: over_max_expiration_time) |> params_for()
+
+      changeset =
+        WebhookEndpointSecret.remove_changeset(
+          webhook_endpoint_secret,
+          webhook_endpoint_secret_params
+        )
+
+      refute changeset.valid?
+
+      assert %{ended_at: ["should be before or equal to #{max_expiration_time}"]} ==
+               errors_on(changeset)
     end
   end
 end

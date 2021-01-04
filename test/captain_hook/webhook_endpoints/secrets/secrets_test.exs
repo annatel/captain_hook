@@ -90,7 +90,7 @@ defmodule CaptainHook.WebhookEndpoint.SecretsTest do
     end
   end
 
-  describe "roll/1" do
+  describe "roll_webhook_endpoint_secret/1" do
     test "when rolling the webhook_endpoint_secret, closes the main webhook_endpoint_secret if exists, creates a new one and return it" do
       webhook_endpoint = insert!(:webhook_endpoint)
 
@@ -100,7 +100,7 @@ defmodule CaptainHook.WebhookEndpoint.SecretsTest do
       rolling_datetime = utc_now() |> DateTime.add(2 * 3600)
 
       assert {:ok, %WebhookEndpointSecret{} = new_webhook_endpoint_secret} =
-               Secrets.roll(webhook_endpoint, rolling_datetime)
+               Secrets.roll_webhook_endpoint_secret(webhook_endpoint, rolling_datetime)
 
       webhook_endpoint_secret = CaptainHook.TestRepo.reload!(webhook_endpoint_secret)
 
@@ -122,13 +122,14 @@ defmodule CaptainHook.WebhookEndpoint.SecretsTest do
     test "when rolling with a ended datetime that is more than 24 hours, return an error tuple with a invalid changeset" do
       webhook_endpoint = insert!(:webhook_endpoint)
       insert!(:webhook_endpoint_secret, webhook_endpoint_id: webhook_endpoint.id)
-      utc_now = utc_now()
 
       assert {:error, %Ecto.Changeset{} = changeset} =
-               Secrets.roll(webhook_endpoint, utc_now |> DateTime.add(25 * 3600))
+               Secrets.roll_webhook_endpoint_secret(
+                 webhook_endpoint,
+                 utc_now() |> add(8 * 24 * 3600)
+               )
 
       refute changeset.valid?
-      assert %{ended_at: ["must be in the next 24 hours"]} = errors_on(changeset)
     end
   end
 
@@ -138,11 +139,6 @@ defmodule CaptainHook.WebhookEndpoint.SecretsTest do
       [prefix, secret] = generated_secret |> String.split("_")
       assert prefix == "whsec"
       assert String.length(secret) == 32
-    end
-
-    test "generated secret contains the prefix separator only once" do
-      generated_secret = Secrets.generate_secret()
-      assert [_prefix, _secret] = generated_secret |> String.split("_")
     end
   end
 end

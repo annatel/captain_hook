@@ -2,7 +2,7 @@ defmodule CaptainHook.Notifier do
   @moduledoc false
 
   alias Ecto.Multi
-  alias CaptainHook.Queue
+  alias CaptainHook.Queuetopia
 
   alias CaptainHook.Clients.HttpClient
   alias CaptainHook.Clients.Response
@@ -30,7 +30,7 @@ defmodule CaptainHook.Notifier do
     |> CaptainHook.repo().transaction()
     |> case do
       {:ok, changes} ->
-        CaptainHook.Queue.send_poll()
+        CaptainHook.Queuetopia.listen(:new_incoming_job)
 
         webhooks
         |> Enum.map(&Map.fetch!(changes, :"webhook_notification_#{&1}"))
@@ -94,7 +94,7 @@ defmodule CaptainHook.Notifier do
     queue_name = "#{webhook_endpoint.webhook}_#{webhook_endpoint.id}"
 
     {:ok, _} =
-      Queue.create_job(queue_name, "notify_endpoint", %{
+      Queuetopia.create_job(queue_name, "notify_endpoint", %{
         webhook_endpoint_id: webhook_endpoint.id,
         webhook_notification_id: webhook_notification.id,
         webhook_result_handler: webhook_result_handler

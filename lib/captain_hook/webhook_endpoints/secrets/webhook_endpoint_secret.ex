@@ -7,6 +7,10 @@ defmodule CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecret do
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.WebhookEndpoints.Secrets
 
+  @one_day_in_seconds 24 * 3600
+  @buffer_time_in_seconds 100
+  @max_expiration_in_days 7
+
   @type t :: %__MODULE__{
           id: integer,
           started_at: DateTime.t(),
@@ -40,10 +44,19 @@ defmodule CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecret do
 
   @spec remove_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def remove_changeset(%__MODULE__{} = webhook_secret, attrs) when is_map(attrs) do
+    max_expired_at =
+      DateTime.utc_now()
+      |> DateTime.add(
+        @max_expiration_in_days * @one_day_in_seconds + @buffer_time_in_seconds,
+        :second
+      )
+      |> DateTime.truncate(:second)
+
     webhook_secret
     |> cast(attrs, [:ended_at, :is_main])
     |> validate_required([:ended_at, :is_main])
     |> AntlUtilsEcto.Changeset.validate_datetime_gte(:ended_at, :started_at)
+    |> AntlUtilsEcto.Changeset.validate_datetime_lte(:ended_at, max_expired_at)
   end
 
   defp put_change_secret(%Ecto.Changeset{} = changeset) do

@@ -14,7 +14,7 @@ defmodule CaptainHook.Supervisor do
     poll_interval = Keyword.get(opts, :poll_interval, @default_poll_interval)
 
     children = [
-      {CaptainHook.Queue, [poll_interval: poll_interval]},
+      {CaptainHook.Queuetopia, [poll_interval: poll_interval]},
       %{
         id: CaptainHookFinch,
         start: {Finch, :start_link, [[name: CaptainHookFinch]]}
