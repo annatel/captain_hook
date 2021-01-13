@@ -12,7 +12,7 @@ The package can be installed by adding `captain_hook` to your list of dependenci
 ```elixir
 def deps do
   [
-    {:captain_hook, "~> 1.7.0"}
+    {:captain_hook, "~> 1.8.0"}
   ]
 end
 ```
@@ -20,28 +20,23 @@ end
 After the packages are installed you must create a database migration for each versionto add the captain_hook tables to your database:
 
 ```elixir
-defmodule MyApp.Repo.Migrations.AddCaptainHookV1Tables do
+defmodule CaptainHook.TestRepo.Migrations.CreateCaptainHookTables do
   use Ecto.Migration
 
   def up do
     CaptainHook.Migrations.V1.up()
-  end
-
-  def down do
-    CaptainHook.Migrations.V1.down()
-  end
-end
-
-defmodule MyApp.Repo.Migrations.AddCaptainHookV2Tables do
-  use Ecto.Migration
-
-  def up do
     CaptainHook.Migrations.V2.up()
+    CaptainHook.Migrations.V3.up()
+    CaptainHook.Migrations.V4.up()
+
     CaptainHook.Migrations.V2Data.up()
   end
 
   def down do
+    CaptainHook.Migrations.V1.down()
     CaptainHook.Migrations.V2.down()
+    CaptainHook.Migrations.V3.down()
+    CaptainHook.Migrations.V4.down()
   end
 end
 ```

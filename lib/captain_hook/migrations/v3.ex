@@ -8,5 +8,6 @@ defmodule CaptainHook.Migrations.V3 do
   end
 
   def down do
+    :noop
   end
 end
