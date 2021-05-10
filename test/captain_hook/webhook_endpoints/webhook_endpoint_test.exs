@@ -9,7 +9,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
 
   describe "create_changeset/2" do
     test "only permitted_keys are casted" do
-      webhook_endpoint_params = params_for(:webhook_endpoint, allow_insecure: true)
+      webhook_endpoint_params = params_for(:webhook_endpoint, is_insecure_allowed: true)
 
       changeset =
         WebhookEndpoint.create_changeset(
@@ -22,7 +22,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       assert :webhook in changes_keys
       assert :started_at in changes_keys
       assert :livemode in changes_keys
-      assert :allow_insecure in changes_keys
+      assert :is_insecure_allowed in changes_keys
       assert :enabled_notification_types in changes_keys
       assert :headers in changes_keys
       assert :url in changes_keys
@@ -43,7 +43,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
     test "when params are valid, return a valid changeset" do
       %{enabled_notification_types: [enabled_notification_type]} =
         webhook_endpoint_params =
-        params_for(:webhook_endpoint, started_at: @datetime_1, allow_insecure: true)
+        params_for(:webhook_endpoint, started_at: @datetime_1, is_insecure_allowed: true)
 
       changeset = WebhookEndpoint.create_changeset(%WebhookEndpoint{}, webhook_endpoint_params)
 
@@ -51,7 +51,9 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       assert get_field(changeset, :webhook) == webhook_endpoint_params.webhook
       assert get_field(changeset, :started_at) == @datetime_1
       assert get_field(changeset, :livemode) == webhook_endpoint_params.livemode
-      assert get_field(changeset, :allow_insecure) == webhook_endpoint_params.allow_insecure
+
+      assert get_field(changeset, :is_insecure_allowed) ==
+               webhook_endpoint_params.is_insecure_allowed
 
       assert Map.get(hd(get_field(changeset, :enabled_notification_types)), :name) ==
                Map.get(enabled_notification_type, :name)
@@ -69,7 +71,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
         params_for(:webhook_endpoint,
           started_at: @datetime_1,
           ended_at: @datetime_2,
-          allow_insecure: true,
+          is_insecure_allowed: true,
           headers: %{"Authorization" => "Basic bG9naW46cGFzc3dvcmQ="}
         )
 
@@ -84,7 +86,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       refute :webhook in changes_keys
       refute :livemode in changes_keys
       refute :started_at in changes_keys
-      assert :allow_insecure in changes_keys
+      assert :is_insecure_allowed in changes_keys
       assert :headers in changes_keys
       assert :url in changes_keys
       refute :ended_at in changes_keys
@@ -99,13 +101,13 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
 
       changeset =
         WebhookEndpoint.update_changeset(webhook_endpoint, %{
-          allow_insecure: true,
+          is_insecure_allowed: true,
           headers: new_headers,
           url: new_url
         })
 
       assert changeset.valid?
-      assert get_field(changeset, :allow_insecure) == true
+      assert get_field(changeset, :is_insecure_allowed) == true
       assert get_field(changeset, :headers) == new_headers
       assert get_field(changeset, :url) == new_url
     end
@@ -132,7 +134,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       refute :webhook in changes_keys
       refute :livemode in changes_keys
       refute :started_at in changes_keys
-      refute :allow_insecure in changes_keys
+      refute :is_insecure_allowed in changes_keys
       refute :headers in changes_keys
       refute :url in changes_keys
       assert :ended_at in changes_keys

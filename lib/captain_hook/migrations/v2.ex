@@ -22,8 +22,8 @@ defmodule CaptainHook.Migrations.V2 do
 
     drop_sequences_table()
 
-    drop_webhook_notifications_table()
     drop_webhook_conversations_table()
+    drop_webhook_notifications_table()
     rename_old_webhook_conversations_to_webhook_conversations()
 
     drop_webhook_endpoint_secrets_table()
@@ -249,15 +249,29 @@ defmodule CaptainHook.Migrations.V2 do
   end
 
   defp drop_webhook_notifications_table do
+    # execute(
+    #   "ALTER TABLE captain_hook_webhook_notifications DROP INDEX captain_hook_webhook_conversations_webhook_notification_id_fkey;"
+    # )
+
     drop(table(:captain_hook_webhook_notifications))
   end
 
   defp drop_webhook_conversations_table() do
+    execute("SET FOREIGN_KEY_CHECKS=0;")
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_conversations DROP FOREIGN KEY captain_hook_webhook_conversations_webhook_notification_id_fkey;"
+    )
+
     drop(table(:captain_hook_webhook_conversations))
+
+    execute("SET FOREIGN_KEY_CHECKS=1;")
   end
 
   defp rename_old_webhook_conversations_to_webhook_conversations() do
-    rename(table(:old_webhook_conversations), to: table(:webhook_conversations))
+    rename(table(:captain_hook_old_webhook_conversations),
+      to: table(:captain_hook_webhook_conversations)
+    )
   end
 
   defp drop_webhook_endpoint_secrets_table do

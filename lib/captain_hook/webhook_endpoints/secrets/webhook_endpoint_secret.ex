@@ -12,13 +12,14 @@ defmodule CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecret do
   @max_expiration_in_days 7
 
   @type t :: %__MODULE__{
-          id: integer,
-          started_at: DateTime.t(),
           ended_at: DateTime.t() | nil,
+          id: integer,
           is_main: boolean,
           secret: binary,
+          started_at: DateTime.t(),
           inserted_at: DateTime.t(),
-          updated_at: DateTime.t()
+          updated_at: DateTime.t(),
+          webhook_endpoint_id: binary
         }
 
   schema "captain_hook_webhook_endpoint_secrets" do
@@ -36,8 +37,8 @@ defmodule CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecret do
   @spec create_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def create_changeset(%__MODULE__{} = webhook_secret, attrs) when is_map(attrs) do
     webhook_secret
-    |> cast(attrs, [:webhook_endpoint_id, :started_at, :is_main])
-    |> validate_required([:webhook_endpoint_id, :started_at, :is_main])
+    |> cast(attrs, [:is_main, :started_at, :webhook_endpoint_id])
+    |> validate_required([:is_main, :started_at, :webhook_endpoint_id])
     |> put_change_secret()
     |> assoc_constraint(:webhook_endpoint)
   end

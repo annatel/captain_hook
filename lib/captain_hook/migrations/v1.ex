@@ -4,15 +4,11 @@ defmodule CaptainHook.Migrations.V1 do
   use Ecto.Migration
 
   def up do
-    Queuetopia.Migrations.V1.up()
-
     create_webhook_endpoints_table()
     create_webhook_conversations_table()
   end
 
   def down do
-    Queuetopia.Migrations.V1.down()
-
     drop_webhook_endpoints_table()
     drop_webhook_conversations_table()
   end
@@ -28,7 +24,7 @@ defmodule CaptainHook.Migrations.V1 do
       add(:url, :string)
       add(:metadata, :map)
       add(:headers, :map)
-      add(:allow_insecure, :boolean)
+      add(:is_insecure_allowed, :boolean)
 
       timestamps()
     end

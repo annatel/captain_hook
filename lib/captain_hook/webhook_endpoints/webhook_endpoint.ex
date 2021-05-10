@@ -5,37 +5,34 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
 
   alias CaptainHook.WebhookEndpoints.EnabledNotificationType
 
-  @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "we"}
-  @foreign_key_type :binary_id
-
   @type t :: %__MODULE__{
-          id: binary,
-          webhook: binary,
-          started_at: DateTime.t(),
-          ended_at: DateTime.t() | nil,
-          livemode: boolean,
-          allow_insecure: boolean,
           enabled_notification_types: [EnabledNotificationType.t()],
+          ended_at: DateTime.t() | nil,
           headers: map | nil,
-          url: binary,
-          secret: binary | nil,
+          id: binary,
           inserted_at: DateTime.t(),
-          updated_at: DateTime.t()
+          is_insecure_allowed: boolean,
+          livemode: boolean,
+          secret: binary | nil,
+          started_at: DateTime.t(),
+          updated_at: DateTime.t(),
+          url: binary,
+          webhook: binary
         }
 
+  @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "we"}
+  @foreign_key_type :binary_id
   schema "captain_hook_webhook_endpoints" do
-    field(:webhook, :string)
-
     field(:started_at, :utc_datetime)
     field(:ended_at, :utc_datetime)
 
-    field(:livemode, :boolean)
-
-    field(:allow_insecure, :boolean, default: false)
     has_many(:enabled_notification_types, EnabledNotificationType, on_replace: :delete)
     field(:headers, :map)
-    field(:url, :string)
+    field(:is_insecure_allowed, :boolean, default: false)
+    field(:livemode, :boolean)
     field(:secret, :string, virtual: true)
+    field(:url, :string)
+    field(:webhook, :string)
 
     timestamps()
   end
@@ -44,8 +41,16 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   @spec create_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def create_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
-    |> cast(attrs, [:webhook, :started_at, :livemode, :allow_insecure, :headers, :url])
-    |> validate_required([:webhook, :livemode, :started_at, :url])
+    |> cast(attrs, [
+      :started_at,
+      :headers,
+      :is_insecure_allowed,
+      :livemode,
+      :secret,
+      :url,
+      :webhook
+    ])
+    |> validate_required([:started_at, :livemode, :url, :webhook])
     |> cast_assoc(:enabled_notification_types)
   end
 
@@ -53,7 +58,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   @spec update_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def update_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
-    |> cast(attrs, [:allow_insecure, :headers, :url])
+    |> cast(attrs, [:headers, :is_insecure_allowed, :url])
     |> cast_assoc(:enabled_notification_types)
   end
 

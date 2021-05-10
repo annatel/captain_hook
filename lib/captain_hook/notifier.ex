@@ -30,7 +30,7 @@ defmodule CaptainHook.Notifier do
     |> CaptainHook.repo().transaction()
     |> case do
       {:ok, changes} ->
-        CaptainHook.Queuetopia.listen(:new_incoming_job)
+        CaptainHook.Queuetopia.handle_event(:new_incoming_job)
 
         webhooks
         |> Enum.map(&Map.fetch!(changes, :"webhook_notification_#{&1}"))
@@ -150,13 +150,13 @@ defmodule CaptainHook.Notifier do
         %WebhookNotification{webhook: webhook_of_webhook_notification} = webhook_notification
       )
       when webhook_of_webhook_endpoint == webhook_of_webhook_notification do
-    %{url: url, allow_insecure: allow_insecure} = webhook_endpoint
+    %{url: url, is_insecure_allowed: is_insecure_allowed} = webhook_endpoint
 
     headers = webhook_endpoint |> build_headers()
     body = webhook_endpoint |> build_body(webhook_notification)
     secrets = webhook_endpoint |> build_secrets()
 
-    HttpClient.call(url, body, headers, secrets: secrets, allow_insecure: allow_insecure)
+    HttpClient.call(url, body, headers, secrets: secrets, is_insecure_allowed: is_insecure_allowed)
     |> to_webhook_conversation_attrs(webhook_endpoint, webhook_notification)
     |> WebhookConversations.create_webhook_conversation()
   end

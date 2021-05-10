@@ -12,7 +12,7 @@ defmodule CaptainHook.Clients.HttpClient do
   def call(url, body, headers, opts \\ [])
       when is_binary(url) and is_map(body) and is_map(headers) do
     secrets = Keyword.get(opts, :secrets)
-    allow_insecure = Keyword.get(opts, :allow_insecure)
+    is_insecure_allowed = Keyword.get(opts, :is_insecure_allowed)
 
     encoded_body = Jason.encode!(body)
 
@@ -35,7 +35,7 @@ defmodule CaptainHook.Clients.HttpClient do
         else: headers
 
     finch_instance_name =
-      unless allow_insecure, do: CaptainHookFinch, else: CaptainHookFinchInsecure
+      unless is_insecure_allowed, do: CaptainHookFinch, else: CaptainHookFinchInsecure
 
     response =
       Finch.build(:post, url, Map.to_list(headers), encoded_body)

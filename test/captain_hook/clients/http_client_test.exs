@@ -125,7 +125,7 @@ defmodule CaptainHook.Clients.HttpClientTest do
     assert client_error_message =~ "CLIENT ALERT: Fatal - Certificate Expired"
   end
 
-  test "when allow_insecure is true and the ssl is expired, returns a success Response" do
+  test "when is_insecure_allowed is true and the ssl is expired, returns a success Response" do
     start_supervised!(CaptainHook.Supervisor)
 
     headers = %{}
@@ -138,7 +138,10 @@ defmodule CaptainHook.Clients.HttpClientTest do
              status: 405,
              response_body:
                "<html>\r\n<head><title>405 Not Allowed</title></head>\r\n<body bgcolor=\"white\">\r\n<center><h1>405 Not Allowed</h1></center>\r\n<hr><center>nginx/1.10.3 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n"
-           } = HttpClient.call("https://expired.badssl.com/", body, headers, allow_insecure: true)
+           } =
+             HttpClient.call("https://expired.badssl.com/", body, headers,
+               is_insecure_allowed: true
+             )
   end
 
   defp endpoint_url(port), do: "http://localhost:#{port}/"
