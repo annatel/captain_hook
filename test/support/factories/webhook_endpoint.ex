@@ -8,7 +8,7 @@ defmodule CaptainHook.Factory.WebhookEndpoint do
           webhook: "webhook_#{System.unique_integer()}",
           started_at: utc_now(),
           livemode: true,
-          allow_insecure: false,
+          is_insecure_allowed: false,
           enabled_notification_types: [build(:enabled_notification_type) |> catch_all_events()],
           headers: %{},
           url: "url_#{System.unique_integer()}"

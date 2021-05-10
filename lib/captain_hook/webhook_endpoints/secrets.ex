@@ -80,6 +80,7 @@ defmodule CaptainHook.WebhookEndpoints.Secrets do
   @spec generate_secret() :: binary
   def generate_secret() do
     prefix_separator = "_"
+    unfriendly_chars_to_copy_past = [prefix_separator, "-"]
 
     replacement =
       [?0..?9, ?a..?z, ?A..?Z]
@@ -91,7 +92,7 @@ defmodule CaptainHook.WebhookEndpoints.Secrets do
     secret =
       :crypto.strong_rand_bytes(@secret_length)
       |> Base.url_encode64(padding: false)
-      |> String.replace(prefix_separator, replacement)
+      |> String.replace(unfriendly_chars_to_copy_past, replacement)
       |> binary_part(0, @secret_length)
 
     "#{@secret_prefix}#{prefix_separator}#{secret}"

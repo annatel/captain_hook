@@ -48,7 +48,7 @@ defmodule CaptainHook.WebhookNotifications do
   def create_webhook_notification(attrs) when is_map(attrs) do
     Multi.new()
     |> Multi.run(:sequence, fn _repo, %{} ->
-      {:ok, Sequences.next(:webhook_notifications)}
+      {:ok, Sequences.next_value!(:webhook_notifications)}
     end)
     |> Multi.insert(:webhook_notification, fn %{sequence: sequence} ->
       %WebhookNotification{}

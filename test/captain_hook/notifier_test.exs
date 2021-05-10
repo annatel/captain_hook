@@ -255,7 +255,7 @@ defmodule CaptainHook.NotifierTest do
       refute Map.has_key?(webhook_conversation.request_headers, "Signature")
     end
 
-    test "when allow_insecure is set for the webhook_endpoint, the http_client is called with allow_insecure: true" do
+    test "when is_insecure_allowed is set for the webhook_endpoint, the http_client is called with is_insecure_allowed: true" do
       start_supervised(CaptainHook.Supervisor)
 
       webhook = "webhook"
@@ -264,7 +264,7 @@ defmodule CaptainHook.NotifierTest do
         insert!(:webhook_endpoint,
           webhook: webhook,
           url: "https://expired.badssl.com/",
-          allow_insecure: true
+          is_insecure_allowed: true
         )
 
       webhook_notification = insert!(:webhook_notification, webhook: webhook)

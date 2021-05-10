@@ -40,7 +40,7 @@ defmodule CaptainHook.WebhookConversations do
   def create_webhook_conversation(attrs) when is_map(attrs) do
     Multi.new()
     |> Multi.run(:sequence, fn _repo, %{} ->
-      {:ok, Sequences.next(:webhook_conversations)}
+      {:ok, Sequences.next_value!(:webhook_conversations)}
     end)
     |> Multi.insert(:webhook_conversation, fn %{sequence: sequence} ->
       %WebhookConversation{}

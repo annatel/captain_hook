@@ -1,4 +1,4 @@
-defmodule CaptainHook.Migrations.V2Data do
+defmodule CaptainHook.Migrations.V2.Data do
   def up do
     CaptainHook.list_webhook_endpoints(includes: [:enabled_notification_types, :secret])
     |> Enum.each(fn webhook_endpoint ->
