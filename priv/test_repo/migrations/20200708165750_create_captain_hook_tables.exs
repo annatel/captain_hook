@@ -1,4 +1,3 @@
-
 defmodule CaptainHook.TestRepo.Migrations.CreateCaptainHookTables do
   use Ecto.Migration
 
@@ -12,7 +11,7 @@ defmodule CaptainHook.TestRepo.Migrations.CreateCaptainHookTables do
     CaptainHook.Migrations.V3.CaptainHook.up()
     CaptainHook.Migrations.V3.Queuetopia.up()
 
-    CaptainHook.Migrations.V2.CaptainHook.Data.up()
+    # CaptainHook.Migrations.V2.CaptainHook.Data.up()
   end
 
   def down do

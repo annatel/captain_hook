@@ -8,13 +8,10 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
   alias CaptainHook.WebhookNotifications.WebhookNotification
 
   @type t :: %__MODULE__{
-          id: binary,
-          webhook_endpoint_id: binary,
-          webhook_endpoint: WebhookEndpoint.t(),
-          webhook_notification_id: binary,
-          webhook_notification: WebhookNotification.t(),
           client_error_message: binary,
           http_status: integer,
+          id: binary,
+          inserted_at: DateTime.t(),
           request_body: binary,
           request_headers: map,
           request_url: binary,
@@ -22,7 +19,10 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
           response_body: binary,
           sequence: integer,
           status: binary,
-          inserted_at: DateTime.t()
+          webhook_endpoint_id: binary,
+          webhook_endpoint: WebhookEndpoint.t() | nil,
+          webhook_notification_id: binary,
+          webhook_notification: WebhookNotification.t() | nil
         }
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wc"}
@@ -52,23 +52,24 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     |> cast(attrs, [
       :webhook_endpoint_id,
       :webhook_notification_id,
-      :sequence,
-      :requested_at,
+      :client_error_message,
+      :http_status,
       :request_url,
       :request_headers,
       :request_body,
-      :http_status,
+      :requested_at,
       :response_body,
-      :client_error_message,
-      :status
+      :sequence,
+      :status,
+      :wrap_data
     ])
     |> validate_required([
       :webhook_endpoint_id,
       :webhook_notification_id,
-      :sequence,
       :requested_at,
       :request_url,
       :request_body,
+      :sequence,
       :status
     ])
     |> validate_inclusion(:status, Map.values(status()))

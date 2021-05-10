@@ -14,4 +14,6 @@ if(Mix.env() == :test) do
     repo: CaptainHook.TestRepo
 
   config :captain_hook, CaptainHook.Queuetopia, disable?: true
+
+  config :queuetopia, use_mysql_adapter?: false
 end

@@ -31,9 +31,7 @@ defmodule CaptainHook.Migrations.V2.CaptainHook do
   end
 
   defp alter_table_webhook_endpoints_add_livemode_column() do
-    execute(
-      "ALTER TABLE captain_hook_webhook_endpoints ADD COLUMN livemode TINYINT(1) NOT NULL AFTER ended_at;"
-    )
+    execute("ALTER TABLE captain_hook_webhook_endpoints ADD COLUMN livemode BOOLEAN NOT NULL;")
 
     create(index(:captain_hook_webhook_endpoints, [:livemode]))
 
@@ -59,7 +57,7 @@ defmodule CaptainHook.Migrations.V2.CaptainHook do
     utc_now = DateTime.utc_now() |> DateTime.to_naive()
 
     execute(
-      "INSERT INTO captain_hook_sequences(`webhook_conversations`, `webhook_notifications`, `inserted_at`, `updated_at`) VALUE (0, 0, '#{
+      "INSERT INTO captain_hook_sequences(webhook_conversations, webhook_notifications, inserted_at, updated_at) VALUES (0, 0, '#{
         utc_now
       }', '#{utc_now}');"
     )

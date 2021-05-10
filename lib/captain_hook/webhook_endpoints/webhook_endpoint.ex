@@ -7,32 +7,30 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   alias CaptainHook.WebhookEndpoints.EnabledNotificationType
 
   @type t :: %__MODULE__{
-          id: binary,
-          webhook: binary,
-          started_at: DateTime.t(),
-          ended_at: DateTime.t() | nil,
-          livemode: boolean,
           allow_insecure: boolean,
           enabled_notification_types: [EnabledNotificationType.t()],
+          ended_at: DateTime.t() | nil,
           headers: map | nil,
-          url: binary,
-          secret: binary | nil,
+          id: binary,
           inserted_at: DateTime.t(),
-          updated_at: DateTime.t()
+          livemode: boolean,
+          secret: binary | nil,
+          started_at: DateTime.t(),
+          updated_at: DateTime.t(),
+          url: binary,
+          webhook: binary
         }
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "we"}
   @foreign_key_type :binary_id
   schema "captain_hook_webhook_endpoints" do
     field(:allow_insecure, :boolean, default: false)
-    field(:api_version, :string)
     has_many(:enabled_notification_types, EnabledNotificationType, on_replace: :delete)
     field(:ended_at, :utc_datetime)
     field(:headers, :map)
     field(:livemode, :boolean)
     field(:secret, :string, virtual: true)
     field(:started_at, :utc_datetime)
-    field(:status, :string)
     field(:url, :string)
     field(:webhook, :string)
 
@@ -48,7 +46,6 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     webhook_endpoint
     |> cast(attrs, [
       :allow_insecure,
-      :api_version,
       :headers,
       :livemode,
       :started_at,

@@ -20,6 +20,8 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
   @foreign_key_type :binary_id
 
   schema "captain_hook_webhook_notifications" do
+    field(:object, :string, default: "webhook_notification")
+
     field(:created_at, :utc_datetime)
     field(:data, :map)
     field(:livemode, :boolean)
@@ -28,6 +30,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
     field(:sequence, :integer)
     field(:type, :string)
     field(:webhook, :string)
+    field(:wrap_data, :boolean, default: true)
 
     timestamps(updated_at: false)
   end
