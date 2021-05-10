@@ -24,24 +24,13 @@ defmodule CaptainHook.TestRepo.Migrations.CreateCaptainHookTables do
   use Ecto.Migration
 
   def up do
-    Queuetopia.Migrations.V1.up()
-    Queuetopia.Migrations.V2.up()
-    Queuetopia.Migrations.V3.up()
-
-    CaptainHook.Migrations.V1.up()
-    CaptainHook.Migrations.V2.up()
-    CaptainHook.Migrations.V2.Data.up()
-    CaptainHook.Migrations.V3.up()
+    Queuetopia.Migrations.up()
+    CaptainHook.Migrations.up()
   end
 
   def down do
-    Queuetopia.Migrations.V1.down()
-    Queuetopia.Migrations.V2.down()
-    Queuetopia.Migrations.V3.down()
-
-    CaptainHook.Migrations.V1.down()
-    CaptainHook.Migrations.V2.down()
-    CaptainHook.Migrations.V3.down()
+    Queuetopia.Migrations.down()
+    CaptainHook.Migrations.down()
   end
 end
 ```
