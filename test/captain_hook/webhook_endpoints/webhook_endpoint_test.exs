@@ -19,7 +19,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
 
       changes_keys = changeset.changes |> Map.keys()
 
-      assert :webhook in changes_keys
+      assert :topic in changes_keys
       assert :started_at in changes_keys
       assert :livemode in changes_keys
       assert :is_insecure_allowed in changes_keys
@@ -34,7 +34,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       changeset = WebhookEndpoint.create_changeset(%WebhookEndpoint{}, %{})
 
       refute changeset.valid?
-      assert %{webhook: ["can't be blank"]} = errors_on(changeset)
+      assert %{topic: ["can't be blank"]} = errors_on(changeset)
       assert %{livemode: ["can't be blank"]} = errors_on(changeset)
       assert %{started_at: ["can't be blank"]} = errors_on(changeset)
       assert %{url: ["can't be blank"]} = errors_on(changeset)
@@ -48,7 +48,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       changeset = WebhookEndpoint.create_changeset(%WebhookEndpoint{}, webhook_endpoint_params)
 
       assert changeset.valid?
-      assert get_field(changeset, :webhook) == webhook_endpoint_params.webhook
+      assert get_field(changeset, :topic) == webhook_endpoint_params.topic
       assert get_field(changeset, :started_at) == @datetime_1
       assert get_field(changeset, :livemode) == webhook_endpoint_params.livemode
 
@@ -83,7 +83,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
 
       changes_keys = changeset.changes |> Map.keys()
 
-      refute :webhook in changes_keys
+      refute :topic in changes_keys
       refute :livemode in changes_keys
       refute :started_at in changes_keys
       assert :is_insecure_allowed in changes_keys
@@ -131,7 +131,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
 
       changes_keys = changeset.changes |> Map.keys()
 
-      refute :webhook in changes_keys
+      refute :topic in changes_keys
       refute :livemode in changes_keys
       refute :started_at in changes_keys
       refute :is_insecure_allowed in changes_keys

@@ -249,10 +249,6 @@ defmodule CaptainHook.Migrations.V2 do
   end
 
   defp drop_webhook_notifications_table do
-    # execute(
-    #   "ALTER TABLE captain_hook_webhook_notifications DROP INDEX captain_hook_webhook_conversations_webhook_notification_id_fkey;"
-    # )
-
     drop(table(:captain_hook_webhook_notifications))
   end
 

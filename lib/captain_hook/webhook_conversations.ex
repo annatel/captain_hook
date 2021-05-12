@@ -55,7 +55,7 @@ defmodule CaptainHook.WebhookConversations do
 
   @spec conversation_succeeded?(WebhookConversation.t()) :: boolean
   def conversation_succeeded?(%WebhookConversation{status: status}) do
-    status == WebhookConversation.status().success
+    status == WebhookConversation.statuses().succeeded
   end
 
   @spec webhook_conversation_queryable(keyword) :: Ecto.Queryable.t()

@@ -11,10 +11,10 @@ defmodule CaptainHook.NotifierTest do
     {:ok, bypass: bypass}
   end
 
-  describe "notify/5" do
+  describe "async_notify/5" do
     test "when no webhook_endpoints exists for the webhook, creates a webhook_notification without enqueuing it" do
       assert {:ok, %WebhookNotification{}} =
-               Notifier.notify("webhook", true, "notification_type", %{})
+               Notifier.async_notify("webhook", true, "notification_type", %{})
 
       Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queuetopia)
     end
@@ -23,14 +23,14 @@ defmodule CaptainHook.NotifierTest do
       webhook_endpoint = insert!(:webhook_endpoint, started_at: utc_now(), ended_at: utc_now())
 
       assert {:ok, %WebhookNotification{}} =
-               Notifier.notify(webhook_endpoint.webhook, true, "notification_type", %{})
+               Notifier.async_notify(webhook_endpoint.webhook, true, "notification_type", %{})
 
       Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queuetopia)
     end
 
     test "support notifying multiple webhooks the same notification, creates a webhook_notification for each webhook" do
       assert {:ok, webhook_notifications} =
-               Notifier.notify(["webhook1", "webhook2"], true, "notification_type", %{})
+               Notifier.async_notify(["webhook1", "webhook2"], true, "notification_type", %{})
 
       assert webhook_notifications |> Enum.map(& &1.webhook) |> Enum.member?("webhook1")
       assert webhook_notifications |> Enum.map(& &1.webhook) |> Enum.member?("webhook2")
@@ -42,7 +42,7 @@ defmodule CaptainHook.NotifierTest do
       webhook_endpoint = insert!(:webhook_endpoint)
 
       assert {:ok, %WebhookNotification{} = webhook_notification} =
-               Notifier.notify(webhook_endpoint.webhook, true, "notification_type", %{})
+               Notifier.async_notify(webhook_endpoint.webhook, true, "notification_type", %{})
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
@@ -63,7 +63,7 @@ defmodule CaptainHook.NotifierTest do
       webhook_endpoint_2 = insert!(:webhook_endpoint, webhook: webhook)
 
       assert {:ok, %WebhookNotification{} = webhook_notification} =
-               Notifier.notify(webhook, true, "notification_type", %{})
+               Notifier.async_notify(webhook, true, "notification_type", %{})
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
@@ -95,7 +95,7 @@ defmodule CaptainHook.NotifierTest do
       webhook_endpoint_2 = insert!(:webhook_endpoint)
 
       assert {:ok, webhook_notifications} =
-               Notifier.notify(
+               Notifier.async_notify(
                  [webhook_endpoint_1.webhook, webhook_endpoint_2.webhook],
                  true,
                  "notification_type",
@@ -137,7 +137,7 @@ defmodule CaptainHook.NotifierTest do
       webhook_endpoint = insert!(:webhook_endpoint)
 
       assert {:ok, %WebhookNotification{} = webhook_notification} =
-               Notifier.notify(webhook_endpoint.webhook, true, "notification_type", %{},
+               Notifier.async_notify(webhook_endpoint.webhook, true, "notification_type", %{},
                  webhook_result_handler: CaptainHook.WebhookResultHandlerMock
                )
 

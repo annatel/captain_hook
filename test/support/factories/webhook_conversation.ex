@@ -13,7 +13,7 @@ defmodule CaptainHook.Factory.WebhookConversation do
           http_status: 200,
           response_body: "response_body_#{System.unique_integer()}",
           client_error_message: "response_body_#{System.unique_integer()}",
-          status: WebhookConversation.status().success
+          status: WebhookConversation.statuses().succeeded
         }
       end
     end

@@ -21,10 +21,6 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationQueryable do
     end)
   end
 
-  defp with_preload(queryable, :webhook_endpoint) do
-    queryable |> preload_webhook_endpoint()
-  end
-
   defp with_preload(queryable, :webhook_notification) do
     queryable |> preload_webhook_notification()
   end
@@ -42,10 +38,6 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationQueryable do
       [webhook_conversation],
       webhook_conversation.webhook_notification_id in subquery(webhook_notification_ids_query)
     )
-  end
-
-  defp preload_webhook_endpoint(queryable) do
-    queryable |> preload(:webhook_endpoint)
   end
 
   defp preload_webhook_notification(queryable) do

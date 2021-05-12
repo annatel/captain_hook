@@ -24,7 +24,7 @@ defmodule CaptainHook.Migrations.V1 do
       add(:url, :string)
       add(:metadata, :map)
       add(:headers, :map)
-      add(:is_insecure_allowed, :boolean)
+      add(:allow_insecure, :boolean)
 
       timestamps()
     end

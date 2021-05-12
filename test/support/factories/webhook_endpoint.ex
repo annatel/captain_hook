@@ -5,7 +5,7 @@ defmodule CaptainHook.Factory.WebhookEndpoint do
     quote do
       def build(:webhook_endpoint) do
         %WebhookEndpoint{
-          webhook: "webhook_#{System.unique_integer()}",
+          topic: "topic_#{System.unique_integer()}",
           started_at: utc_now(),
           livemode: true,
           is_insecure_allowed: false,

@@ -16,8 +16,8 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
           secret: binary | nil,
           started_at: DateTime.t(),
           updated_at: DateTime.t(),
-          url: binary,
-          webhook: binary
+          topic: binary,
+          url: binary
         }
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "we"}
@@ -31,8 +31,8 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     field(:is_insecure_allowed, :boolean, default: false)
     field(:livemode, :boolean)
     field(:secret, :string, virtual: true)
+    field(:topic, :string)
     field(:url, :string)
-    field(:webhook, :string)
 
     timestamps()
   end
@@ -47,10 +47,10 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
       :is_insecure_allowed,
       :livemode,
       :secret,
-      :url,
-      :webhook
+      :topic,
+      :url
     ])
-    |> validate_required([:started_at, :livemode, :url, :webhook])
+    |> validate_required([:started_at, :livemode, :topic, :url])
     |> cast_assoc(:enabled_notification_types)
   end
 

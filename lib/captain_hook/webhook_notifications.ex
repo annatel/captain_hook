@@ -43,6 +43,14 @@ defmodule CaptainHook.WebhookNotifications do
     |> CaptainHook.repo().one!()
   end
 
+  @spec get_webhook_notification_by(keyword, keyword) :: WebhookNotification.t()
+  def get_webhook_notification_by([idempotency_key: idempotency_key], opts \\ []) do
+    opts
+    |> Keyword.put(:filters, idempotency_key: idempotency_key)
+    |> webhook_notification_queryable()
+    |> CaptainHook.repo().one!()
+  end
+
   @spec create_webhook_notification(map()) ::
           {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
   def create_webhook_notification(attrs) when is_map(attrs) do
@@ -65,9 +73,11 @@ defmodule CaptainHook.WebhookNotifications do
   def webhook_notification_queryable(opts \\ []) when is_list(opts) do
     filters = Keyword.get(opts, :filters, [])
     fields = Keyword.get(opts, :fields)
+    includes = Keyword.get(opts, :includes, [])
 
     WebhookNotificationQueryable.queryable()
     |> WebhookNotificationQueryable.select_fields(fields)
     |> WebhookNotificationQueryable.filter(filters)
+    |> WebhookConversationQueryable.with_preloads(includes)
   end
 end

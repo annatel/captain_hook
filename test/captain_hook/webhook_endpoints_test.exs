@@ -28,7 +28,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
       [
         [id: webhook_endpoint.id],
-        [webhook: webhook_endpoint.webhook],
+        [topic: webhook_endpoint.topic],
         [livemode: webhook_endpoint.livemode],
         [ongoing_at: utc_now]
       ]
@@ -38,7 +38,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
       [
         [id: uuid()],
-        [webhook: "webhook"],
+        [topic: "topic"],
         [livemode: !webhook_endpoint.livemode],
         [ended_at: DateTime.add(utc_now, -3600, :second)],
         [scheduled_at: DateTime.add(utc_now, 7200, :second)]
@@ -89,7 +89,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
       webhook_endpoint = WebhookEndpoints.get_webhook_endpoint(webhook_endpoint_factory.id)
       assert %WebhookEndpoints.WebhookEndpoint{} = webhook_endpoint
-      assert webhook_endpoint.webhook == webhook_endpoint_factory.webhook
+      assert webhook_endpoint.topic == webhook_endpoint_factory.topic
       assert webhook_endpoint.id == webhook_endpoint_factory.id
       assert is_nil(webhook_endpoint.secret)
     end
@@ -105,7 +105,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
           includes: [:enabled_notification_types, :secret]
         )
 
-      assert webhook_endpoint.webhook == webhook_endpoint_factory.webhook
+      assert webhook_endpoint.topic == webhook_endpoint_factory.topic
       assert webhook_endpoint.id == webhook_endpoint_factory.id
       assert webhook_endpoint.secret == webhook_secret.secret
 
@@ -152,7 +152,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
       assert {:ok, webhook_endpoint} =
                WebhookEndpoints.create_webhook_endpoint(webhook_endpoint_params)
 
-      assert webhook_endpoint.webhook == webhook_endpoint_params.webhook
+      assert webhook_endpoint.topic == webhook_endpoint_params.topic
       assert webhook_endpoint.started_at == webhook_endpoint_params.started_at
       assert webhook_endpoint.url == webhook_endpoint_params.url
       assert is_nil(webhook_endpoint.ended_at)
