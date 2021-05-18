@@ -22,9 +22,11 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
   schema "captain_hook_webhook_notifications" do
     belongs_to(:webhook_endpoint, WebhookEndpoint, type: Shortcode.Ecto.UUID, prefix: "we")
 
+    field(:attempt, :integer, default: 0)
     field(:created_at, :utc_datetime)
     field(:data, :map)
     field(:idempotency_key, :string)
+    field(:next_retry_at, :utc_datetime)
     field(:resource_id, :string)
     field(:resource_type, :string)
     field(:sequence, :integer)
@@ -35,8 +37,8 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
   end
 
   @doc false
-  @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
-  def changeset(%__MODULE__{} = webhook_notification, attrs) when is_map(attrs) do
+  @spec create_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
+  def create_changeset(%__MODULE__{} = webhook_notification, attrs) when is_map(attrs) do
     webhook_notification
     |> cast(attrs, [
       :created_at,
@@ -49,5 +51,12 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
     ])
     |> validate_required([:created_at, :data, :sequence, :type, :webhook_endpoint_id])
     |> assoc_constraint(:webhook_endpoint)
+  end
+
+  @spec update_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
+  def update_changeset(%__MODULE__{} = webhook_notification, attrs) when is_map(attrs) do
+    webhook_notification
+    |> cast(attrs, [:attempt, :next_retry_at, :succeeded_at])
+    |> validate_required([:attempt])
   end
 end

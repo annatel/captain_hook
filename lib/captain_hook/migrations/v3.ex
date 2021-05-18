@@ -9,6 +9,7 @@ defmodule CaptainHook.Migrations.V3 do
 
     alter_table_webhook_endpoints_rename_webhook_to_topic()
     alter_table_webhook_endpoints_rename_allow_insecure_to_is_insecure_allowed()
+    alter_table_webhook_endpoints_add_is_enabled()
 
     alter_table_webhook_notifications_remove_webhook()
     alter_table_webhook_notifications_remove_livemode()
@@ -16,6 +17,8 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_notifications_add_webhook_endpoint_id()
     alter_table_webhook_notifications_add_succeeded_at()
     alter_table_webhook_notifications_add_idempotency_key()
+    alter_table_webhook_notifications_add_attempt()
+    alter_table_webhook_notifications_next_retry_at()
     alter_table_webhook_notifications_add_updated_at()
 
     alter_table_webhook_notifications_remove_webhook_endpoint_id()
@@ -27,6 +30,7 @@ defmodule CaptainHook.Migrations.V3 do
 
     alter_table_webhook_endpoints_rename_is_insecure_allowed_to_allow_insecure()
     alter_table_webhook_endpoints_rename_topic_to_webhook()
+    alter_table_webhook_endpoints_remove_is_enabled()
 
     alter_table_webhook_notifications_remove_webhook_endpoint()
     alter_table_webhook_notifications_add_webhook()
@@ -34,6 +38,8 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_notifications_remove_succeeded_at()
     alter_table_webhook_notifications_remove_updated_at()
     alter_table_webhook_notifications_remove_idempotency_key()
+    alter_table_webhook_notifications_remove_attempt()
+    alter_table_webhook_notifications_remove_next_retry_at()
 
     alter_table_webhook_conversations_add_webhook_endpoint_id()
   end
@@ -90,6 +96,16 @@ defmodule CaptainHook.Migrations.V3 do
     )
   end
 
+  defp alter_table_webhook_endpoints_add_is_enabled() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints ADD COLUMN is_enabled BOOLEAN NOT NULL AFTER headers"
+    )
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints ADD INDEX captain_hook_webhook_endpoints_is_enabled_index (is_enabled);"
+    )
+  end
+
   defp alter_table_webhook_notifications_remove_webhook() do
     execute(
       "ALTER TABLE captain_hook_webhook_notifications DROP INDEX captain_hook_webhook_notifications_webhook_index;"
@@ -124,6 +140,10 @@ defmodule CaptainHook.Migrations.V3 do
     execute(
       "ALTER TABLE captain_hook_webhook_notifications ADD COLUMN succeeded_at DATETIME NULL AFTER sequence"
     )
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_notifications ADD INDEX captain_hook_webhook_notifications_succeeded_at_index (succeeded_at);"
+    )
   end
 
   defp alter_table_webhook_notifications_add_updated_at() do
@@ -139,6 +159,18 @@ defmodule CaptainHook.Migrations.V3 do
 
     execute(
       "ALTER TABLE captain_hook_webhook_notifications ADD UNIQUE INDEX captain_hook_webhook_notifications_idempotency_key_index (idempotency_key);"
+    )
+  end
+
+  defp alter_table_webhook_notifications_add_attempt do
+    execute(
+      "ALTER TABLE captain_hook_webhook_notifications ADD COLUMN attempt INTEGER NOT NULL AFTER webhook_endpoint_id"
+    )
+  end
+
+  defp alter_table_webhook_notifications_next_retry_at do
+    execute(
+      "ALTER TABLE captain_hook_webhook_notifications ADD COLUMN next_retry_at DATETIME NULL AFTER idempotency_key"
     )
   end
 
@@ -174,6 +206,12 @@ defmodule CaptainHook.Migrations.V3 do
     execute(
       "ALTER TABLE captain_hook_webhook_endpoints CHANGE topic webhook VARCHAR(255) NOT NULL;"
     )
+  end
+
+  defp alter_table_webhook_endpoints_remove_is_enabled() do
+    alter table(:captain_hook_webhook_endpoints) do
+      remove(:is_enabled)
+    end
   end
 
   defp alter_table_webhook_notifications_remove_webhook_endpoint() do
@@ -217,6 +255,18 @@ defmodule CaptainHook.Migrations.V3 do
   defp alter_table_webhook_notifications_remove_idempotency_key() do
     alter table(:captain_hook_webhook_notifications) do
       remove(:idempotency_key)
+    end
+  end
+
+  defp alter_table_webhook_notifications_remove_attempt() do
+    alter table(:captain_hook_webhook_notifications) do
+      remove(:attempt)
+    end
+  end
+
+  defp alter_table_webhook_notifications_remove_next_retry_at() do
+    alter table(:captain_hook_webhook_notifications) do
+      remove(:next_retry_at)
     end
   end
 

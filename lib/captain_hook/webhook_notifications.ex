@@ -48,7 +48,7 @@ defmodule CaptainHook.WebhookNotifications do
     opts
     |> Keyword.put(:filters, idempotency_key: idempotency_key)
     |> webhook_notification_queryable()
-    |> CaptainHook.repo().one!()
+    |> CaptainHook.repo().one()
   end
 
   @spec create_webhook_notification(map()) ::
@@ -60,13 +60,27 @@ defmodule CaptainHook.WebhookNotifications do
     end)
     |> Multi.insert(:webhook_notification, fn %{sequence: sequence} ->
       %WebhookNotification{}
-      |> WebhookNotification.changeset(attrs |> Map.put(:sequence, sequence))
+      |> WebhookNotification.create_changeset(attrs |> Map.put(:sequence, sequence))
     end)
     |> CaptainHook.repo().transaction()
     |> case do
       {:ok, %{webhook_notification: webhook_notification}} -> {:ok, webhook_notification}
       {:error, :webhook_notification, error, _} -> {:error, error}
     end
+  end
+
+  @spec update_webhook_notification(WebhookNotification.t(), map()) ::
+          {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
+  def update_webhook_notification(%WebhookNotification{} = webhook_notification, attrs)
+      when is_map(attrs) do
+    webhook_notification
+    |> WebhookNotification.update_changeset(attrs)
+    |> CaptainHook.repo().update()
+  end
+
+  @spec notification_succeeded?(WebhookNotification.t()) :: boolean
+  def notification_succeeded?(%WebhookNotification{succeeded_at: succeeded_at}) do
+    not is_nil(succeeded_at)
   end
 
   @spec webhook_notification_queryable(keyword) :: Ecto.Queryable.t()
@@ -78,6 +92,6 @@ defmodule CaptainHook.WebhookNotifications do
     WebhookNotificationQueryable.queryable()
     |> WebhookNotificationQueryable.select_fields(fields)
     |> WebhookNotificationQueryable.filter(filters)
-    |> WebhookConversationQueryable.with_preloads(includes)
+    |> WebhookNotificationQueryable.with_preloads(includes)
   end
 end

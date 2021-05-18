@@ -41,9 +41,11 @@ defmodule CaptainHook.Notifier do
     |> Multi.run(:webhook_notifications, fn _, %{} ->
       create_webhook_notifications(topic, livemode?, notification_type, data, opts)
     end)
-    |> Multi.run(
-      :enqueue_webhook_notifications,
-      fn _, %{webhook_notifications: webhook_notifications} ->
+    |> Multi.merge(fn
+      %{webhook_notifications: []} ->
+        Multi.new()
+
+      %{webhook_notifications: webhook_notifications} ->
         webhook_result_handler = Keyword.get(opts, :webhook_result_handler) |> stringify()
 
         webhook_notifications
@@ -58,24 +60,21 @@ defmodule CaptainHook.Notifier do
             {:ok, enqueue_notify_endpoint!(webhook_notification, webhook_result_handler)}
           end)
         end)
-      end
-    )
+    end)
     |> CaptainHook.repo().transaction()
     |> case do
-      {:ok, changes} ->
+      {:ok, %{webhook_notifications: webhook_notifications}} ->
         CaptainHook.Queuetopia.handle_event(:new_incoming_job)
-        {:ok, get_webhook_notifications_from_multi_changes(changes)}
+        {:ok, webhook_notifications}
 
       {:error, _, changeset, _} ->
         {:error, changeset}
     end
   end
 
-  @spec create_webhook_notifications(binary | [binary], boolean, binary, map, keyword) ::
-          {:ok, [WebhookNotification.t()]} | {:error, Ecto.Changeset.t()}
-  def create_webhook_notifications(topic, livemode?, notification_type, data, opts \\ [])
-      when is_boolean(livemode?) and is_binary(notification_type) and
-             is_map(data) and is_list(opts) do
+  defp create_webhook_notifications(topic, livemode?, notification_type, data, opts)
+       when is_boolean(livemode?) and is_binary(notification_type) and
+              is_map(data) and is_list(opts) do
     utc_now = DateTime.utc_now()
     topics = topic |> List.wrap() |> Enum.uniq()
 
@@ -102,7 +101,8 @@ defmodule CaptainHook.Notifier do
   defp notify_topic_multi(multi, topic, livemode?, notification_type, data, created_at, opts) do
     webhook_endpoints =
       WebhookEndpoints.list_webhook_endpoints(
-        filters: [topic: topic, livemode: livemode?, ongoing_at: created_at]
+        filters: [topic: topic, livemode: livemode?, ongoing_at: created_at],
+        includes: [:enabled_notification_types]
       )
 
     webhook_endpoints
@@ -155,7 +155,7 @@ defmodule CaptainHook.Notifier do
 
     multi
     |> Multi.run(:"webhook_notification_by_#{idempotency_key}", fn _, %{} ->
-      WebhookNotifications.get_webhook_notification_by(idempotency_key: idempotency_key)
+      {:ok, WebhookNotifications.get_webhook_notification_by(idempotency_key: idempotency_key)}
     end)
     |> Multi.run(:"webhook_notification_for_#{webhook_endpoint.id}", fn _repo, changes ->
       webhook_notification = Map.fetch!(changes, :"webhook_notification_by_#{idempotency_key}")
@@ -182,11 +182,13 @@ defmodule CaptainHook.Notifier do
        ) do
     queue_name = "#{webhook_endpoint.topic}_#{webhook_endpoint.id}"
 
-    {:ok, _} =
+    {:ok, res} =
       Queuetopia.create_job(queue_name, "notify_endpoint", %{
         webhook_notification_id: webhook_notification.id,
         webhook_result_handler: webhook_result_handler
       })
+
+    res
   end
 
   defp get_webhook_notifications_from_multi_changes(changes) when is_map(changes) do
@@ -196,56 +198,84 @@ defmodule CaptainHook.Notifier do
     end)
     |> Enum.map(fn {_key, value} -> value end)
     |> Enum.reject(&is_nil/1)
-    |> case do
-      webhook_notifications -> {:ok, webhook_notifications}
+  end
+
+  @spec send_webhook_notification(map) ::
+          {:ok, :noop | WebhookNotification.t()} | {:error, binary}
+  def send_webhook_notification(%{
+        "webhook_notification_id" => webhook_notification_id,
+        "webhook_result_handler" => webhook_result_handler
+      }) do
+    %{webhook_endpoint: webhook_endpoint} =
+      webhook_notification =
+      webhook_notification_id
+      |> WebhookNotifications.get_webhook_notification!(includes: [:webhook_endpoint])
+
+    if not webhook_endpoint.is_enabled or
+         WebhookNotifications.notification_succeeded?(webhook_notification) do
+      {:ok, :noop}
+    else
+      %{webhook_notification: webhook_notification, webhook_conversation: webhook_conversation} =
+        webhook_notification |> send_webhook_notification!()
+
+      if WebhookNotifications.notification_succeeded?(webhook_notification) do
+        {:ok, webhook_notification}
+      else
+        handle_failure(webhook_result_handler, webhook_notification, webhook_conversation)
+        {:error, inspect(webhook_conversation)}
+      end
     end
   end
 
-  @spec send_webhook_notification(
-          map | WebhookEndpoint.t(),
-          pos_integer | WebhookNotification.t()
-        ) ::
-          {:ok, binary | WebhookConversation.t()} | {:error, binary | Ecto.Changeset.t()}
-  def send_webhook_notification(
-        %{
-          "webhook_notification_id" => webhook_notification_id,
-          "webhook_result_handler" => webhook_result_handler
-        },
-        attempt_number
-      ) do
-    webhook_notification_id
-    |> WebhookNotifications.get_webhook_notification!()
-    |> send_webhook_notification()
-    |> case do
-      {:ok, webhook_conversation} ->
-        if WebhookConversations.conversation_succeeded?(webhook_conversation) do
-          {:ok, webhook_conversation}
-        else
-          handle_failure(webhook_result_handler, webhook_conversation, attempt_number)
-          {:error, inspect(webhook_conversation)}
-        end
-
-      {:error, changeset} ->
-        error = changeset |> AntlUtilsEcto.Changeset.errors_on() |> inspect()
-        {:error, error}
-    end
-  end
-
-  def send_webhook_notification(%WebhookNotification{succeeded_at: nil} = webhook_notification) do
+  @spec send_webhook_notification!(WebhookNotification.t()) :: %{
+          webhook_conversation: WebhookConversation.t(),
+          webhook_notification: WebhookNotification.t()
+        }
+  def send_webhook_notification!(%WebhookNotification{succeeded_at: nil} = webhook_notification) do
     %{webhook_endpoint: webhook_endpoint} =
       WebhookNotifications.get_webhook_notification!(webhook_notification.id,
-        includes: [webhook_endpoint: :enabled_notification_types]
+        includes: [webhook_endpoint: [:enabled_notification_types]]
       )
 
     %{url: url, is_insecure_allowed: is_insecure_allowed} = webhook_endpoint
 
     headers = webhook_endpoint |> build_headers()
-    body = webhook_endpoint |> build_body(webhook_notification)
+    body = webhook_notification |> build_body()
     secrets = webhook_endpoint |> build_secrets()
 
-    HttpClient.call(url, body, headers, secrets: secrets, is_insecure_allowed: is_insecure_allowed)
-    |> to_webhook_conversation_attrs(webhook_endpoint, webhook_notification)
-    |> WebhookConversations.create_webhook_conversation()
+    response =
+      HttpClient.call(url, body, headers,
+        secrets: secrets,
+        is_insecure_allowed: is_insecure_allowed
+      )
+
+    webhook_conversation =
+      save_webhook_conversation!(response, webhook_endpoint, webhook_notification)
+
+    if WebhookConversations.conversation_succeeded?(webhook_conversation) do
+      %{
+        webhook_notification: set_webhook_notification_as_successful!(webhook_notification),
+        webhook_conversation: webhook_conversation
+      }
+    else
+      %{
+        webhook_notification: update_webhook_notification_attempt!(webhook_notification),
+        webhook_conversation: webhook_conversation
+      }
+    end
+  end
+
+  defp save_webhook_conversation!(
+         %Response{} = response,
+         %WebhookEndpoint{} = webhook_endpoint,
+         %WebhookNotification{} = webhook_notification
+       ) do
+    {:ok, webhook_conversation} =
+      response
+      |> to_webhook_conversation_attrs(webhook_endpoint, webhook_notification)
+      |> WebhookConversations.create_webhook_conversation()
+
+    webhook_conversation
   end
 
   defp to_webhook_conversation_attrs(
@@ -260,7 +290,6 @@ defmodule CaptainHook.Notifier do
         else: WebhookConversation.statuses().failed
 
     %{
-      webhook_endpoint_id: webhook_endpoint_id,
       webhook_notification_id: webhook_notification_id,
       requested_at: response.requested_at,
       request_url: response.request_url,
@@ -273,13 +302,37 @@ defmodule CaptainHook.Notifier do
     }
   end
 
+  defp set_webhook_notification_as_successful!(%WebhookNotification{} = webhook_notification) do
+    {:ok, webhook_notification} =
+      WebhookNotifications.update_webhook_notification(webhook_notification, %{
+        attempt: webhook_notification.attempt + 1,
+        succeeded_at: DateTime.utc_now(),
+        next_retry_at: nil
+      })
+
+    webhook_notification
+  end
+
+  defp update_webhook_notification_attempt!(%WebhookNotification{} = webhook_notification) do
+    {:ok, webhook_notification} =
+      WebhookNotifications.update_webhook_notification(webhook_notification, %{
+        attempt: webhook_notification.attempt + 1,
+        next_retry_at: nil
+      })
+
+    webhook_notification
+  end
+
   defp handle_failure(
          webhook_result_handler,
-         %WebhookConversation{} = webhook_conversation,
-         attemps
+         %WebhookNotification{} = webhook_notification,
+         %WebhookConversation{} = webhook_conversation
        ) do
     if webhook_result_handler do
-      handler_module(webhook_result_handler).handle_failure(webhook_conversation, attemps)
+      handler_module(webhook_result_handler).handle_failure(
+        webhook_notification,
+        webhook_conversation
+      )
     end
   end
 
@@ -293,17 +346,9 @@ defmodule CaptainHook.Notifier do
     headers || %{}
   end
 
-  defp build_body(
-         %WebhookEndpoint{id: webhook_endpoint_id, livemode: livemode?},
-         %WebhookNotification{} = webhook_notification
-       ) do
-    %{
-      id: webhook_notification.id,
-      type: webhook_notification.type,
-      livemode: livemode?,
-      endpoint_id: webhook_endpoint_id,
-      data: webhook_notification.data
-    }
+  defp build_body(%WebhookNotification{} = webhook_notification) do
+    webhook_notification.data
+    |> Map.merge(%{webhook_endpoint_id: webhook_notification.webhook_endpoint_id})
   end
 
   defp build_secrets(%WebhookEndpoint{} = webhook_endpoint) do

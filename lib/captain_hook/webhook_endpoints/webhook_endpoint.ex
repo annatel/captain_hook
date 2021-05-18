@@ -1,7 +1,7 @@
 defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   use Ecto.Schema
 
-  import Ecto.Changeset, only: [cast: 3, cast_assoc: 2, validate_required: 2]
+  import Ecto.Changeset, only: [cast: 3, cast_assoc: 2, put_change: 3, validate_required: 2]
 
   alias CaptainHook.WebhookEndpoints.EnabledNotificationType
 
@@ -11,6 +11,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
           headers: map | nil,
           id: binary,
           inserted_at: DateTime.t(),
+          is_enabled: boolean,
           is_insecure_allowed: boolean,
           livemode: boolean,
           secret: binary | nil,
@@ -28,6 +29,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
 
     has_many(:enabled_notification_types, EnabledNotificationType, on_replace: :delete)
     field(:headers, :map)
+    field(:is_enabled, :boolean, default: true)
     field(:is_insecure_allowed, :boolean, default: false)
     field(:livemode, :boolean)
     field(:secret, :string, virtual: true)
@@ -58,7 +60,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   @spec update_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def update_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
-    |> cast(attrs, [:headers, :is_insecure_allowed, :url])
+    |> cast(attrs, [:headers, :is_enabled, :is_insecure_allowed, :url])
     |> cast_assoc(:enabled_notification_types)
   end
 
@@ -69,5 +71,6 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     |> cast(attrs, [:ended_at])
     |> validate_required([:ended_at])
     |> AntlUtilsEcto.Changeset.validate_datetime_gte(:ended_at, :started_at)
+    |> put_change(:is_enabled, false)
   end
 end

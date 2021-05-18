@@ -4,12 +4,12 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
 
   alias CaptainHook.WebhookNotifications.WebhookNotification
 
-  describe "changeset/2" do
+  describe "create_changeset/2" do
     test "only permitted_keys are casted" do
       webhook_notification_params = params_for(:webhook_notification)
 
       changeset =
-        WebhookNotification.changeset(
+        WebhookNotification.create_changeset(
           %WebhookNotification{},
           Map.merge(webhook_notification_params, %{new_key: "value"})
         )
@@ -28,7 +28,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
     end
 
     test "when required params are missing, returns an invalid changeset" do
-      changeset = WebhookNotification.changeset(%WebhookNotification{}, %{})
+      changeset = WebhookNotification.create_changeset(%WebhookNotification{}, %{})
 
       refute changeset.valid?
       assert %{webhook_endpoint_id: ["can't be blank"]} = errors_on(changeset)
@@ -42,7 +42,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
       webhook_notification_params = params_for(:webhook_notification)
 
       changeset =
-        WebhookNotification.changeset(%WebhookNotification{}, webhook_notification_params)
+        WebhookNotification.create_changeset(%WebhookNotification{}, webhook_notification_params)
 
       assert changeset.valid?
 
