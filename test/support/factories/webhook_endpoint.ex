@@ -3,7 +3,7 @@ defmodule CaptainHook.Factory.WebhookEndpoint do
 
   defmacro __using__(_opts) do
     quote do
-      def build(:webhook_endpoint) do
+      def build(:webhook_endpoint, attrs) do
         %WebhookEndpoint{
           topic: "topic_#{System.unique_integer()}",
           started_at: utc_now(),
@@ -13,16 +13,21 @@ defmodule CaptainHook.Factory.WebhookEndpoint do
           headers: %{},
           url: "url_#{System.unique_integer()}"
         }
+        |> struct!(attrs)
       end
 
       def make_ended(%WebhookEndpoint{} = webhook_endpoint) do
         %{webhook_endpoint | ended_at: utc_now()}
       end
 
-      def build(:enabled_notification_type) do
+      def make_disable(%WebhookEndpoint{} = webhook_endpoint),
+        do: %{webhook_endpoint | is_enabled: false}
+
+      def build(:enabled_notification_type, attrs) do
         %EnabledNotificationType{
           name: "name_#{System.unique_integer()}"
         }
+        |> struct!(attrs)
       end
 
       def catch_all_events(%EnabledNotificationType{} = enabled_notification_type) do

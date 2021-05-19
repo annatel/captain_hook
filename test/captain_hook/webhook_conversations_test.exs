@@ -32,7 +32,6 @@ defmodule WebhookConversations.WebhookConversationsTest do
         [id: webhook_conversation.id],
         [webhook_endpoint_id: webhook_notification.webhook_endpoint_id],
         [webhook_notification_id: webhook_conversation.webhook_notification_id],
-        [topic: webhook_endpoint.topic],
         [status: webhook_conversation.status]
       ]
       |> Enum.each(fn filter ->
@@ -44,7 +43,6 @@ defmodule WebhookConversations.WebhookConversationsTest do
         [id: uuid()],
         [webhook_endpoint_id: uuid()],
         [webhook_notification_id: uuid()],
-        [topic: "topic"],
         [status: "status"]
       ]
       |> Enum.each(fn filter ->
@@ -73,7 +71,8 @@ defmodule WebhookConversations.WebhookConversationsTest do
 
   describe "create_webhook_conversation/2" do
     test "without required params, returns an :error tuple with an invalid changeset" do
-      webhook_conversation_params = params_for(:webhook_conversation, webhook_endpoint_id: nil)
+      webhook_conversation_params =
+        params_for(:webhook_conversation, webhook_notification_id: nil)
 
       assert {:error, changeset} =
                WebhookConversations.create_webhook_conversation(webhook_conversation_params)
@@ -93,8 +92,8 @@ defmodule WebhookConversations.WebhookConversationsTest do
       assert {:ok, webhook_conversation} =
                WebhookConversations.create_webhook_conversation(webhook_conversation_params)
 
-      assert webhook_conversation.webhook_endpoint_id ==
-               webhook_conversation_params.webhook_endpoint_id
+      assert webhook_conversation.webhook_notification_id ==
+               webhook_conversation_params.webhook_notification_id
 
       assert webhook_conversation.sequence > 0
     end

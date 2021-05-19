@@ -24,7 +24,6 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wc"}
   @foreign_key_type :binary_id
-
   schema "captain_hook_webhook_conversations" do
     belongs_to(:webhook_notification, WebhookNotification, type: Shortcode.Ecto.UUID, prefix: "wn")
 

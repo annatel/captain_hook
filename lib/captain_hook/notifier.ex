@@ -22,10 +22,10 @@ defmodule CaptainHook.Notifier do
     create_webhook_notifications(topic, livemode?, notification_type, data, opts)
     |> case do
       {:ok, webhook_notifications} ->
-        webhook_notifications
-        |> Enum.map(fn webhook_notification ->
-          webhook_notification |> send_webhook_notification()
-        end)
+        {:ok,
+         webhook_notifications
+         |> Enum.map(&send_webhook_notification!/1)
+         |> Enum.map(& &1.webhook_notification)}
 
       {:error, changeset} ->
         {:error, changeset}
@@ -51,11 +51,8 @@ defmodule CaptainHook.Notifier do
         webhook_notifications
         |> Enum.reduce(Multi.new(), fn webhook_notification, acc ->
           acc
-          |> Multi.run(:"enqueue_webhook_notification_#{webhook_notification.id}", fn _, %{} ->
-            webhook_notification =
-              WebhookNotifications.get_webhook_notification!(webhook_notification.id,
-                includes: [:webhook_endpoint]
-              )
+          |> Multi.run(:"enqueue_webhook_notification_#{webhook_notification.id}", fn repo, %{} ->
+            webhook_notification = repo.preload(webhook_notification, [:webhook_endpoint])
 
             {:ok, enqueue_notify_endpoint!(webhook_notification, webhook_result_handler)}
           end)
@@ -211,8 +208,7 @@ defmodule CaptainHook.Notifier do
       webhook_notification_id
       |> WebhookNotifications.get_webhook_notification!(includes: [:webhook_endpoint])
 
-    if not webhook_endpoint.is_enabled or
-         WebhookNotifications.notification_succeeded?(webhook_notification) do
+    if not webhook_endpoint.is_enabled do
       {:ok, :noop}
     else
       %{webhook_notification: webhook_notification, webhook_conversation: webhook_conversation} =
@@ -228,7 +224,7 @@ defmodule CaptainHook.Notifier do
   end
 
   @spec send_webhook_notification!(WebhookNotification.t()) :: %{
-          webhook_conversation: WebhookConversation.t(),
+          webhook_conversation: WebhookConversation.t() | nil,
           webhook_notification: WebhookNotification.t()
         }
   def send_webhook_notification!(%WebhookNotification{succeeded_at: nil} = webhook_notification) do
@@ -263,6 +259,10 @@ defmodule CaptainHook.Notifier do
         webhook_conversation: webhook_conversation
       }
     end
+  end
+
+  def send_webhook_notification!(%WebhookNotification{} = webhook_notification) do
+    %{webhook_notification: webhook_notification, webhook_conversation: nil}
   end
 
   defp save_webhook_conversation!(

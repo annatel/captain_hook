@@ -44,7 +44,6 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationTest do
     end
 
     test "when params are valid, return a valid changeset" do
-      webhook_endpoint = insert!(:webhook_endpoint)
       webhook_notification = insert!(:webhook_notification)
 
       webhook_conversation_params =
