@@ -7,17 +7,9 @@ defmodule WebhookConversations.WebhookConversationsTest do
   describe "list_webhook_conversations/1" do
     test "returns the list of webhook_conversations ordered by the sequence descending" do
       webhook_notification = insert!(:webhook_notification)
-      webhook_endpoint = insert!(:webhook_endpoint)
 
-      insert!(:webhook_conversation,
-        webhook_endpoint_id: webhook_endpoint.id,
-        webhook_notification_id: webhook_notification.id
-      )
-
-      insert!(:webhook_conversation,
-        webhook_endpoint_id: webhook_endpoint.id,
-        webhook_notification_id: webhook_notification.id
-      )
+      insert!(:webhook_conversation, webhook_notification_id: webhook_notification.id)
+      insert!(:webhook_conversation, webhook_notification_id: webhook_notification.id)
 
       assert %{data: [webhook_conversation_1, webhook_conversation_2], total: 2} =
                WebhookConversations.list_webhook_conversations()
@@ -26,20 +18,20 @@ defmodule WebhookConversations.WebhookConversationsTest do
     end
 
     test "filters" do
-      webhook_notification = insert!(:webhook_notification)
       webhook_endpoint = insert!(:webhook_endpoint)
+
+      webhook_notification =
+        insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
 
       webhook_conversation =
         insert!(:webhook_conversation,
-          webhook_endpoint_id: webhook_endpoint.id,
           webhook_notification_id: webhook_notification.id
         )
 
       [
         [id: webhook_conversation.id],
-        [webhook_endpoint_id: webhook_conversation.webhook_endpoint_id],
+        [webhook_endpoint_id: webhook_notification.webhook_endpoint_id],
         [webhook_notification_id: webhook_conversation.webhook_notification_id],
-        [webhook: webhook_notification.webhook],
         [status: webhook_conversation.status]
       ]
       |> Enum.each(fn filter ->
@@ -50,7 +42,7 @@ defmodule WebhookConversations.WebhookConversationsTest do
       [
         [id: uuid()],
         [webhook_endpoint_id: uuid()],
-        [webhook: "webhook"],
+        [webhook_notification_id: uuid()],
         [status: "status"]
       ]
       |> Enum.each(fn filter ->
@@ -66,11 +58,9 @@ defmodule WebhookConversations.WebhookConversationsTest do
 
     test "when the webhook_conversation exists, returns the webhook_conversation" do
       webhook_notification = insert!(:webhook_notification)
-      webhook_endpoint = insert!(:webhook_endpoint)
 
       webhook_conversation_factory =
         insert!(:webhook_conversation,
-          webhook_endpoint_id: webhook_endpoint.id,
           webhook_notification_id: webhook_notification.id
         )
 
@@ -81,7 +71,8 @@ defmodule WebhookConversations.WebhookConversationsTest do
 
   describe "create_webhook_conversation/2" do
     test "without required params, returns an :error tuple with an invalid changeset" do
-      webhook_conversation_params = params_for(:webhook_conversation, webhook_endpoint_id: nil)
+      webhook_conversation_params =
+        params_for(:webhook_conversation, webhook_notification_id: nil)
 
       assert {:error, changeset} =
                WebhookConversations.create_webhook_conversation(webhook_conversation_params)
@@ -89,13 +80,11 @@ defmodule WebhookConversations.WebhookConversationsTest do
       refute changeset.valid?
     end
 
-    test "with valid params, returns the webhook_endpoint" do
+    test "with valid params, returns the webhook_conversation" do
       webhook_notification = insert!(:webhook_notification)
-      webhook_endpoint = insert!(:webhook_endpoint)
 
       webhook_conversation_params =
         params_for(:webhook_conversation,
-          webhook_endpoint_id: webhook_endpoint.id,
           webhook_notification_id: webhook_notification.id
         )
         |> Map.drop([:sequence])
@@ -103,8 +92,8 @@ defmodule WebhookConversations.WebhookConversationsTest do
       assert {:ok, webhook_conversation} =
                WebhookConversations.create_webhook_conversation(webhook_conversation_params)
 
-      assert webhook_conversation.webhook_endpoint_id ==
-               webhook_conversation_params.webhook_endpoint_id
+      assert webhook_conversation.webhook_notification_id ==
+               webhook_conversation_params.webhook_notification_id
 
       assert webhook_conversation.sequence > 0
     end

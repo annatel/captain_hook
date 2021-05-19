@@ -3,17 +3,19 @@ defmodule CaptainHook.Factory.WebhookNotification do
 
   defmacro __using__(_opts) do
     quote do
-      def build(:webhook_notification) do
+      def build(:webhook_notification, attrs) do
+        %{id: webhook_endpoint_id} = insert!(:webhook_endpoint)
+
         %WebhookNotification{
-          webhook: "webhook_#{System.unique_integer()}",
+          webhook_endpoint_id: webhook_endpoint_id,
           created_at: utc_now(),
           data: %{},
-          livemode: true,
           resource_id: uuid(),
           resource_type: "resource_type_#{System.unique_integer()}",
           sequence: System.unique_integer([:positive]),
           type: "type_#{System.unique_integer()}"
         }
+        |> struct!(attrs)
       end
     end
   end

@@ -3,7 +3,7 @@ defmodule CaptainHook.Factory.WebhookConversation do
 
   defmacro __using__(_opts) do
     quote do
-      def build(:webhook_conversation) do
+      def build(:webhook_conversation, attrs) do
         %WebhookConversation{
           sequence: System.unique_integer([:positive]),
           requested_at: utc_now(),
@@ -13,8 +13,9 @@ defmodule CaptainHook.Factory.WebhookConversation do
           http_status: 200,
           response_body: "response_body_#{System.unique_integer()}",
           client_error_message: "response_body_#{System.unique_integer()}",
-          status: WebhookConversation.status().success
+          status: WebhookConversation.statuses().succeeded
         }
+        |> struct!(attrs)
       end
     end
   end

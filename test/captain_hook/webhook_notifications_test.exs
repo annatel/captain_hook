@@ -21,11 +21,10 @@ defmodule CaptainHook.WebhookNotificationsTest do
 
       [
         [id: webhook_notification.id],
-        [livemode: webhook_notification.livemode],
         [resource_id: webhook_notification.resource_id],
         [resource_type: webhook_notification.resource_type],
         [type: webhook_notification.type],
-        [webhook: webhook_notification.webhook]
+        [webhook_endpoint_id: webhook_notification.webhook_endpoint_id]
       ]
       |> Enum.each(fn filter ->
         assert %{data: [_webhook_notification]} =
@@ -34,11 +33,10 @@ defmodule CaptainHook.WebhookNotificationsTest do
 
       [
         [id: uuid()],
-        [livemode: !webhook_notification.livemode],
         [resource_id: "resource_id"],
         [resource_type: "resource_type"],
         [type: "type"],
-        [webhook: "webhook"]
+        [webhook_endpoint_id: uuid()]
       ]
       |> Enum.each(fn filter ->
         assert %{data: []} = WebhookNotifications.list_webhook_notifications(filters: filter)
@@ -79,7 +77,7 @@ defmodule CaptainHook.WebhookNotificationsTest do
 
   describe "create_webhook_notification/2" do
     test "without required params, returns an :error tuple with an invalid changeset" do
-      webhook_notification_params = params_for(:webhook_notification, webhook: nil)
+      webhook_notification_params = params_for(:webhook_notification, webhook_endpoint_id: nil)
 
       assert {:error, changeset} =
                WebhookNotifications.create_webhook_notification(webhook_notification_params)
@@ -94,11 +92,14 @@ defmodule CaptainHook.WebhookNotificationsTest do
                WebhookNotifications.create_webhook_notification(webhook_notification_params)
 
       assert webhook_notification.data == webhook_notification_params.data
-      assert webhook_notification.livemode == webhook_notification_params.livemode
+
       assert webhook_notification.resource_id == webhook_notification_params.resource_id
       assert webhook_notification.resource_type == webhook_notification_params.resource_type
       assert webhook_notification.type == webhook_notification_params.type
-      assert webhook_notification.webhook == webhook_notification_params.webhook
+
+      assert webhook_notification.webhook_endpoint_id ==
+               webhook_notification_params.webhook_endpoint_id
+
       assert webhook_notification.sequence > 0
     end
   end

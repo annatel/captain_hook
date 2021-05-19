@@ -16,8 +16,8 @@ defmodule CaptainHook do
       def notify(webhook, livemode?, notification_type, data, opts \\ []),
         do: unquote(__MODULE__).notify(webhook, livemode?, notification_type, data, opts)
 
-      def send_webhook_notification(webhook_endpoint, webhook_notification),
-        do: unquote(__MODULE__).send_webhook_notification(webhook_endpoint, webhook_notification)
+      def send_webhook_notification!(webhook_notification),
+        do: unquote(__MODULE__).send_webhook_notification!(webhook_notification)
 
       def list_webhook_endpoints(opts \\ []),
         do: unquote(__MODULE__).list_webhook_endpoints(opts)
@@ -68,9 +68,12 @@ defmodule CaptainHook do
           {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
   defdelegate notify(webhook, livemode?, notification_type, data, opts \\ []), to: Notifier
 
-  @spec send_webhook_notification(WebhookEndpoint.t(), WebhookNotification.t()) ::
-          {:ok, WebhookConversation.t()} | {:error, Ecto.Changeset.t()}
-  defdelegate send_webhook_notification(webhook_endpoint, webhook_notification), to: Notifier
+  @spec send_webhook_notification!(WebhookNotification.t()) ::
+          %{
+            webhook_conversation: WebhookConversation.t(),
+            webhook_notification: WebhookNotification.t()
+          }
+  defdelegate send_webhook_notification!(webhook_notification), to: Notifier
 
   @spec list_webhook_endpoints(keyword) :: [WebhookEndpoint.t()]
   defdelegate list_webhook_endpoints(opts \\ []), to: WebhookEndpoints

@@ -4,22 +4,21 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
 
   alias CaptainHook.WebhookNotifications.WebhookNotification
 
-  describe "changeset/2" do
+  describe "create_changeset/2" do
     test "only permitted_keys are casted" do
       webhook_notification_params = params_for(:webhook_notification)
 
       changeset =
-        WebhookNotification.changeset(
+        WebhookNotification.create_changeset(
           %WebhookNotification{},
           Map.merge(webhook_notification_params, %{new_key: "value"})
         )
 
       changes_keys = changeset.changes |> Map.keys()
 
-      assert :webhook in changes_keys
+      assert :webhook_endpoint_id in changes_keys
       assert :created_at in changes_keys
       assert :data in changes_keys
-      assert :livemode in changes_keys
       assert :resource_id in changes_keys
       assert :resource_type in changes_keys
       assert :sequence in changes_keys
@@ -29,13 +28,12 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
     end
 
     test "when required params are missing, returns an invalid changeset" do
-      changeset = WebhookNotification.changeset(%WebhookNotification{}, %{})
+      changeset = WebhookNotification.create_changeset(%WebhookNotification{}, %{})
 
       refute changeset.valid?
-      assert %{webhook: ["can't be blank"]} = errors_on(changeset)
+      assert %{webhook_endpoint_id: ["can't be blank"]} = errors_on(changeset)
       assert %{created_at: ["can't be blank"]} = errors_on(changeset)
       assert %{data: ["can't be blank"]} = errors_on(changeset)
-      assert %{livemode: ["can't be blank"]} = errors_on(changeset)
       assert %{sequence: ["can't be blank"]} = errors_on(changeset)
       assert %{type: ["can't be blank"]} = errors_on(changeset)
     end
@@ -44,13 +42,15 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
       webhook_notification_params = params_for(:webhook_notification)
 
       changeset =
-        WebhookNotification.changeset(%WebhookNotification{}, webhook_notification_params)
+        WebhookNotification.create_changeset(%WebhookNotification{}, webhook_notification_params)
 
       assert changeset.valid?
-      assert get_field(changeset, :webhook) == webhook_notification_params.webhook
+
+      assert get_field(changeset, :webhook_endpoint_id) ==
+               webhook_notification_params.webhook_endpoint_id
+
       assert get_field(changeset, :created_at) == webhook_notification_params.created_at
       assert get_field(changeset, :data) == webhook_notification_params.data
-      assert get_field(changeset, :livemode) == webhook_notification_params.livemode
       assert get_field(changeset, :resource_id) == webhook_notification_params.resource_id
       assert get_field(changeset, :resource_type) == webhook_notification_params.resource_type
       assert get_field(changeset, :sequence) == webhook_notification_params.sequence

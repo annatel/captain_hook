@@ -1,51 +1,62 @@
 defmodule CaptainHook.WebhookNotifications.WebhookNotification do
   use Ecto.Schema
 
-  import Ecto.Changeset, only: [cast: 3, validate_required: 2]
+  import Ecto.Changeset, only: [assoc_constraint: 2, cast: 3, validate_required: 2]
+
+  alias CaptainHook.WebhookEndpoints.WebhookEndpoint
 
   @type t :: %__MODULE__{
-          id: binary,
           created_at: DateTime.t(),
           data: map,
-          livemode: boolean,
+          id: binary,
+          inserted_at: DateTime.t(),
           resource_id: binary | nil,
           resource_type: binary | nil,
           sequence: integer,
           type: binary,
-          webhook: binary,
-          inserted_at: DateTime.t()
+          webhook_endpoint_id: binary
         }
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wn"}
   @foreign_key_type :binary_id
-
   schema "captain_hook_webhook_notifications" do
+    belongs_to(:webhook_endpoint, WebhookEndpoint, type: Shortcode.Ecto.UUID, prefix: "we")
+
+    field(:attempt, :integer, default: 0)
     field(:created_at, :utc_datetime)
     field(:data, :map)
-    field(:livemode, :boolean)
+    field(:idempotency_key, :string)
+    field(:next_retry_at, :utc_datetime)
     field(:resource_id, :string)
     field(:resource_type, :string)
     field(:sequence, :integer)
+    field(:succeeded_at, :utc_datetime)
     field(:type, :string)
-    field(:webhook, :string)
 
-    timestamps(updated_at: false)
+    timestamps()
   end
 
   @doc false
-  @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
-  def changeset(%__MODULE__{} = webhook_notification, attrs) when is_map(attrs) do
+  @spec create_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
+  def create_changeset(%__MODULE__{} = webhook_notification, attrs) when is_map(attrs) do
     webhook_notification
     |> cast(attrs, [
       :created_at,
       :data,
-      :livemode,
       :resource_id,
       :resource_type,
       :sequence,
       :type,
-      :webhook
+      :webhook_endpoint_id
     ])
-    |> validate_required([:created_at, :data, :livemode, :sequence, :type, :webhook])
+    |> validate_required([:created_at, :data, :sequence, :type, :webhook_endpoint_id])
+    |> assoc_constraint(:webhook_endpoint)
+  end
+
+  @spec update_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
+  def update_changeset(%__MODULE__{} = webhook_notification, attrs) when is_map(attrs) do
+    webhook_notification
+    |> cast(attrs, [:attempt, :next_retry_at, :succeeded_at])
+    |> validate_required([:attempt])
   end
 end

@@ -4,12 +4,13 @@ defmodule CaptainHook.Factory.WebhookEndpointSecret do
 
   defmacro __using__(_opts) do
     quote do
-      def build(:webhook_endpoint_secret) do
+      def build(:webhook_endpoint_secret, attrs) do
         %WebhookEndpointSecret{
           started_at: utc_now(),
           secret: Secrets.generate_secret(),
           is_main: true
         }
+        |> struct!(attrs)
       end
 
       def make_ended(%WebhookEndpointSecret{} = webhook_endpoint_endpoint) do

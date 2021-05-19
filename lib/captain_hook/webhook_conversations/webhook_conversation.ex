@@ -4,7 +4,6 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
   import Ecto.Changeset,
     only: [assoc_constraint: 2, cast: 3, validate_inclusion: 3, validate_required: 2]
 
-  alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.WebhookNotifications.WebhookNotification
 
   @type t :: %__MODULE__{
@@ -19,18 +18,13 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
           response_body: binary,
           sequence: integer,
           status: binary,
-          webhook_endpoint_id: binary,
-          webhook_endpoint: WebhookEndpoint.t(),
           webhook_notification_id: binary,
           webhook_notification: WebhookNotification.t()
         }
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wc"}
   @foreign_key_type :binary_id
-
   schema "captain_hook_webhook_conversations" do
-    belongs_to(:webhook_endpoint, WebhookEndpoint, type: Shortcode.Ecto.UUID, prefix: "we")
-
     belongs_to(:webhook_notification, WebhookNotification, type: Shortcode.Ecto.UUID, prefix: "wn")
 
     field(:client_error_message, :string)
@@ -51,7 +45,6 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
   def changeset(%__MODULE__{} = webhook_conversation, attrs) when is_map(attrs) do
     webhook_conversation
     |> cast(attrs, [
-      :webhook_endpoint_id,
       :webhook_notification_id,
       :client_error_message,
       :http_status,
@@ -64,7 +57,6 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
       :status
     ])
     |> validate_required([
-      :webhook_endpoint_id,
       :webhook_notification_id,
       :request_body,
       :request_url,
@@ -72,16 +64,15 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
       :sequence,
       :status
     ])
-    |> validate_inclusion(:status, Map.values(status()))
-    |> assoc_constraint(:webhook_endpoint)
+    |> validate_inclusion(:status, Map.values(statuses()))
     |> assoc_constraint(:webhook_notification)
   end
 
-  @spec status :: %{failed: binary(), success: binary()}
-  def status do
+  @spec statuses :: %{failed: binary(), succeeded: binary()}
+  def statuses do
     %{
-      success: "success",
-      failed: "failed"
+      failed: "failed",
+      succeeded: "succeeded"
     }
   end
 end
