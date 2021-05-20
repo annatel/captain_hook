@@ -13,8 +13,11 @@ defmodule CaptainHook do
     quote do
       @behaviour CaptainHook.Behaviour
 
-      def notify(webhook, livemode?, notification_type, data, opts \\ []),
-        do: unquote(__MODULE__).notify(webhook, livemode?, notification_type, data, opts)
+      def notify(topic, livemode?, notification_type, data, opts \\ []),
+        do: unquote(__MODULE__).notify(topic, livemode?, notification_type, data, opts)
+
+      def async_notify(topic, livemode?, notification_type, data, opts \\ []),
+        do: unquote(__MODULE__).async_notify(topic, livemode?, notification_type, data, opts)
 
       def send_webhook_notification!(webhook_notification),
         do: unquote(__MODULE__).send_webhook_notification!(webhook_notification)
@@ -65,8 +68,12 @@ defmodule CaptainHook do
   end
 
   @spec notify(binary | [binary], boolean, binary, map, keyword) ::
-          {:ok, WebhookNotification.t()} | {:error, Ecto.Changeset.t()}
-  defdelegate notify(webhook, livemode?, notification_type, data, opts \\ []), to: Notifier
+          {:ok, [WebhookNotification.t()]} | {:error, Ecto.Changeset.t()}
+  defdelegate notify(topic, livemode?, notification_type, data, opts \\ []), to: Notifier
+
+  @spec async_notify(binary | [binary], boolean, binary, map, keyword) ::
+          {:ok, [WebhookNotification.t()]} | {:error, Ecto.Changeset.t()}
+  defdelegate async_notify(topic, livemode?, notification_type, data, opts \\ []), to: Notifier
 
   @spec send_webhook_notification!(WebhookNotification.t()) ::
           %{

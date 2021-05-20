@@ -24,6 +24,6 @@ captain_hook-*.tar
 
 .elixir_ls
 .tool-versions
-!env/test.env
+!env/ci.env
 !env/example.env
 env/*.env
