@@ -165,7 +165,7 @@ defmodule CaptainHook.Notifier do
           data: data,
           idempotency_key: idempotency_key,
           resource_id: Keyword.get(opts, :resource_id) |> stringify(),
-          resource_type: Keyword.get(opts, :resource_type) |> stringify(),
+          resource_object: Keyword.get(opts, :resource_object) |> stringify(),
           type: notification_type,
           webhook_endpoint_id: webhook_endpoint.id
         })
