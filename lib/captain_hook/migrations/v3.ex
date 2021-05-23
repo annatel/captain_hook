@@ -20,6 +20,7 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_notifications_add_attempt()
     alter_table_webhook_notifications_next_retry_at()
     alter_table_webhook_notifications_add_updated_at()
+    alter_table_webhook_notifications_rename_resource_type_to_resource_object()
 
     alter_table_webhook_notifications_remove_webhook_endpoint_id()
   end
@@ -40,6 +41,7 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_notifications_remove_idempotency_key()
     alter_table_webhook_notifications_remove_attempt()
     alter_table_webhook_notifications_remove_next_retry_at()
+    alter_table_webhook_notifications_rename_resource_object_to_resource_type()
 
     alter_table_webhook_conversations_add_webhook_endpoint_id()
   end
@@ -150,6 +152,12 @@ defmodule CaptainHook.Migrations.V3 do
     alter table(:captain_hook_webhook_notifications) do
       add(:updated_at, :utc_datetime, null: false)
     end
+  end
+
+  defp alter_table_webhook_notifications_rename_resource_type_to_resource_object() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_notifications CHANGE resource_type resource_object VARCHAR(255) NULL;"
+    )
   end
 
   defp alter_table_webhook_notifications_add_idempotency_key do
@@ -268,6 +276,12 @@ defmodule CaptainHook.Migrations.V3 do
     alter table(:captain_hook_webhook_notifications) do
       remove(:next_retry_at)
     end
+  end
+
+  defp alter_table_webhook_notifications_rename_resource_object_to_resource_type() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_notifications CHANGE resource_object resource_type VARCHAR(255) NULL;"
+    )
   end
 
   defp alter_table_webhook_notifications_remove_updated_at() do
