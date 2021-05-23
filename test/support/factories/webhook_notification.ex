@@ -11,7 +11,7 @@ defmodule CaptainHook.Factory.WebhookNotification do
           created_at: utc_now(),
           data: %{},
           resource_id: uuid(),
-          resource_type: "resource_type_#{System.unique_integer()}",
+          resource_object: "resource_object_#{System.unique_integer()}",
           sequence: System.unique_integer([:positive]),
           type: "type_#{System.unique_integer()}"
         }

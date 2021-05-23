@@ -20,7 +20,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
       assert :created_at in changes_keys
       assert :data in changes_keys
       assert :resource_id in changes_keys
-      assert :resource_type in changes_keys
+      assert :resource_object in changes_keys
       assert :sequence in changes_keys
       assert :type in changes_keys
       refute :ended_at in changes_keys
@@ -52,7 +52,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
       assert get_field(changeset, :created_at) == webhook_notification_params.created_at
       assert get_field(changeset, :data) == webhook_notification_params.data
       assert get_field(changeset, :resource_id) == webhook_notification_params.resource_id
-      assert get_field(changeset, :resource_type) == webhook_notification_params.resource_type
+      assert get_field(changeset, :resource_object) == webhook_notification_params.resource_object
       assert get_field(changeset, :sequence) == webhook_notification_params.sequence
       assert get_field(changeset, :type) == webhook_notification_params.type
     end

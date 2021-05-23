@@ -11,7 +11,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
           id: binary,
           inserted_at: DateTime.t(),
           resource_id: binary | nil,
-          resource_type: binary | nil,
+          resource_object: binary | nil,
           sequence: integer,
           type: binary,
           webhook_endpoint_id: binary
@@ -28,7 +28,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
     field(:idempotency_key, :string)
     field(:next_retry_at, :utc_datetime)
     field(:resource_id, :string)
-    field(:resource_type, :string)
+    field(:resource_object, :string)
     field(:sequence, :integer)
     field(:succeeded_at, :utc_datetime)
     field(:type, :string)
@@ -44,7 +44,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
       :created_at,
       :data,
       :resource_id,
-      :resource_type,
+      :resource_object,
       :sequence,
       :type,
       :webhook_endpoint_id
