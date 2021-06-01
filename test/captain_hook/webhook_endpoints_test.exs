@@ -284,20 +284,44 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
   describe "disable_notification_type/2" do
     test "disable an enabled notification type, return the updated webhook_endpoint" do
-      %{enabled_notification_types: [enabled_notification_type]} =
+      %{
+        enabled_notification_types: [
+          enabled_notification_type_1,
+          %{id: id2} = _enabled_notification_type_2
+        ]
+      } =
         webhook_endpoint =
-        insert!(:webhook_endpoint, enabled_notification_types: [build(:enabled_notification_type)])
+        insert!(:webhook_endpoint,
+          enabled_notification_types: [
+            build(:enabled_notification_type),
+            build(:enabled_notification_type)
+          ]
+        )
 
-      assert {:ok, %{enabled_notification_types: []}} =
+      assert {:ok, %{enabled_notification_types: [%{id: ^id2} = _enabled_notification_type_2]}} =
+               WebhookEndpoints.disable_notification_type(
+                 webhook_endpoint,
+                 enabled_notification_type_1.name
+               )
+
+      assert [_enabled_notification_type] =
+               WebhookEndpoints.EnabledNotificationType |> CaptainHook.repo().all()
+    end
+
+    test "disable a disabled notification type, ignore it and return the webhook_endpoint" do
+      enabled_notification_type = build(:enabled_notification_type)
+
+      %{enabled_notification_types: [_]} =
+        webhook_endpoint =
+        insert!(:webhook_endpoint,
+          enabled_notification_types: [build(:enabled_notification_type)]
+        )
+
+      assert {:ok, %{enabled_notification_types: [_]}} =
                WebhookEndpoints.disable_notification_type(
                  webhook_endpoint,
                  enabled_notification_type.name
                )
-
-      assert [] = WebhookEndpoints.EnabledNotificationType |> CaptainHook.repo().all()
-    end
-
-    test "disable a disabled notification type, ignore it and return the webhook_endpoint" do
     end
   end
 

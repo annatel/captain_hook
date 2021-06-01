@@ -1,7 +1,7 @@
 defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   use Ecto.Schema
 
-  import Ecto.Changeset, only: [cast: 3, cast_assoc: 2, put_change: 3, validate_required: 2]
+  import Ecto.Changeset, only: [cast: 3, cast_assoc: 3, put_change: 3, validate_required: 2]
 
   alias CaptainHook.WebhookEndpoints.EnabledNotificationType
 
@@ -54,7 +54,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     ])
     |> put_change_started_at_now()
     |> validate_required([:livemode, :topic, :url])
-    |> cast_assoc(:enabled_notification_types)
+    |> cast_assoc(:enabled_notification_types, required: true)
   end
 
   @doc false
@@ -62,7 +62,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   def update_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
     |> cast(attrs, [:headers, :is_enabled, :is_insecure_allowed, :url])
-    |> cast_assoc(:enabled_notification_types)
+    |> cast_assoc(:enabled_notification_types, required: true)
   end
 
   @doc false
