@@ -13,7 +13,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
       %{id: webhook_endpoint_2_id} = insert!(:webhook_endpoint, started_at: @datetime_2)
 
-      assert [%{id: ^webhook_endpoint_1_id}, %{id: ^webhook_endpoint_2_id}] =
+      assert %{data: [%{id: ^webhook_endpoint_2_id}, %{id: ^webhook_endpoint_1_id}], total: 2} =
                WebhookEndpoints.list_webhook_endpoints()
     end
 
@@ -33,7 +33,8 @@ defmodule CaptainHook.WebhookEndpointsTest do
         [ongoing_at: utc_now]
       ]
       |> Enum.each(fn filter ->
-        assert [_webhook_endpoint] = WebhookEndpoints.list_webhook_endpoints(filters: filter)
+        assert %{data: [_webhook_endpoint], total: 1} =
+                 WebhookEndpoints.list_webhook_endpoints(filters: filter)
       end)
 
       [
@@ -44,7 +45,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
         [scheduled_at: DateTime.add(utc_now, 7200, :second)]
       ]
       |> Enum.each(fn filter ->
-        assert [] = WebhookEndpoints.list_webhook_endpoints(filters: filter)
+        assert %{data: [], total: 0} = WebhookEndpoints.list_webhook_endpoints(filters: filter)
       end)
     end
 
@@ -53,7 +54,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
       webhook_endpoint = insert!(:webhook_endpoint)
       insert!(:webhook_endpoint_secret, webhook_endpoint_id: webhook_endpoint.id)
 
-      assert [webhook_endpoint] = WebhookEndpoints.list_webhook_endpoints()
+      assert %{data: [webhook_endpoint]} = WebhookEndpoints.list_webhook_endpoints()
 
       assert is_nil(Map.get(webhook_endpoint, :secret))
 
@@ -68,7 +69,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
       webhook_endpoint = insert!(:webhook_endpoint)
       insert!(:webhook_endpoint_secret, webhook_endpoint_id: webhook_endpoint.id)
 
-      assert [webhook_endpoint] =
+      assert %{data: [webhook_endpoint]} =
                WebhookEndpoints.list_webhook_endpoints(
                  includes: [:enabled_notification_types, :secret]
                )

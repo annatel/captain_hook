@@ -96,7 +96,8 @@ defmodule CaptainHook.Notifier do
   end
 
   defp notify_topic_multi(multi, topic, livemode?, notification_type, data, created_at, opts) do
-    webhook_endpoints =
+    # TODO: list without pagination
+    %{data: webhook_endpoints} =
       WebhookEndpoints.list_webhook_endpoints(
         filters: [topic: topic, livemode: livemode?, ongoing_at: created_at],
         includes: [:enabled_notification_types]

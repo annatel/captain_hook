@@ -9,13 +9,24 @@ defmodule CaptainHook.WebhookEndpoints do
   alias CaptainHook.WebhookEndpoints.Secrets
 
   @all_events_wildcard "*"
+  @default_page_number 1
+  @default_page_size 100
 
-  @spec list_webhook_endpoints(keyword) :: [WebhookEndpoint.t()]
+  @spec list_webhook_endpoints(keyword) :: %{data: [WebhookEndpoint.t()], total: integer}
   def list_webhook_endpoints(opts \\ []) do
-    opts
-    |> webhook_endpoint_queryable()
-    |> order_by(asc: :started_at)
-    |> CaptainHook.repo().all()
+    page_number = Keyword.get(opts, :page_number, @default_page_number)
+    page_size = Keyword.get(opts, :page_size, @default_page_size)
+
+    query = opts |> webhook_endpoint_queryable() |> order_by(desc: :started_at)
+
+    count = query |> CaptainHook.repo().aggregate(:count, :id)
+
+    webhook_endpoints =
+      query
+      |> WebhookEndpointQueryable.paginate(page_number, page_size)
+      |> CaptainHook.repo().all()
+
+    %{total: count, data: webhook_endpoints}
   end
 
   @spec get_webhook_endpoint(binary, keyword) :: WebhookEndpoint.t() | nil
