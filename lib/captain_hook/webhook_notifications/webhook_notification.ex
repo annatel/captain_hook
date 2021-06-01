@@ -6,13 +6,17 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
 
   @type t :: %__MODULE__{
+          attempt: integer,
           created_at: DateTime.t(),
           data: map,
           id: binary,
+          idempotency_key: binary,
           inserted_at: DateTime.t(),
+          next_retry_at: DateTime.t() | nil,
           resource_id: binary | nil,
           resource_object: binary | nil,
           sequence: integer,
+          succeeded_at: DateTime.t() | nil,
           type: binary,
           webhook_endpoint_id: binary
         }
