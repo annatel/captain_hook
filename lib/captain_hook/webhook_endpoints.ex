@@ -31,16 +31,20 @@ defmodule CaptainHook.WebhookEndpoints do
 
   @spec get_webhook_endpoint(binary, keyword) :: WebhookEndpoint.t() | nil
   def get_webhook_endpoint(id, opts \\ []) when is_binary(id) do
+    filters = opts |> Keyword.get(:filters, []) |> Keyword.put(:id, id)
+
     opts
-    |> Keyword.put(:filters, id: id)
+    |> Keyword.put(:filters, filters)
     |> webhook_endpoint_queryable()
     |> CaptainHook.repo().one()
   end
 
   @spec get_webhook_endpoint!(binary, keyword) :: WebhookEndpoint.t()
   def get_webhook_endpoint!(id, opts \\ []) when is_binary(id) do
+    filters = opts |> Keyword.get(:filters, []) |> Keyword.put(:id, id)
+
     opts
-    |> Keyword.put(:filters, id: id)
+    |> Keyword.put(:filters, filters)
     |> webhook_endpoint_queryable()
     |> CaptainHook.repo().one!()
   end
