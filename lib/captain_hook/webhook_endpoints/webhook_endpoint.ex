@@ -52,7 +52,8 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
       :topic,
       :url
     ])
-    |> validate_required([:started_at, :livemode, :topic, :url])
+    |> put_change_started_at_now()
+    |> validate_required([:livemode, :topic, :url])
     |> cast_assoc(:enabled_notification_types)
   end
 
@@ -72,5 +73,10 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     |> validate_required([:ended_at])
     |> AntlUtilsEcto.Changeset.validate_datetime_gte(:ended_at, :started_at)
     |> put_change(:is_enabled, false)
+  end
+
+  defp put_change_started_at_now(%Ecto.Changeset{} = changeset) do
+    changeset
+    |> put_change(:started_at, DateTime.utc_now() |> DateTime.truncate(:second))
   end
 end

@@ -36,20 +36,18 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       refute changeset.valid?
       assert %{topic: ["can't be blank"]} = errors_on(changeset)
       assert %{livemode: ["can't be blank"]} = errors_on(changeset)
-      assert %{started_at: ["can't be blank"]} = errors_on(changeset)
       assert %{url: ["can't be blank"]} = errors_on(changeset)
     end
 
     test "when params are valid, return a valid changeset" do
       %{enabled_notification_types: [enabled_notification_type]} =
-        webhook_endpoint_params =
-        params_for(:webhook_endpoint, started_at: @datetime_1, is_insecure_allowed: true)
+        webhook_endpoint_params = params_for(:webhook_endpoint, is_insecure_allowed: true)
 
       changeset = WebhookEndpoint.create_changeset(%WebhookEndpoint{}, webhook_endpoint_params)
 
       assert changeset.valid?
       assert get_field(changeset, :topic) == webhook_endpoint_params.topic
-      assert get_field(changeset, :started_at) == @datetime_1
+      assert get_field(changeset, :started_at) == webhook_endpoint_params.started_at
       assert get_field(changeset, :livemode) == webhook_endpoint_params.livemode
 
       assert get_field(changeset, :is_insecure_allowed) ==
