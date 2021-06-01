@@ -82,7 +82,7 @@ defmodule CaptainHook do
           }
   defdelegate send_webhook_notification!(webhook_notification), to: Notifier
 
-  @spec list_webhook_endpoints(keyword) :: [WebhookEndpoint.t()]
+  @spec list_webhook_endpoints(keyword) :: %{data: [WebhookEndpoint.t()], total: integer}
   defdelegate list_webhook_endpoints(opts \\ []), to: WebhookEndpoints
 
   @spec get_webhook_endpoint(binary, keyword) :: WebhookEndpoint.t() | nil
