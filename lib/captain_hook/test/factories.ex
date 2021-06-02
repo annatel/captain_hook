@@ -40,8 +40,8 @@ defmodule CaptainHook.Test.Factories do
     %WebhookNotification{
       created_at: utc_now(),
       data: %{},
-      resource_id: uuid(),
-      resource_object: "resource_object_#{System.unique_integer()}",
+      resource_id: "resource_id",
+      resource_object: "resource_object",
       sequence: System.unique_integer([:positive]),
       type: "type_#{System.unique_integer()}"
     }
@@ -52,12 +52,11 @@ defmodule CaptainHook.Test.Factories do
     %WebhookConversation{
       sequence: System.unique_integer([:positive]),
       requested_at: utc_now(),
-      request_url: "request_url_#{System.unique_integer()}",
+      request_url: "request_url",
       request_headers: %{"Header-Key" => "header value"},
-      request_body: "request_body_#{System.unique_integer()}",
+      request_body: "{}",
       http_status: 200,
-      response_body: "response_body_#{System.unique_integer()}",
-      client_error_message: "response_body_#{System.unique_integer()}",
+      response_body: "response body",
       status: WebhookConversation.statuses().succeeded
     }
     |> struct!(attrs)
@@ -91,8 +90,6 @@ defmodule CaptainHook.Test.Factories do
   end
 
   def insert!(schema) when is_struct(schema), do: schema |> CaptainHook.repo().insert!()
-
-  defp uuid(), do: Ecto.UUID.generate()
 
   defp utc_now(), do: DateTime.utc_now() |> DateTime.truncate(:second)
 end
