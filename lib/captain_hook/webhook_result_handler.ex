@@ -7,11 +7,11 @@ defmodule CaptainHook.WebhookResultHandler do
 
   defmacro __using__(_opts) do
     quote do
-      @behaviour unquote(__MODULE__)
+      @behaviour CaptainHook.WebhookResultHandler
 
-      defoverridable unquote(__MODULE__)
+      defoverridable CaptainHook.WebhookResultHandler
 
-      @impl unquote(__MODULE__)
+      @impl true
       def handle_failure(
             %CaptainHook.WebhookNotifications.WebhookNotification{} = _webhook_notification,
             %CaptainHook.WebhookConversations.WebhookConversation{} = _webhook_conversation
