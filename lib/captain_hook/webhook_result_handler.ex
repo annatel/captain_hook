@@ -9,8 +9,6 @@ defmodule CaptainHook.WebhookResultHandler do
     quote do
       @behaviour CaptainHook.WebhookResultHandler
 
-      defoverridable CaptainHook.WebhookResultHandler
-
       @impl true
       def handle_failure(
             %CaptainHook.WebhookNotifications.WebhookNotification{} = _webhook_notification,
@@ -18,6 +16,8 @@ defmodule CaptainHook.WebhookResultHandler do
           ) do
         :ok
       end
+
+      defoverridable CaptainHook.WebhookResultHandler
     end
   end
 end
