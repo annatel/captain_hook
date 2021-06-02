@@ -7,9 +7,7 @@ defmodule CaptainHook.Factory do
   alias CaptainHook.TestRepo
 
   @spec uuid :: <<_::288>>
-  def uuid() do
-    Ecto.UUID.generate()
-  end
+  def uuid(), do: Ecto.UUID.generate()
 
   @spec shortcode_uuid(nil | binary) :: binary
   def shortcode_uuid(prefix \\ nil), do: uuid() |> Shortcode.to_shortcode!(prefix)
