@@ -14,6 +14,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
           is_enabled: boolean,
           is_insecure_allowed: boolean,
           livemode: boolean,
+          object: binary,
           secret: binary | nil,
           started_at: DateTime.t(),
           updated_at: DateTime.t(),
@@ -37,6 +38,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     field(:url, :string)
 
     timestamps()
+    field(:object, :string, default: "webhook_endpoint")
   end
 
   @doc false

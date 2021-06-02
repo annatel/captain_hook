@@ -13,6 +13,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
           idempotency_key: binary,
           inserted_at: DateTime.t(),
           next_retry_at: DateTime.t() | nil,
+          object: binary,
           resource_id: binary | nil,
           resource_object: binary | nil,
           sequence: integer,
@@ -38,6 +39,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
     field(:type, :string)
 
     timestamps()
+    field(:object, :string, default: "webhook_notification")
   end
 
   @doc false

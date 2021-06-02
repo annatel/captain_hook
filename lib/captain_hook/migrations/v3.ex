@@ -10,6 +10,7 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_endpoints_rename_webhook_to_topic()
     alter_table_webhook_endpoints_rename_allow_insecure_to_is_insecure_allowed()
     alter_table_webhook_endpoints_add_is_enabled()
+    alter_table_webhook_endpoints_add_object()
 
     alter_table_webhook_notifications_remove_webhook()
     alter_table_webhook_notifications_remove_livemode()
@@ -21,8 +22,10 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_notifications_next_retry_at()
     alter_table_webhook_notifications_add_updated_at()
     alter_table_webhook_notifications_rename_resource_type_to_resource_object()
+    alter_table_webhook_notifications_add_object()
 
-    alter_table_webhook_notifications_remove_webhook_endpoint_id()
+    alter_table_webhook_conversations_remove_webhook_endpoint_id()
+    alter_table_webhook_conversations_add_object()
   end
 
   def down do
@@ -32,6 +35,7 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_endpoints_rename_is_insecure_allowed_to_allow_insecure()
     alter_table_webhook_endpoints_rename_topic_to_webhook()
     alter_table_webhook_endpoints_remove_is_enabled()
+    alter_table_webhook_endpoints_remove_object()
 
     alter_table_webhook_notifications_remove_webhook_endpoint()
     alter_table_webhook_notifications_add_webhook()
@@ -42,8 +46,10 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_notifications_remove_attempt()
     alter_table_webhook_notifications_remove_next_retry_at()
     alter_table_webhook_notifications_rename_resource_object_to_resource_type()
+    alter_table_webhook_notifications_remove_object()
 
     alter_table_webhook_conversations_add_webhook_endpoint_id()
+    alter_table_webhook_conversations_remove_object()
   end
 
   defp rename_sequences_to_old_sequences() do
@@ -108,6 +114,12 @@ defmodule CaptainHook.Migrations.V3 do
     )
   end
 
+  defp alter_table_webhook_endpoints_add_object() do
+    alter table(:captain_hook_webhook_endpoints) do
+      add(:object, :string, default: "webhook_endpoint")
+    end
+  end
+
   defp alter_table_webhook_notifications_remove_webhook() do
     execute(
       "ALTER TABLE captain_hook_webhook_notifications DROP INDEX captain_hook_webhook_notifications_webhook_index;"
@@ -160,6 +172,12 @@ defmodule CaptainHook.Migrations.V3 do
     )
   end
 
+  defp alter_table_webhook_notifications_add_object() do
+    alter table(:captain_hook_webhook_notifications) do
+      add(:object, :string, default: "webhook_notification")
+    end
+  end
+
   defp alter_table_webhook_notifications_add_idempotency_key do
     execute(
       "ALTER TABLE captain_hook_webhook_notifications ADD COLUMN idempotency_key VARCHAR(255) NULL AFTER data"
@@ -182,7 +200,7 @@ defmodule CaptainHook.Migrations.V3 do
     )
   end
 
-  defp alter_table_webhook_notifications_remove_webhook_endpoint_id() do
+  defp alter_table_webhook_conversations_remove_webhook_endpoint_id() do
     execute("SET FOREIGN_KEY_CHECKS=0;")
 
     execute(
@@ -194,6 +212,12 @@ defmodule CaptainHook.Migrations.V3 do
     end
 
     execute("SET FOREIGN_KEY_CHECKS=1;")
+  end
+
+  defp alter_table_webhook_conversations_add_object() do
+    alter table(:captain_hook_webhook_conversations) do
+      add(:object, :string, default: "webhook_conversation")
+    end
   end
 
   defp drop_sequences_table() do
@@ -219,6 +243,12 @@ defmodule CaptainHook.Migrations.V3 do
   defp alter_table_webhook_endpoints_remove_is_enabled() do
     alter table(:captain_hook_webhook_endpoints) do
       remove(:is_enabled)
+    end
+  end
+
+  defp alter_table_webhook_endpoints_remove_object() do
+    alter table(:captain_hook_webhook_endpoints) do
+      remove(:object)
     end
   end
 
@@ -278,6 +308,12 @@ defmodule CaptainHook.Migrations.V3 do
     end
   end
 
+  defp alter_table_webhook_notifications_remove_object() do
+    alter table(:captain_hook_webhook_notifications) do
+      remove(:object)
+    end
+  end
+
   defp alter_table_webhook_notifications_rename_resource_object_to_resource_type() do
     execute(
       "ALTER TABLE captain_hook_webhook_notifications CHANGE resource_object resource_type VARCHAR(255) NULL;"
@@ -287,6 +323,12 @@ defmodule CaptainHook.Migrations.V3 do
   defp alter_table_webhook_notifications_remove_updated_at() do
     alter table(:captain_hook_webhook_notifications) do
       remove(:updated_at)
+    end
+  end
+
+  defp alter_table_webhook_conversations_remove_object() do
+    alter table(:captain_hook_webhook_conversations) do
+      remove(:object)
     end
   end
 end

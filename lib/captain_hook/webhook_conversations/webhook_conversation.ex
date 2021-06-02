@@ -11,6 +11,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
           http_status: integer,
           id: binary,
           inserted_at: DateTime.t(),
+          object: binary,
           request_body: binary,
           request_headers: map,
           request_url: binary,
@@ -38,6 +39,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     field(:status, :string)
 
     timestamps(updated_at: false)
+    field(:object, :string, default: "webhook_conversation")
   end
 
   @doc false
