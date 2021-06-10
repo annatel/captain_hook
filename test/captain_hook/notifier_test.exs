@@ -420,7 +420,7 @@ defmodule CaptainHook.NotifierTest do
     test "when the webhook notification does not exists, raises a Ecto.NoResultsError" do
       assert_raise Ecto.NoResultsError, fn ->
         Notifier.send_webhook_notification(%{
-          "webhook_notification_id" => shortcode_uuid(),
+          "webhook_notification_id" => shortcode_uuid("wn"),
           "webhook_result_handler" => nil
         })
       end

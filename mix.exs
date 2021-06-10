@@ -39,7 +39,7 @@ defmodule CaptainHook.MixProject do
       {:finch, "~> 0.7.0"},
       {:plug_crypto, "~> 1.0"},
       {:recase, "~> 0.7"},
-      {:shortcode, "~> 0.5.0"}
+      {:shortcode, "~> 0.6.0"}
     ]
   end
 
