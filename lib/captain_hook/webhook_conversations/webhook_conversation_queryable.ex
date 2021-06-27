@@ -8,20 +8,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationQueryable do
 
   alias CaptainHook.WebhookNotifications
 
-  @includes [:webhook_notification]
-
-  @spec includes() :: [atom]
-  def includes(), do: @includes
-
-  @spec with_preloads(Ecto.Queryable.t(), keyword) :: Ecto.Queryable.t()
-  def with_preloads(queryable, includes) when is_list(includes) do
-    includes
-    |> Enum.reduce(queryable, fn include, queryable ->
-      queryable |> with_preload(include)
-    end)
-  end
-
-  defp with_preload(queryable, :webhook_notification) do
+  defp include_assoc(queryable, :webhook_notification) do
     queryable |> preload_webhook_notification()
   end
 
@@ -29,7 +16,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversationQueryable do
     queryable |> preload(:webhook_notification)
   end
 
-  defp filter_by_field({:webhook_endpoint_id, webhook_endpoint_id}, queryable) do
+  defp filter_by_field(queryable, {:webhook_endpoint_id, webhook_endpoint_id}) do
     webhook_notification_ids_query =
       WebhookNotifications.webhook_notification_queryable(
         filters: [webhook_endpoint_id: webhook_endpoint_id],

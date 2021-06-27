@@ -7,10 +7,13 @@ defmodule CaptainHook.Migrations.V3 do
     rename_sequences_to_old_sequences()
     create_sequences_table()
 
-    alter_table_webhook_endpoints_rename_webhook_to_topic()
+    alter_table_webhook_endpoints_rename_webhook_to_owner_id()
     alter_table_webhook_endpoints_rename_allow_insecure_to_is_insecure_allowed()
     alter_table_webhook_endpoints_add_is_enabled()
     alter_table_webhook_endpoints_add_object()
+    alter_table_webhook_endpoints_add_api_version()
+    alter_table_webhook_endpoints_rename_started_at_to_created_at()
+    alter_table_webhook_endpoints_rename_ended_at_to_deleted_at()
 
     alter_table_webhook_notifications_remove_webhook()
     alter_table_webhook_notifications_remove_livemode()
@@ -33,9 +36,12 @@ defmodule CaptainHook.Migrations.V3 do
     rename_old_sequences_to_sequences_table()
 
     alter_table_webhook_endpoints_rename_is_insecure_allowed_to_allow_insecure()
-    alter_table_webhook_endpoints_rename_topic_to_webhook()
+    alter_table_webhook_endpoints_rename_subscriber_to_webhook()
     alter_table_webhook_endpoints_remove_is_enabled()
     alter_table_webhook_endpoints_remove_object()
+    alter_table_webhook_endpoints_remove_api_version()
+    alter_table_webhook_endpoints_rename_created_at_to_started_at()
+    alter_table_webhook_endpoints_rename_deleted_at_to_ended_at()
 
     alter_table_webhook_notifications_remove_webhook_endpoint()
     alter_table_webhook_notifications_add_webhook()
@@ -92,10 +98,18 @@ defmodule CaptainHook.Migrations.V3 do
     )
   end
 
-  defp alter_table_webhook_endpoints_rename_webhook_to_topic() do
-    execute(
-      "ALTER TABLE captain_hook_webhook_endpoints CHANGE webhook topic VARCHAR(255) NOT NULL;"
+  defp alter_table_webhook_endpoints_rename_webhook_to_owner_id() do
+    rename(table(:captain_hook_webhook_endpoints), :webhook,
+      to: elem(CaptainHook.owner_id_field(:migration), 0)
     )
+
+    alter table(:captain_hook_webhook_endpoints) do
+      modify(
+        elem(CaptainHook.owner_id_field(:migration), 0),
+        elem(CaptainHook.owner_id_field(:migration), 1),
+        null: false
+      )
+    end
   end
 
   defp alter_table_webhook_endpoints_rename_allow_insecure_to_is_insecure_allowed() do
@@ -118,6 +132,44 @@ defmodule CaptainHook.Migrations.V3 do
     alter table(:captain_hook_webhook_endpoints) do
       add(:object, :string, default: "webhook_endpoint")
     end
+  end
+
+  defp alter_table_webhook_endpoints_add_api_version() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints ADD COLUMN api_version VARCHAR(255) NOT NULL AFTER id"
+    )
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints ADD INDEX captain_hook_webhook_endpoints_api_version_index (api_version);"
+    )
+  end
+
+  defp alter_table_webhook_endpoints_rename_started_at_to_created_at() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints CHANGE started_at created_at DATETIME NOT NULL;"
+    )
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints DROP INDEX captain_hook_webhook_endpoints_started_at_index;"
+    )
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints ADD INDEX captain_hook_webhook_endpoints_created_at_index (created_at);"
+    )
+  end
+
+  defp alter_table_webhook_endpoints_rename_ended_at_to_deleted_at() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints CHANGE ended_at deleted_at DATETIME NULL AFTER is_insecure_allowed;"
+    )
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints DROP INDEX captain_hook_webhook_endpoints_ended_at_index;"
+    )
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints ADD INDEX captain_hook_webhook_endpoints_deleted_at_index (deleted_at);"
+    )
   end
 
   defp alter_table_webhook_notifications_remove_webhook() do
@@ -234,9 +286,19 @@ defmodule CaptainHook.Migrations.V3 do
     )
   end
 
-  defp alter_table_webhook_endpoints_rename_topic_to_webhook() do
+  defp alter_table_webhook_endpoints_rename_subscriber_to_webhook() do
+    rename(
+      table(:captain_hook_webhook_endpoints),
+      elem(CaptainHook.owner_id_field(:migration), 0),
+      to: :webhook
+    )
+
+    alter table(:captain_hook_webhook_endpoints) do
+      modify(:webhook, :string, null: false)
+    end
+
     execute(
-      "ALTER TABLE captain_hook_webhook_endpoints CHANGE topic webhook VARCHAR(255) NOT NULL;"
+      "ALTER TABLE captain_hook_webhook_endpoints CHANGE subscriber webhook VARCHAR(255) NOT NULL;"
     )
   end
 
@@ -250,6 +312,40 @@ defmodule CaptainHook.Migrations.V3 do
     alter table(:captain_hook_webhook_endpoints) do
       remove(:object)
     end
+  end
+
+  defp alter_table_webhook_endpoints_remove_api_version() do
+    alter table(:captain_hook_webhook_endpoints) do
+      remove(:api_version)
+    end
+  end
+
+  defp alter_table_webhook_endpoints_rename_created_at_to_started_at() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints CHANGE created_at started_at DATETIME NULL;"
+    )
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints DROP INDEX captain_hook_webhook_endpoints_created_at_index;"
+    )
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints ADD INDEX captain_hook_webhook_endpoints_started_at_index (started_at);"
+    )
+  end
+
+  defp alter_table_webhook_endpoints_rename_deleted_at_to_ended_at() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints CHANGE deleted_at ended_at DATETIME NULL;"
+    )
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints DROP INDEX captain_hook_webhook_endpoints_deleted_at_index;"
+    )
+
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints ADD INDEX captain_hook_webhook_endpoints_ended_at_index (ended_at);"
+    )
   end
 
   defp alter_table_webhook_notifications_remove_webhook_endpoint() do

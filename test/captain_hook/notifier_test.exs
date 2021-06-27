@@ -13,17 +13,7 @@ defmodule CaptainHook.NotifierTest do
   end
 
   describe "notify/5" do
-    test "when no webhook_endpoints exists for the topic, it does not do anything" do
-      assert {:ok, []} = Notifier.notify("topic", true, "notification_type", %{})
-    end
-
-    test "when no ongoing webhook_endpoints exists for the topic, it does not do anything" do
-      webhook_endpoint = insert!(:webhook_endpoint, started_at: utc_now(), ended_at: utc_now())
-
-      assert {:ok, []} = Notifier.notify(webhook_endpoint.topic, true, "notification_type", %{})
-    end
-
-    test "when the topic has one webhook_endpoint, creates a webhook_notification and send it",
+    test "when the owner has an ongoing webhook_endpoint, creates a webhook_notification and send it",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
 
@@ -33,23 +23,68 @@ defmodule CaptainHook.NotifierTest do
 
       webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
 
-      assert {:ok, [%WebhookNotification{id: webhook_notification_id} = webhook_notification]} =
-               Notifier.notify(webhook_endpoint.topic, true, "notification_type", %{})
+      assert {:ok, [%WebhookNotification{id: webhook_notification_id}]} =
+               Notifier.notify(webhook_endpoint.owner_id, true, "notification_type", %{})
 
-      assert [webhook_conversation] =
+      assert [_webhook_conversation] =
                WebhookConversation
                |> where(webhook_notification_id: ^webhook_notification_id)
                |> TestRepo.all()
-
-      assert webhook_conversation.request_body ==
-               Jason.encode!(
-                 Map.merge(webhook_notification.data, %{
-                   webhook_endpoint_id: webhook_endpoint.id
-                 })
-               )
     end
 
-    test "when the notification exists with the same idempotency key, it does not create a new one",
+    test "when no webhook_endpoints exists for the topic, it does not create a webhook_notifications" do
+      assert {:ok, []} = Notifier.notify(uuid(), true, "notification_type", %{})
+    end
+
+    test "when the owner_id has no ongoing webhook, it does not create a webhook_notifications" do
+      webhook_endpoint = insert!(:webhook_endpoint, created_at: utc_now(), deleted_at: utc_now())
+
+      assert {:ok, []} =
+               Notifier.notify(webhook_endpoint.owner_id, true, "notification_type", %{})
+    end
+
+    test "when the webhook is disabled, no webhook_notifications are created" do
+      webhook_endpoint = insert!(:webhook_endpoint, is_enabled: false)
+
+      assert {:ok, []} =
+               Notifier.notify(webhook_endpoint.owner_id, true, "notification_type", %{})
+    end
+
+    test "when the notification exists with an existing idempotency key from another webhook_endpoint, creates a webhook_notification and send it",
+         %{bypass: bypass} do
+      start_supervised(CaptainHook.Supervisor)
+
+      Bypass.expect_once(bypass, "POST", "/", fn conn ->
+        Plug.Conn.resp(conn, 200, "")
+      end)
+
+      owner_id_1 = uuid()
+      owner_id_2 = uuid()
+
+      webhook_endpoint_1 =
+        insert!(:webhook_endpoint, owner_id: owner_id_1, url: endpoint_url(bypass.port))
+
+      webhook_endpoint_2 =
+        insert!(:webhook_endpoint, owner_id: owner_id_2, url: endpoint_url(bypass.port))
+
+      webhook_notification_2 =
+        insert!(:webhook_notification,
+          idempotency_key: uuid(),
+          webhook_endpoint_id: webhook_endpoint_2.id
+        )
+
+      assert {:ok, [%WebhookNotification{id: webhook_notification_id}]} =
+               Notifier.notify(webhook_endpoint_1.owner_id, true, "notification_type", %{},
+                 idempotency_key: webhook_notification_2.idempotency_key
+               )
+
+      assert [_webhook_conversation] =
+               WebhookConversation
+               |> where(webhook_notification_id: ^webhook_notification_id)
+               |> TestRepo.all()
+    end
+
+    test "when the notification exists with an existing idempotency key for the webhook_endpoint and it is not succeeded, it does not create a new webhook_notification but send it",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
 
@@ -61,10 +96,13 @@ defmodule CaptainHook.NotifierTest do
 
       %{id: webhook_notification_id} =
         webhook_notification =
-        insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
+        insert!(:webhook_notification,
+          idempotency_key: uuid(),
+          webhook_endpoint_id: webhook_endpoint.id
+        )
 
       assert {:ok, [%{id: ^webhook_notification_id}]} =
-               Notifier.notify(webhook_endpoint.topic, true, "notification_type", %{},
+               Notifier.notify(webhook_endpoint.owner_id, true, "notification_type", %{},
                  idempotency_key: webhook_notification.idempotency_key
                )
 
@@ -74,7 +112,7 @@ defmodule CaptainHook.NotifierTest do
                |> TestRepo.all()
     end
 
-    test "when the webhook_notification exists and it is already succeed, do not send it",
+    test "when the notification exists with an existing idempotency key for the webhook_endpoint and it is not succeeded, it does not create a new webhook_notification and do not resent it",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
 
@@ -83,12 +121,13 @@ defmodule CaptainHook.NotifierTest do
       %{id: webhook_notification_id} =
         webhook_notification =
         insert!(:webhook_notification,
-          webhook_endpoint_id: webhook_endpoint.id,
-          succeeded_at: utc_now()
+          idempotency_key: uuid(),
+          succeeded_at: utc_now(),
+          webhook_endpoint_id: webhook_endpoint.id
         )
 
       assert {:ok, [%{id: ^webhook_notification_id}]} =
-               Notifier.notify(webhook_endpoint.topic, true, "notification_type", %{},
+               Notifier.notify(webhook_endpoint.owner_id, true, "notification_type", %{},
                  idempotency_key: webhook_notification.idempotency_key
                )
 
@@ -100,27 +139,15 @@ defmodule CaptainHook.NotifierTest do
   end
 
   describe "async_notify/5" do
-    test "when no webhook_endpoints exists for the topic, it does not do anything" do
-      assert {:ok, []} = Notifier.async_notify("topic", true, "notification_type", %{})
-      Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queuetopia)
-    end
-
-    test "when no ongoing webhook_endpoints exists for the topic, it does not do anything" do
-      webhook_endpoint = insert!(:webhook_endpoint, started_at: utc_now(), ended_at: utc_now())
-
-      assert {:ok, []} =
-               Notifier.async_notify(webhook_endpoint.topic, true, "notification_type", %{})
-    end
-
-    test "when the topic has one webhook_endpoint, creates a webhook_notification and enqueue it" do
+    test "when the owner has one webhook_endpoint, creates a webhook_notification and enqueue it" do
       webhook_endpoint = insert!(:webhook_endpoint)
 
       assert {:ok, [%WebhookNotification{} = webhook_notification]} =
-               Notifier.async_notify(webhook_endpoint.topic, true, "notification_type", %{})
+               Notifier.async_notify(webhook_endpoint.owner_id, true, "notification_type", %{})
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
-        "#{webhook_endpoint.topic}_#{webhook_endpoint.id}",
+        "#{webhook_endpoint.id}",
         %{
           params: %{
             "webhook_notification_id" => webhook_notification.id,
@@ -130,13 +157,13 @@ defmodule CaptainHook.NotifierTest do
       )
     end
 
-    test "when the topic has multiple webhook_endpoints, creates multiple webhook_notifications for each endpoint and enqueue them" do
-      topic = "topic"
-      webhook_endpoint_1 = insert!(:webhook_endpoint, topic: topic)
-      webhook_endpoint_2 = insert!(:webhook_endpoint, topic: topic)
+    test "when the owner has multiple webhook_endpoints, creates multiple webhook_notifications for each endpoint and enqueue them" do
+      owner_id = uuid()
+      webhook_endpoint_1 = insert!(:webhook_endpoint, owner_id: owner_id)
+      webhook_endpoint_2 = insert!(:webhook_endpoint, owner_id: owner_id)
 
       assert {:ok, webhook_notifications} =
-               Notifier.async_notify(topic, true, "notification_type", %{})
+               Notifier.async_notify(owner_id, true, "notification_type", %{})
 
       assert length(webhook_notifications) == 2
 
@@ -148,7 +175,7 @@ defmodule CaptainHook.NotifierTest do
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
-        "#{webhook_endpoint_1.topic}_#{webhook_endpoint_1.id}",
+        "#{webhook_endpoint_1.id}",
         %{
           params: %{
             "webhook_notification_id" => webhook_notification_1.id,
@@ -159,7 +186,7 @@ defmodule CaptainHook.NotifierTest do
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
-        "#{webhook_endpoint_2.topic}_#{webhook_endpoint_2.id}",
+        "#{webhook_endpoint_2.id}",
         %{
           params: %{
             "webhook_notification_id" => webhook_notification_2.id,
@@ -169,75 +196,29 @@ defmodule CaptainHook.NotifierTest do
       )
     end
 
-    test "notify multiple topics, when each topic has one webhook_endpoint, creates multiple webhook_notifications for each webhook_endpoint and enqueue them" do
-      webhook_endpoint_1 = insert!(:webhook_endpoint)
-      webhook_endpoint_2 = insert!(:webhook_endpoint)
-      webhook_endpoint_3 = insert!(:webhook_endpoint, topic: webhook_endpoint_2.topic)
+    test "when the owner has no webhook_endpoints, it does not create a webhook_notifications" do
+      assert {:ok, []} = Notifier.async_notify("owner_id", true, "notification_type", %{})
+      Queuetopia.Test.Assertions.refute_job_created(CaptainHook.Queuetopia)
+    end
 
-      assert {:ok, webhook_notifications} =
-               Notifier.async_notify(
-                 [webhook_endpoint_1.topic, webhook_endpoint_2.topic],
-                 true,
-                 "notification_type",
-                 %{}
-               )
+    test "when the owner has no ongoing webhook_endpoint, it does not create a webhook_notifications" do
+      webhook_endpoint = build(:webhook_endpoint) |> make_deleted() |> insert!()
 
-      assert length(webhook_notifications) == 3
-
-      [webhook_notification_1] =
-        webhook_notifications |> Enum.filter(&(&1.webhook_endpoint_id == webhook_endpoint_1.id))
-
-      [webhook_notification_2] =
-        webhook_notifications |> Enum.filter(&(&1.webhook_endpoint_id == webhook_endpoint_2.id))
-
-      [webhook_notification_3] =
-        webhook_notifications |> Enum.filter(&(&1.webhook_endpoint_id == webhook_endpoint_3.id))
-
-      Queuetopia.Test.Assertions.assert_job_created(
-        CaptainHook.Queuetopia,
-        "#{webhook_endpoint_1.topic}_#{webhook_endpoint_1.id}",
-        %{
-          params: %{
-            "webhook_notification_id" => webhook_notification_1.id,
-            "webhook_result_handler" => nil
-          }
-        }
-      )
-
-      Queuetopia.Test.Assertions.assert_job_created(
-        CaptainHook.Queuetopia,
-        "#{webhook_endpoint_2.topic}_#{webhook_endpoint_2.id}",
-        %{
-          params: %{
-            "webhook_notification_id" => webhook_notification_2.id,
-            "webhook_result_handler" => nil
-          }
-        }
-      )
-
-      Queuetopia.Test.Assertions.assert_job_created(
-        CaptainHook.Queuetopia,
-        "#{webhook_endpoint_3.topic}_#{webhook_endpoint_3.id}",
-        %{
-          params: %{
-            "webhook_notification_id" => webhook_notification_3.id,
-            "webhook_result_handler" => nil
-          }
-        }
-      )
+      assert {:ok, []} =
+               Notifier.async_notify(webhook_endpoint.owner_id, true, "notification_type", %{})
     end
 
     test "when webhook_result_handler is specified, enqueue the webhook_notification with the webhook_result_handler" do
       webhook_endpoint = insert!(:webhook_endpoint)
 
       assert {:ok, [webhook_notification]} =
-               Notifier.async_notify(webhook_endpoint.topic, true, "notification_type", %{},
+               Notifier.async_notify(webhook_endpoint.owner_id, true, "notification_type", %{},
                  webhook_result_handler: CaptainHook.WebhookResultHandlerMock
                )
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
-        "#{webhook_endpoint.topic}_#{webhook_endpoint.id}",
+        "#{webhook_endpoint.id}",
         %{
           params: %{
             "webhook_notification_id" => webhook_notification.id,
@@ -247,21 +228,24 @@ defmodule CaptainHook.NotifierTest do
       )
     end
 
-    test "when the notification exists with the same idempotency key, it does not create a new one" do
+    test "when a notification exists with the same idempotency key for the webhook_endpoint, it does not create a new one" do
       webhook_endpoint = insert!(:webhook_endpoint)
 
       %{id: webhook_notification_id} =
         webhook_notification =
-        insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
+        insert!(:webhook_notification,
+          idempotency_key: uuid(),
+          webhook_endpoint_id: webhook_endpoint.id
+        )
 
       assert {:ok, [%{id: ^webhook_notification_id}]} =
-               Notifier.async_notify(webhook_endpoint.topic, true, "notification_type", %{},
+               Notifier.async_notify(webhook_endpoint.owner_id, true, "notification_type", %{},
                  idempotency_key: webhook_notification.idempotency_key
                )
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
-        "#{webhook_endpoint.topic}_#{webhook_endpoint.id}",
+        "#{webhook_endpoint.id}",
         %{
           params: %{
             "webhook_notification_id" => webhook_notification_id,
@@ -273,23 +257,6 @@ defmodule CaptainHook.NotifierTest do
   end
 
   describe "send_webhook_notification/2" do
-    test "when the webhook_endpoint is disabled, returns an ok noop tuple",
-         %{bypass: bypass} do
-      start_supervised(CaptainHook.Supervisor)
-
-      webhook_endpoint =
-        build(:webhook_endpoint, url: endpoint_url(bypass.port)) |> make_disable() |> insert!()
-
-      webhook_notification =
-        insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
-
-      assert {:ok, :noop} =
-               Notifier.send_webhook_notification(%{
-                 "webhook_notification_id" => webhook_notification.id,
-                 "webhook_result_handler" => nil
-               })
-    end
-
     test "when the webhook_notification is already succeed, returns the notification without sending it",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
@@ -420,7 +387,7 @@ defmodule CaptainHook.NotifierTest do
     test "when the webhook notification does not exists, raises a Ecto.NoResultsError" do
       assert_raise Ecto.NoResultsError, fn ->
         Notifier.send_webhook_notification(%{
-          "webhook_notification_id" => shortcode_uuid(),
+          "webhook_notification_id" => shortcode_uuid("wn"),
           "webhook_result_handler" => nil
         })
       end

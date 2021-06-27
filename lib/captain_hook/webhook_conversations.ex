@@ -1,8 +1,6 @@
 defmodule CaptainHook.WebhookConversations do
   @moduledoc false
 
-  import Ecto.Query, only: [order_by: 2]
-
   alias Ecto.Multi
   alias CaptainHook.Sequences
   alias CaptainHook.WebhookConversations.{WebhookConversation, WebhookConversationQueryable}
@@ -10,29 +8,58 @@ defmodule CaptainHook.WebhookConversations do
   @default_page_number 1
   @default_page_size 100
 
-  @spec list_webhook_conversations(keyword) :: %{data: [WebhookConversation.t()], total: integer}
+  @spec list_webhook_conversations(keyword) :: [WebhookConversation.t()]
   def list_webhook_conversations(opts \\ []) when is_list(opts) do
-    page_number = Keyword.get(opts, :page_number, @default_page_number)
-    page_size = Keyword.get(opts, :page_size, @default_page_size)
+    try do
+      opts |> webhook_conversation_queryable() |> CaptainHook.repo().all()
+    rescue
+      Ecto.Query.CastError -> []
+    end
+  end
 
-    query = opts |> webhook_conversation_queryable() |> order_by(desc: :sequence)
+  @spec paginate_webhook_conversations(pos_integer, pos_integer, keyword) :: %{
+          data: [WebhookEndpoint.t()],
+          page_number: integer,
+          page_size: integer,
+          total: integer
+        }
+  def paginate_webhook_conversations(
+        page_size \\ @default_page_size,
+        page_number \\ @default_page_number,
+        opts \\ []
+      )
+      when is_integer(page_number) and is_integer(page_size) do
+    try do
+      query = opts |> webhook_conversation_queryable()
 
-    count = query |> CaptainHook.repo().aggregate(:count, :id)
+      webhook_conversations =
+        query
+        |> WebhookConversationQueryable.paginate(page_size, page_number)
+        |> CaptainHook.repo().all()
 
-    webhook_conversations =
-      query
-      |> WebhookConversationQueryable.paginate(page_number, page_size)
-      |> CaptainHook.repo().all()
-
-    %{total: count, data: webhook_conversations}
+      %{
+        data: webhook_conversations,
+        page_number: page_number,
+        page_size: page_size,
+        total: CaptainHook.repo().aggregate(query, :count, :id)
+      }
+    rescue
+      Ecto.Query.CastError -> %{data: [], page_number: 0, page_size: 0, total: 0}
+    end
   end
 
   @spec get_webhook_conversation(binary, keyword) :: WebhookConversation.t() | nil
   def get_webhook_conversation(id, opts \\ []) when is_binary(id) do
-    opts
-    |> Keyword.put(:filters, id: id)
-    |> webhook_conversation_queryable()
-    |> CaptainHook.repo().one()
+    filters = opts |> Keyword.get(:filters, []) |> Keyword.put(:id, id)
+
+    try do
+      opts
+      |> Keyword.put(:filters, filters)
+      |> webhook_conversation_queryable()
+      |> CaptainHook.repo().one()
+    rescue
+      Ecto.Query.CastError -> nil
+    end
   end
 
   @spec create_webhook_conversation(map()) ::
@@ -65,6 +92,7 @@ defmodule CaptainHook.WebhookConversations do
 
     WebhookConversationQueryable.queryable()
     |> WebhookConversationQueryable.filter(filters)
-    |> WebhookConversationQueryable.with_preloads(includes)
+    |> WebhookConversationQueryable.include(includes)
+    |> WebhookConversationQueryable.order_by(desc: :sequence)
   end
 end

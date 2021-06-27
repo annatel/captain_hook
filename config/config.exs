@@ -13,5 +13,11 @@ if(Mix.env() == :test) do
   config :captain_hook,
     repo: CaptainHook.TestRepo
 
+  config :padlock,
+    repo: CaptainHook.TestRepo
+
+  config :captain_hook,
+    owner_id_field: [migration: {:owner_id, :binary_id}, schema: {:owner_id, :binary_id, []}]
+
   config :captain_hook, CaptainHook.Queuetopia, disable?: true
 end

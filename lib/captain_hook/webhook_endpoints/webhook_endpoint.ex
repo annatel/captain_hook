@@ -1,13 +1,15 @@
 defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
-  use Ecto.Schema
+  use CaptainHook.WebhookEndpoints.WebhookEndpointSchema
 
   import Ecto.Changeset, only: [cast: 3, cast_assoc: 3, put_change: 3, validate_required: 2]
 
   alias CaptainHook.WebhookEndpoints.EnabledNotificationType
 
   @type t :: %__MODULE__{
+          api_version: binary | nil,
+          created_at: DateTime.t(),
+          deleted_at: DateTime.t() | nil,
           enabled_notification_types: [EnabledNotificationType.t()],
-          ended_at: DateTime.t() | nil,
           headers: map | nil,
           id: binary,
           inserted_at: DateTime.t(),
@@ -16,27 +18,26 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
           livemode: boolean,
           object: binary,
           secret: binary | nil,
-          started_at: DateTime.t(),
           updated_at: DateTime.t(),
-          topic: binary,
           url: binary
         }
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "we"}
   @foreign_key_type :binary_id
   schema "captain_hook_webhook_endpoints" do
-    field(:started_at, :utc_datetime)
-    field(:ended_at, :utc_datetime)
+    configurable_fields()
 
+    field(:api_version, :string, default: "2021-01-01")
+    field(:created_at, :utc_datetime)
     has_many(:enabled_notification_types, EnabledNotificationType, on_replace: :delete)
     field(:headers, :map)
     field(:is_enabled, :boolean, default: true)
     field(:is_insecure_allowed, :boolean, default: false)
     field(:livemode, :boolean)
     field(:secret, :string, virtual: true)
-    field(:topic, :string)
     field(:url, :string)
 
+    field(:deleted_at, :utc_datetime)
     timestamps()
     field(:object, :string, default: "webhook_endpoint")
   end
@@ -46,17 +47,17 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   def create_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
     |> cast(attrs, [
-      :started_at,
+      :api_version,
       :headers,
       :is_insecure_allowed,
+      :is_enabled,
       :livemode,
-      :secret,
-      :topic,
       :url
     ])
-    |> put_change_started_at_now()
-    |> validate_required([:livemode, :topic, :url])
+    |> put_change_created_at_now()
+    |> validate_required([:livemode, :url])
     |> cast_assoc(:enabled_notification_types, required: true)
+    |> validate_configurable_fields(attrs)
   end
 
   @doc false
@@ -71,14 +72,14 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   @spec remove_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
   def remove_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
-    |> cast(attrs, [:ended_at])
-    |> validate_required([:ended_at])
-    |> AntlUtilsEcto.Changeset.validate_datetime_gte(:ended_at, :started_at)
+    |> cast(attrs, [:deleted_at])
+    |> validate_required([:deleted_at])
+    |> AntlUtilsEcto.Changeset.validate_datetime_gte(:deleted_at, :created_at)
     |> put_change(:is_enabled, false)
   end
 
-  defp put_change_started_at_now(%Ecto.Changeset{} = changeset) do
+  defp put_change_created_at_now(%Ecto.Changeset{} = changeset) do
     changeset
-    |> put_change(:started_at, DateTime.utc_now() |> DateTime.truncate(:second))
+    |> put_change(:created_at, DateTime.utc_now() |> DateTime.truncate(:second))
   end
 end
