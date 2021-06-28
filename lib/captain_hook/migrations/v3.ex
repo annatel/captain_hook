@@ -99,8 +99,8 @@ defmodule CaptainHook.Migrations.V3 do
   end
 
   defp alter_table_webhook_endpoints_rename_webhook_to_owner_id() do
-    rename(table(:captain_hook_webhook_endpoints), :webhook,
-      to: elem(CaptainHook.owner_id_field(:migration), 0)
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoints RENAME COLUMN webhook TO #{elem(CaptainHook.owner_id_field(:migration), 0)};"
     )
 
     alter table(:captain_hook_webhook_endpoints) do
