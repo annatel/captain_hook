@@ -220,11 +220,11 @@ defmodule CaptainHook.Test.AssertionsTest do
 
   describe "assert_webhook_endpoints_created/2" do
     test "when the webhoook_endpoint is created" do
-      %{topic: topic} = insert!(:webhook_endpoint)
-      assert_webhook_endpoints_created(topic, %{enabled_notification_types: ["*"]})
+      %{owner_id: owner_id} = insert!(:webhook_endpoint)
+      assert_webhook_endpoints_created(owner_id, %{enabled_notification_types: ["*"]})
     end
 
-    test "when no webhoook_endpoint exist for the topic" do
+    test "when no webhoook_endpoint exist for the owner_id" do
       message =
         %ExUnit.AssertionError{
           message: "Expected a webhook endpoint with the attributes %{}, got none"
@@ -232,12 +232,12 @@ defmodule CaptainHook.Test.AssertionsTest do
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_endpoints_created("topic")
+        assert_webhook_endpoints_created("owner_id")
       end
     end
 
     test "when attributes don't match" do
-      %{topic: topic} = insert!(:webhook_endpoint)
+      %{owner_id: owner_id} = insert!(:webhook_endpoint)
 
       message =
         %ExUnit.AssertionError{
@@ -246,14 +246,14 @@ defmodule CaptainHook.Test.AssertionsTest do
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_endpoints_created(topic, %{
+        assert_webhook_endpoints_created(owner_id, %{
           url: "url"
         })
       end
     end
 
     test "when some expected enabled_notification_types are missing" do
-      %{topic: topic} = insert!(:webhook_endpoint)
+      %{owner_id: owner_id} = insert!(:webhook_endpoint)
 
       message =
         %ExUnit.AssertionError{
@@ -265,7 +265,7 @@ defmodule CaptainHook.Test.AssertionsTest do
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_endpoints_created(topic, %{
+        assert_webhook_endpoints_created(owner_id, %{
           enabled_notification_types: ["url"]
         })
       end

@@ -6,24 +6,16 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
 
   import Ecto.Query, only: [preload: 2, select_merge: 3, where: 2]
 
-  @includes [:enabled_notification_types, :secret]
-
-  @spec includes() :: [atom]
-  def includes(), do: @includes
-
-  @spec with_preloads(Ecto.Queryable.t(), list) :: Ecto.Queryable.t()
-  def with_preloads(queryable, includes) when is_list(includes) do
-    includes
-    |> Enum.reduce(queryable, fn include, queryable ->
-      queryable |> with_preload(include)
-    end)
+  def queryable() do
+    super()
+    |> AntlUtilsEcto.Query.where(:deleted_at, nil)
   end
 
-  defp with_preload(queryable, :secret) do
+  defp include_assoc(queryable, :secret) do
     queryable |> preload_secret()
   end
 
-  defp with_preload(queryable, :enabled_notification_types) do
+  defp include_assoc(queryable, :enabled_notification_types) do
     queryable |> preload_enabled_notification_types()
   end
 
@@ -31,8 +23,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
     queryable |> preload(:enabled_notification_types)
   end
 
-  @spec preload_secret(Ecto.Queryable.t()) :: Ecto.Queryable.t()
-  def preload_secret(queryable) do
+  defp preload_secret(queryable) do
     queryable
     |> select_merge(
       [webhook_endpoint],
@@ -46,18 +37,14 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
     )
   end
 
-  defp filter_by_field({:ended_at, %DateTime{} = datetime}, queryable) do
+  defp filter_by_field(queryable, {:with_trashed, true}) do
     queryable
-    |> AntlUtilsEcto.Query.where_period_status(:ended, :started_at, :ended_at, datetime)
+    |> AntlUtilsEcto.Query.or_where_not(:deleted_at, nil)
   end
 
-  defp filter_by_field({:ongoing_at, %DateTime{} = datetime}, queryable) do
+  defp filter_by_field(queryable, {:only_trashed, true}) do
     queryable
-    |> AntlUtilsEcto.Query.where_period_status(:ongoing, :started_at, :ended_at, datetime)
-  end
-
-  defp filter_by_field({:scheduled_at, %DateTime{} = datetime}, queryable) do
-    queryable
-    |> AntlUtilsEcto.Query.where_period_status(:scheduled, :started_at, :ended_at, datetime)
+    |> CaptainHook.Extensions.Ecto.Query.exclude_where_field(:deleted_at)
+    |> AntlUtilsEcto.Query.where_not(:deleted_at, nil)
   end
 end
