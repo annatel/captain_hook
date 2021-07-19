@@ -13,5 +13,9 @@ if(Mix.env() == :test) do
   config :captain_hook,
     repo: CaptainHook.TestRepo
 
+  config :captain_hook,
+    default_wildcard_char: "*",
+    default_separator: "."
+
   config :captain_hook, CaptainHook.Queuetopia, disable?: true
 end

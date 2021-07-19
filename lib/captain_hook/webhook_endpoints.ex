@@ -156,17 +156,25 @@ defmodule CaptainHook.WebhookEndpoints do
 
     Enum.member?(enabled_notification_type_names, @all_events_wildcard) ||
       Enum.member?(enabled_notification_type_names, notification_type) ||
-      wildcard_member?(enabled_notification_type_names, notification_type, ".", "*")
+      wildcard_member?(
+        enabled_notification_type_names,
+        notification_type
+      )
   end
 
-  def wildcard_member?(
-        enabled_notification_type_names,
-        notification_type,
-        separator,
-        wildcard_char
-      ) do
+  defp wildcard_member?(
+         enabled_notification_type_names,
+         notification_type
+       ) do
     enabled_notification_type_names
-    |> Enum.map(&AntlUtilsElixir.Wildcard.match?(&1, notification_type, separator, wildcard_char))
+    |> Enum.map(
+      &AntlUtilsElixir.Wildcard.match?(
+        &1,
+        notification_type,
+        Application.get_env(:captain_hook, :default_separator),
+        Application.get_env(:captain_hook, :default_wildcard_char)
+      )
+    )
     |> Enum.any?()
   end
 
