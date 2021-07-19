@@ -87,9 +87,7 @@ defmodule CaptainHook.Test.Assertions do
              """
              Expected a webhook_notification with data:
              #{inspect(data, pretty: true)}
-             Found webhook_notification with data: #{
-               inspect(webhook_notification.data, pretty: true)
-             }
+             Found webhook_notification with data: #{inspect(webhook_notification.data, pretty: true)}
              """
     end)
   end
@@ -142,9 +140,7 @@ defmodule CaptainHook.Test.Assertions do
                    enabled_notification_type_names
                  ),
                  """
-                   Expected enabled_notification_types #{
-                   inspect(expected_enabled_notification_types, pretty: true)
-                 },
+                   Expected enabled_notification_types #{inspect(expected_enabled_notification_types, pretty: true)},
                    got: #{inspect(enabled_notification_type_names, pretty: true)}
                  """
         end)

@@ -59,9 +59,7 @@ defmodule CaptainHook.Migrations.V2 do
     utc_now = DateTime.utc_now() |> DateTime.to_naive()
 
     execute(
-      "INSERT INTO captain_hook_sequences(`webhook_conversations`, `webhook_notifications`, `inserted_at`, `updated_at`) VALUE (0, 0, '#{
-        utc_now
-      }', '#{utc_now}');"
+      "INSERT INTO captain_hook_sequences(`webhook_conversations`, `webhook_notifications`, `inserted_at`, `updated_at`) VALUE (0, 0, '#{utc_now}', '#{utc_now}');"
     )
   end
 

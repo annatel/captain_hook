@@ -155,10 +155,21 @@ defmodule CaptainHook.WebhookEndpoints do
     enabled_notification_type_names = enabled_notification_types |> Enum.map(& &1.name)
 
     Enum.member?(enabled_notification_type_names, @all_events_wildcard) ||
-      Enum.member?(enabled_notification_type_names, notification_type)
+      Enum.member?(enabled_notification_type_names, notification_type) ||
+      wildcard_member?(enabled_notification_type_names, notification_type, ".", "*")
   end
 
-  @spec webhook_endpoint_queryable(keyword) :: Ecto.Queryable.t()
+  def wildcard_member?(
+        enabled_notification_type_names,
+        notification_type,
+        separator,
+        wildcard_char
+      ) do
+    enabled_notification_type_names
+    |> Enum.map(&AntlUtilsElixir.Wildcard.match?(&1, notification_type, separator, wildcard_char))
+    |> Enum.any?()
+  end
+
   def webhook_endpoint_queryable(opts \\ []) do
     filters = Keyword.get(opts, :filters, [])
     includes = Keyword.get(opts, :includes, [])
