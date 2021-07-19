@@ -19,7 +19,7 @@ defmodule CaptainHook.Migrations.V2 do
   def down do
     alter_table_webhook_endpoints_remove_livemode_column()
     alter_table_webhook_endpoints_add_metada_column()
-
+#
     drop_sequences_table()
 
     drop_webhook_conversations_table()
