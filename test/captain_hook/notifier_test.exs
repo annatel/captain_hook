@@ -282,6 +282,29 @@ defmodule CaptainHook.NotifierTest do
                |> TestRepo.all()
     end
 
+    test "when the webhook_endpoint is disabled, do not send the webhook_notification and returns an ok nil tuples",
+         %{bypass: bypass} do
+      start_supervised(CaptainHook.Supervisor)
+
+      webhook_endpoint =
+        build(:webhook_endpoint, url: endpoint_url(bypass.port)) |> make_disable() |> insert!()
+
+      %{id: webhook_notification_id} =
+        webhook_notification =
+        insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
+
+      assert {:ok, nil} =
+               Notifier.send_webhook_notification(%{
+                 "webhook_notification_id" => webhook_notification.id,
+                 "webhook_result_handler" => nil
+               })
+
+      assert [] =
+               WebhookConversation
+               |> where(webhook_notification_id: ^webhook_notification_id)
+               |> TestRepo.all()
+    end
+
     test "when the webhook_notification is not succeed, send the webhook_notification and returns a ok names tuple with the webhook_conversation",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)

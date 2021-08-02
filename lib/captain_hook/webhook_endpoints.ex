@@ -170,6 +170,9 @@ defmodule CaptainHook.WebhookEndpoints do
     |> update_webhook_endpoint(%{enabled_notification_types: enabled_notification_types})
   end
 
+  @spec webhook_endpoint_enabled?(WebhookEndpoint.t()) :: boolean
+  def webhook_endpoint_enabled?(%WebhookEndpoint{is_enabled: is_enabled}), do: is_enabled
+
   @spec notification_type_enabled?(WebhookEndpoint.t(), binary) :: boolean
   def notification_type_enabled?(
         %WebhookEndpoint{enabled_notification_types: enabled_notification_types},

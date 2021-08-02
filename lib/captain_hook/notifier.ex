@@ -108,10 +108,10 @@ defmodule CaptainHook.Notifier do
     end
   end
 
-  defp should_be_notified?(%WebhookEndpoint{is_enabled: false}, _notification_type), do: false
-
   defp should_be_notified?(%WebhookEndpoint{} = webhook_endpoint, notification_type),
-    do: WebhookEndpoints.notification_type_enabled?(webhook_endpoint, notification_type)
+    do:
+      WebhookEndpoints.webhook_endpoint_enabled?(webhook_endpoint) &&
+        WebhookEndpoints.notification_type_enabled?(webhook_endpoint, notification_type)
 
   defp create_webhook_notification(
          %WebhookEndpoint{} = webhook_endpoint,
@@ -197,16 +197,23 @@ defmodule CaptainHook.Notifier do
         },
         opts \\ []
       ) do
-    %{webhook_notification: webhook_notification, webhook_conversation: webhook_conversation} =
+    %{webhook_endpoint: webhook_endpoint} =
+      webhook_notification =
       webhook_notification_id
       |> WebhookNotifications.get_webhook_notification!(includes: [:webhook_endpoint])
-      |> send_webhook_notification!(opts)
 
-    if WebhookNotifications.notification_succeeded?(webhook_notification) do
-      {:ok, webhook_notification}
+    if WebhookEndpoints.webhook_endpoint_enabled?(webhook_endpoint) do
+      %{webhook_notification: webhook_notification, webhook_conversation: webhook_conversation} =
+        webhook_notification |> send_webhook_notification!(opts)
+
+      if WebhookNotifications.notification_succeeded?(webhook_notification) do
+        {:ok, webhook_notification}
+      else
+        handle_failure(webhook_result_handler, webhook_notification, webhook_conversation)
+        {:error, inspect(webhook_conversation)}
+      end
     else
-      handle_failure(webhook_result_handler, webhook_notification, webhook_conversation)
-      {:error, inspect(webhook_conversation)}
+      {:ok, nil}
     end
   end
 
