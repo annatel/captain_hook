@@ -95,14 +95,9 @@ defmodule CaptainHook do
       def get_webhook_conversation(id, opts \\ []),
         do: unquote(__MODULE__).get_webhook_conversation(id, opts)
 
-      @spec failure_report_email_subject(WebhookNotification.t(), WebhookConversation.t()) ::
-              binary
-      def failure_report_email_subject(webhook_notification, webhook_conversation),
-        do:
-          unquote(__MODULE__).failure_report_email_subject(
-            webhook_notification,
-            webhook_conversation
-          )
+      @spec failure_report_email_subject(WebhookNotification.t()) :: binary
+      def failure_report_email_subject(webhook_notification),
+        do: unquote(__MODULE__).failure_report_email_subject(webhook_notification)
 
       @spec failure_report_email_html_body(
               WebhookNotification.t(),
