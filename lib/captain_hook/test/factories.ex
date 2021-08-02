@@ -63,7 +63,7 @@ defmodule CaptainHook.Test.Factories do
 
   defp put_owner_id(webhook_endpoint) do
     owner_id_value =
-      if elem(CaptainHook.owner_id_field(:schema), 1) == :binary_id,
+      if elem(CaptainHook.owner_id_field(:migration), 1) == :binary_id,
         do: Ecto.UUID.generate(),
         else: System.unique_integer([:positive])
 

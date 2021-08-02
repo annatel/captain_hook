@@ -17,6 +17,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
           request_url: binary,
           requested_at: DateTime.t(),
           response_body: binary,
+          responded_at: DateTime.t(),
           sequence: integer,
           status: binary,
           webhook_notification_id: binary,
@@ -35,6 +36,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
     field(:request_url, :string)
     field(:requested_at, :utc_datetime)
     field(:response_body, :string)
+    field(:responded_at, :utc_datetime)
     field(:sequence, :integer)
     field(:status, :string)
 
@@ -55,6 +57,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
       :request_url,
       :requested_at,
       :response_body,
+      :responded_at,
       :sequence,
       :status
     ])

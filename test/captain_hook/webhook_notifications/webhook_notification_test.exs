@@ -38,6 +38,22 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
       assert %{type: ["can't be blank"]} = errors_on(changeset)
     end
 
+    test "when the type format is invalid, returns an invalid changeset" do
+      Enum.each(
+        [
+          params_for(:webhook_notification, type: "*"),
+          params_for(:webhook_notification, type: ".."),
+          params_for(:webhook_notification, type: ".a"),
+          params_for(:webhook_notification, type: "a.")
+        ],
+        &assert(
+          %{type: ["has invalid format"]} =
+            WebhookNotification.create_changeset(%WebhookNotification{}, &1)
+            |> errors_on()
+        )
+      )
+    end
+
     test "when params are valid, return a valid changeset" do
       webhook_notification_params = params_for(:webhook_notification)
 

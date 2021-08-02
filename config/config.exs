@@ -11,7 +11,9 @@ if(Mix.env() == :test) do
     pool: Ecto.Adapters.SQL.Sandbox
 
   config :captain_hook,
-    repo: CaptainHook.TestRepo
+    repo: CaptainHook.TestRepo,
+    notification_type_separator: ".",
+    notification_type_wildcard: "*"
 
   config :padlock,
     repo: CaptainHook.TestRepo

@@ -1,7 +1,8 @@
 defmodule CaptainHook.WebhookNotifications.WebhookNotification do
   use Ecto.Schema
 
-  import Ecto.Changeset, only: [assoc_constraint: 2, cast: 3, validate_required: 2]
+  import Ecto.Changeset,
+    only: [assoc_constraint: 2, cast: 3, validate_required: 2, validate_format: 3]
 
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
 
@@ -56,6 +57,13 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
       :webhook_endpoint_id
     ])
     |> validate_required([:created_at, :data, :sequence, :type, :webhook_endpoint_id])
+    |> validate_format(
+      :type,
+      AntlUtilsElixir.Wildcard.expr_regex!(
+        CaptainHook.notification_type_separator(),
+        CaptainHook.notification_type_wildcard()
+      )
+    )
     |> assoc_constraint(:webhook_endpoint)
   end
 

@@ -1,7 +1,7 @@
 defmodule CaptainHook.WebhookEndpoints.EnabledNotificationType do
   use Ecto.Schema
 
-  import Ecto.Changeset, only: [cast: 3, validate_required: 2]
+  import Ecto.Changeset, only: [cast: 3, validate_required: 2, validate_format: 3]
 
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
 
@@ -35,5 +35,12 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationType do
     enabled_notification_type
     |> cast(attrs, [:webhook_endpoint_id, :name])
     |> validate_required([:name])
+    |> validate_format(
+      :name,
+      AntlUtilsElixir.Wildcard.pattern_regex!(
+        CaptainHook.notification_type_separator(),
+        CaptainHook.notification_type_wildcard()
+      )
+    )
   end
 end

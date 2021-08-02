@@ -277,7 +277,7 @@ defmodule CaptainHook.Notifier do
        )
        when is_binary(webhook_endpoint_id) do
     status =
-      if response.status in 200..299,
+      if response.success?,
         do: WebhookConversation.statuses().succeeded,
         else: WebhookConversation.statuses().failed
 
@@ -287,8 +287,9 @@ defmodule CaptainHook.Notifier do
       request_url: response.request_url,
       request_headers: response.request_headers,
       request_body: response.request_body,
-      http_status: response.status,
+      http_status: response.response_http_status,
       response_body: response.response_body,
+      responded_at: response.responded_at,
       client_error_message: response.client_error_message,
       status: status
     }
