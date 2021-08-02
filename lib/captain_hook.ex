@@ -121,8 +121,6 @@ defmodule CaptainHook do
               webhook_conversation,
               webhook_conversations_url
             )
-
-      defoverridable CaptainHook.Behaviour
     end
   end
 
