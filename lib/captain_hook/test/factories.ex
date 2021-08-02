@@ -16,14 +16,13 @@ defmodule CaptainHook.Test.Factories do
         ) :: struct
   def build(:webhook_endpoint, attrs) do
     %WebhookEndpoint{
-      topic: "topic_#{System.unique_integer()}",
-      started_at: utc_now(),
-      livemode: true,
-      is_insecure_allowed: false,
+      created_at: utc_now(),
       enabled_notification_types: [%{name: "*"}],
       headers: %{},
+      livemode: true,
       url: "url_#{System.unique_integer()}"
     }
+    |> put_owner_id()
     |> struct!(attrs)
   end
 
@@ -62,6 +61,16 @@ defmodule CaptainHook.Test.Factories do
     |> struct!(attrs)
   end
 
+  defp put_owner_id(webhook_endpoint) do
+    owner_id_value =
+      if elem(CaptainHook.owner_id_field(:migration), 1) == :binary_id,
+        do: Ecto.UUID.generate(),
+        else: System.unique_integer([:positive])
+
+    webhook_endpoint
+    |> Map.put(elem(CaptainHook.owner_id_field(:schema), 0), owner_id_value)
+  end
+
   @spec params_for(struct) :: map
   def params_for(schema) when is_struct(schema) do
     schema
@@ -89,7 +98,8 @@ defmodule CaptainHook.Test.Factories do
     factory_name |> build([]) |> insert!()
   end
 
-  def insert!(schema) when is_struct(schema), do: schema |> CaptainHook.repo().insert!()
+  def insert!(schema) when is_struct(schema),
+    do: schema |> CaptainHook.repo().insert!()
 
   defp utc_now(), do: DateTime.utc_now() |> DateTime.truncate(:second)
 end

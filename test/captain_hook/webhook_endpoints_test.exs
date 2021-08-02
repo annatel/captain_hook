@@ -4,83 +4,81 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
   alias CaptainHook.WebhookEndpoints
 
-  @datetime_1 DateTime.from_naive!(~N[2018-05-24 12:27:48], "Etc/UTC")
-  @datetime_2 DateTime.from_naive!(~N[2018-06-24 12:27:48], "Etc/UTC")
-
   describe "list_webhook_endpoints/1" do
-    test "returns the list of webhook_endpoints ordered by their started_at ascending" do
-      %{id: webhook_endpoint_1_id} = insert!(:webhook_endpoint, started_at: @datetime_1)
+    test "list_webhook_endpoints" do
+      %{id: id_1} = insert!(:webhook_endpoint, created_at: utc_now())
+      %{id: id_2} = insert!(:webhook_endpoint, created_at: utc_now() |> add(1200, :second))
 
-      %{id: webhook_endpoint_2_id} = insert!(:webhook_endpoint, started_at: @datetime_2)
+      assert [%{id: ^id_2}, %{id: ^id_1}] = WebhookEndpoints.list_webhook_endpoints()
+      assert [%{id: ^id_1}] = WebhookEndpoints.list_webhook_endpoints(filters: [id: id_1])
+    end
+  end
 
-      assert %{data: [%{id: ^webhook_endpoint_2_id}, %{id: ^webhook_endpoint_1_id}], total: 2} =
-               WebhookEndpoints.list_webhook_endpoints()
+  describe "paginate_webhook_endpoints/1" do
+    test "returns the list of webhook_endpoints ordered by their id descending" do
+      %{id: id1} = insert!(:webhook_endpoint, created_at: utc_now())
+      %{id: id2} = insert!(:webhook_endpoint, created_at: utc_now() |> add(1200, :second))
+
+      assert %{data: [%{id: ^id2}, %{id: ^id1}], page_number: 1, page_size: 100, total: 2} =
+               WebhookEndpoints.paginate_webhook_endpoints()
+
+      assert %{data: [], page_number: 2, page_size: 100, total: 2} =
+               WebhookEndpoints.paginate_webhook_endpoints(100, 2)
     end
 
     test "filters" do
-      utc_now = utc_now()
-
-      webhook_endpoint =
-        insert!(:webhook_endpoint,
-          started_at: utc_now,
-          ended_at: DateTime.add(utc_now, 3600, :second)
-        )
+      webhook_endpoint = insert!(:webhook_endpoint)
 
       [
         [id: webhook_endpoint.id],
-        [topic: webhook_endpoint.topic],
-        [livemode: webhook_endpoint.livemode],
-        [ongoing_at: utc_now]
+        [owner_id: webhook_endpoint.owner_id],
+        [livemode: webhook_endpoint.livemode]
       ]
       |> Enum.each(fn filter ->
         assert %{data: [_webhook_endpoint], total: 1} =
-                 WebhookEndpoints.list_webhook_endpoints(filters: filter)
+                 WebhookEndpoints.paginate_webhook_endpoints(100, 1, filters: filter)
       end)
 
       [
-        [id: uuid()],
-        [topic: "topic"],
-        [livemode: !webhook_endpoint.livemode],
-        [ended_at: DateTime.add(utc_now, -3600, :second)],
-        [scheduled_at: DateTime.add(utc_now, 7200, :second)]
+        [id: shortcode_uuid("we")],
+        [owner_id: uuid()],
+        [livemode: !webhook_endpoint.livemode]
       ]
       |> Enum.each(fn filter ->
-        assert %{data: [], total: 0} = WebhookEndpoints.list_webhook_endpoints(filters: filter)
+        assert %{data: []} = WebhookEndpoints.paginate_webhook_endpoints(100, 1, filters: filter)
       end)
     end
 
-    test "by default list_webhook_endpoints includes no components" do
-      WebhookEndpoints.list_webhook_endpoints()
+    test "soft delete" do
+      %{id: id} = insert!(:webhook_endpoint, created_at: utc_now())
+
+      %{id: soft_deleted_id} =
+        build(:webhook_endpoint, created_at: utc_now() |> add(1200, :second))
+        |> make_deleted()
+        |> insert!()
+
+      %{data: [%{id: ^id}], total: 1} = WebhookEndpoints.paginate_webhook_endpoints(100, 1)
+
+      %{data: [%{id: ^soft_deleted_id}, %{id: ^id}], total: 2} =
+        WebhookEndpoints.paginate_webhook_endpoints(100, 1, filters: [with_trashed: true])
+
+      %{data: [%{id: ^soft_deleted_id}], total: 1} =
+        WebhookEndpoints.paginate_webhook_endpoints(100, 1, filters: [only_trashed: true])
+    end
+
+    test "includes" do
       webhook_endpoint = insert!(:webhook_endpoint)
       insert!(:webhook_endpoint_secret, webhook_endpoint_id: webhook_endpoint.id)
 
-      assert %{data: [webhook_endpoint]} = WebhookEndpoints.list_webhook_endpoints()
-
+      assert %{data: [webhook_endpoint]} = WebhookEndpoints.paginate_webhook_endpoints()
       assert is_nil(Map.get(webhook_endpoint, :secret))
-
-      [Access.key!(:enabled_notification_types)]
-      |> associations_on(webhook_endpoint)
-      |> Enum.each(fn assoc ->
-        refute assoc |> List.wrap() |> List.first() |> Ecto.assoc_loaded?()
-      end)
-    end
-
-    test "with includes, returns included fields" do
-      webhook_endpoint = insert!(:webhook_endpoint)
-      insert!(:webhook_endpoint_secret, webhook_endpoint_id: webhook_endpoint.id)
+      assert Ecto.assoc_loaded?(webhook_endpoint.enabled_notification_types)
 
       assert %{data: [webhook_endpoint]} =
-               WebhookEndpoints.list_webhook_endpoints(
-                 includes: [:enabled_notification_types, :secret]
-               )
+               WebhookEndpoints.paginate_webhook_endpoints(100, 1, includes: [:secret])
 
-      refute is_nil(Map.get(webhook_endpoint, :secret))
-
-      [Access.key!(:enabled_notification_types)]
-      |> associations_on(webhook_endpoint)
-      |> Enum.each(fn assoc ->
-        assert assoc |> List.wrap() |> List.first() |> Ecto.assoc_loaded?()
-      end)
+      refute is_nil(webhook_endpoint.secret)
+      assert Ecto.assoc_loaded?(webhook_endpoint.enabled_notification_types)
     end
   end
 
@@ -90,7 +88,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
       webhook_endpoint = WebhookEndpoints.get_webhook_endpoint(webhook_endpoint_factory.id)
       assert %WebhookEndpoints.WebhookEndpoint{} = webhook_endpoint
-      assert webhook_endpoint.topic == webhook_endpoint_factory.topic
+      assert webhook_endpoint.owner_id == webhook_endpoint_factory.owner_id
       assert webhook_endpoint.id == webhook_endpoint_factory.id
       assert is_nil(webhook_endpoint.secret)
     end
@@ -106,15 +104,10 @@ defmodule CaptainHook.WebhookEndpointsTest do
           includes: [:enabled_notification_types, :secret]
         )
 
-      assert webhook_endpoint.topic == webhook_endpoint_factory.topic
+      assert webhook_endpoint.owner_id == webhook_endpoint_factory.owner_id
       assert webhook_endpoint.id == webhook_endpoint_factory.id
       assert webhook_endpoint.secret == webhook_secret.secret
-
-      [Access.key!(:enabled_notification_types)]
-      |> associations_on(webhook_endpoint)
-      |> Enum.each(fn assoc ->
-        assert assoc |> List.wrap() |> List.first() |> Ecto.assoc_loaded?()
-      end)
+      assert Ecto.assoc_loaded?(webhook_endpoint.enabled_notification_types)
     end
 
     test "when the webhook_endpoint does not exist, returns nil" do
@@ -153,10 +146,10 @@ defmodule CaptainHook.WebhookEndpointsTest do
       assert {:ok, webhook_endpoint} =
                WebhookEndpoints.create_webhook_endpoint(webhook_endpoint_params)
 
-      assert webhook_endpoint.topic == webhook_endpoint_params.topic
-      assert webhook_endpoint.started_at == webhook_endpoint_params.started_at
+      assert webhook_endpoint.owner_id == webhook_endpoint_params.owner_id
+      assert webhook_endpoint.created_at == webhook_endpoint_params.created_at
       assert webhook_endpoint.url == webhook_endpoint_params.url
-      assert is_nil(webhook_endpoint.ended_at)
+      assert is_nil(webhook_endpoint.deleted_at)
 
       assert [enabled_notification_type] = webhook_endpoint.enabled_notification_types
 
@@ -179,47 +172,51 @@ defmodule CaptainHook.WebhookEndpointsTest do
                })
 
       assert webhook_endpoint.headers == %{key: "new_value"}
-      assert is_nil(webhook_endpoint.ended_at)
+      assert is_nil(webhook_endpoint.deleted_at)
     end
   end
 
   describe "delete_webhook_endpoint/2" do
-    test "with a webhook_endpoint that is ended, raises a FunctionClauseError" do
-      webhook_endpoint = insert!(:webhook_endpoint, ended_at: @datetime_1)
+    test "with a webhook_endpoint that is soft deleted, raises a FunctionClauseError" do
+      webhook_endpoint = build(:webhook_endpoint) |> make_deleted() |> insert!()
 
       assert_raise FunctionClauseError, fn ->
-        WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint, @datetime_1)
+        WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint, utc_now())
       end
     end
 
     test "with an invalid params, returns an invalid changeset" do
-      webhook_endpoint = insert!(:webhook_endpoint, started_at: @datetime_2)
+      utc_now = utc_now()
+      webhook_endpoint = build(:webhook_endpoint, created_at: utc_now)
 
       assert {:error, changeset} =
-               WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint, @datetime_1)
+               WebhookEndpoints.delete_webhook_endpoint(
+                 webhook_endpoint,
+                 utc_now |> add(-1200, :second)
+               )
 
       refute changeset.valid?
     end
 
     test "with valid params, returns the ended webhook_endpoint" do
-      webhook_endpoint_factory = insert!(:webhook_endpoint, started_at: @datetime_1)
+      webhook_endpoint_factory = insert!(:webhook_endpoint)
 
       insert!(:webhook_endpoint_secret,
         webhook_endpoint_id: webhook_endpoint_factory.id,
-        is_main: true,
-        started_at: @datetime_1
+        is_main: true
       )
 
       insert!(:webhook_endpoint_secret,
         webhook_endpoint_id: webhook_endpoint_factory.id,
-        is_main: false,
-        started_at: @datetime_1
+        is_main: false
       )
+
+      delete_at = utc_now()
 
       assert {:ok, webhook_endpoint} =
-               WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint_factory, @datetime_2)
+               WebhookEndpoints.delete_webhook_endpoint(webhook_endpoint_factory, delete_at)
 
-      assert webhook_endpoint.ended_at == @datetime_2
+      assert webhook_endpoint.deleted_at == delete_at
 
       assert [] = WebhookEndpoints.list_webhook_endpoint_secrets(webhook_endpoint)
     end

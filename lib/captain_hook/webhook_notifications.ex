@@ -1,8 +1,6 @@
 defmodule CaptainHook.WebhookNotifications do
   @moduledoc false
 
-  import Ecto.Query, only: [order_by: 2]
-
   alias Ecto.Multi
   alias CaptainHook.Sequences
   alias CaptainHook.WebhookNotifications.{WebhookNotification, WebhookNotificationQueryable}
@@ -10,29 +8,58 @@ defmodule CaptainHook.WebhookNotifications do
   @default_page_number 1
   @default_page_size 100
 
-  @spec list_webhook_notifications(keyword) :: %{data: [WebhookNotification.t()], total: integer}
+  @spec list_webhook_notifications(keyword) :: [WebhookNotification.t()]
   def list_webhook_notifications(opts \\ []) do
-    page_number = Keyword.get(opts, :page_number, @default_page_number)
-    page_size = Keyword.get(opts, :page_size, @default_page_size)
+    try do
+      opts |> webhook_notification_queryable() |> CaptainHook.repo().all()
+    rescue
+      Ecto.Query.CastError -> []
+    end
+  end
 
-    query = opts |> webhook_notification_queryable() |> order_by(desc: :sequence)
+  @spec paginate_webhook_notifications(pos_integer, pos_integer, keyword) :: %{
+          data: [WebhookEndpoint.t()],
+          page_number: integer,
+          page_size: integer,
+          total: integer
+        }
+  def paginate_webhook_notifications(
+        page_size \\ @default_page_size,
+        page_number \\ @default_page_number,
+        opts \\ []
+      )
+      when is_integer(page_number) and is_integer(page_size) do
+    try do
+      query = opts |> webhook_notification_queryable()
 
-    count = query |> CaptainHook.repo().aggregate(:count, :id)
+      webhook_notifications =
+        query
+        |> WebhookNotificationQueryable.paginate(page_size, page_number)
+        |> CaptainHook.repo().all()
 
-    webhook_notifications =
-      query
-      |> WebhookNotificationQueryable.paginate(page_number, page_size)
-      |> CaptainHook.repo().all()
-
-    %{total: count, data: webhook_notifications}
+      %{
+        data: webhook_notifications,
+        page_number: page_number,
+        page_size: page_size,
+        total: CaptainHook.repo().aggregate(query, :count, :id)
+      }
+    rescue
+      Ecto.Query.CastError -> %{data: [], page_number: 0, page_size: 0, total: 0}
+    end
   end
 
   @spec get_webhook_notification(binary, keyword) :: WebhookNotification.t() | nil
   def get_webhook_notification(id, opts \\ []) when is_binary(id) do
-    opts
-    |> Keyword.put(:filters, id: id)
-    |> webhook_notification_queryable()
-    |> CaptainHook.repo().one()
+    filters = opts |> Keyword.get(:filters, []) |> Keyword.put(:id, id)
+
+    try do
+      opts
+      |> Keyword.put(:filters, filters)
+      |> webhook_notification_queryable()
+      |> CaptainHook.repo().one()
+    rescue
+      Ecto.Query.CastError -> nil
+    end
   end
 
   @spec get_webhook_notification!(binary, keyword) :: WebhookNotification.t()
@@ -45,10 +72,16 @@ defmodule CaptainHook.WebhookNotifications do
 
   @spec get_webhook_notification_by(keyword, keyword) :: WebhookNotification.t()
   def get_webhook_notification_by([idempotency_key: idempotency_key], opts \\ []) do
-    opts
-    |> Keyword.put(:filters, idempotency_key: idempotency_key)
-    |> webhook_notification_queryable()
-    |> CaptainHook.repo().one()
+    filters = opts |> Keyword.get(:filters, []) |> Keyword.put(:idempotency_key, idempotency_key)
+
+    try do
+      opts
+      |> Keyword.put(:filters, filters)
+      |> webhook_notification_queryable()
+      |> CaptainHook.repo().one()
+    rescue
+      Ecto.Query.CastError -> nil
+    end
   end
 
   @spec create_webhook_notification(map()) ::
@@ -86,12 +119,13 @@ defmodule CaptainHook.WebhookNotifications do
   @spec webhook_notification_queryable(keyword) :: Ecto.Queryable.t()
   def webhook_notification_queryable(opts \\ []) when is_list(opts) do
     filters = Keyword.get(opts, :filters, [])
-    fields = Keyword.get(opts, :fields)
-    includes = Keyword.get(opts, :includes, [])
+    includes = opts |> Keyword.get(:includes, [])
+    select_fields = Keyword.get(opts, :fields)
 
     WebhookNotificationQueryable.queryable()
-    |> WebhookNotificationQueryable.select_fields(fields)
     |> WebhookNotificationQueryable.filter(filters)
-    |> WebhookNotificationQueryable.with_preloads(includes)
+    |> WebhookNotificationQueryable.include(includes)
+    |> WebhookNotificationQueryable.order_by(desc: :sequence)
+    |> WebhookNotificationQueryable.select_fields(select_fields)
   end
 end

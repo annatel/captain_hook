@@ -33,13 +33,14 @@ defmodule CaptainHook.MixProject do
       {:myxql, ">= 0.0.0"},
       {:ecto_sql, "~> 3.6"},
       {:captain_hook_signature, "~> 0.4.1"},
-      {:antl_utils_elixir, "~> 0.4", override: true},
-      {:antl_utils_ecto, "~> 1.3.0", override: true},
-      {:queuetopia, "~> 1.6.0"},
+      {:antl_utils_elixir, "~> 0.4"},
+      {:antl_utils_ecto, "~> 2.4"},
+      {:queuetopia, "~> 2.1"},
       {:finch, "~> 0.7.0"},
       {:plug_crypto, "~> 1.0"},
       {:recase, "~> 0.7"},
-      {:shortcode, "~> 0.6.0"}
+      {:shortcode, "~> 0.7.0"},
+      {:padlock, git: "https://github.com/annatel/padlock.git", tag: "0.2.0"}
     ]
   end
 

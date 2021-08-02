@@ -1,6 +1,4 @@
 defmodule CaptainHook do
-  @behaviour CaptainHook.Behaviour
-
   alias CaptainHook.Notifier
   alias CaptainHook.WebhookEndpoints
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
@@ -11,55 +9,89 @@ defmodule CaptainHook do
 
   defmacro __using__(_opts) do
     quote do
-      @behaviour CaptainHook.Behaviour
+      def notify(owner_id, livemode?, notification_type, data, opts \\ []),
+        do: unquote(__MODULE__).notify(owner_id, livemode?, notification_type, data, opts)
 
-      def notify(topic, livemode?, notification_type, data, opts \\ []),
-        do: unquote(__MODULE__).notify(topic, livemode?, notification_type, data, opts)
+      def async_notify(owner_id, livemode?, notification_type, data, opts \\ []),
+        do: unquote(__MODULE__).async_notify(owner_id, livemode?, notification_type, data, opts)
 
-      def async_notify(topic, livemode?, notification_type, data, opts \\ []),
-        do: unquote(__MODULE__).async_notify(topic, livemode?, notification_type, data, opts)
-
+      @spec send_webhook_notification!(WebhookNotification.t()) :: map
       def send_webhook_notification!(webhook_notification),
         do: unquote(__MODULE__).send_webhook_notification!(webhook_notification)
 
-      def list_webhook_endpoints(opts \\ []),
-        do: unquote(__MODULE__).list_webhook_endpoints(opts)
+      @spec paginate_webhook_endpoints(non_neg_integer, non_neg_integer, keyword) :: %{
+              data: [WebhookEndpoint.t()],
+              page_number: non_neg_integer,
+              page_size: non_neg_integer,
+              total: integer
+            }
+      def paginate_webhook_endpoints(page_size, page_number, opts \\ []),
+        do: unquote(__MODULE__).paginate_webhook_endpoints(page_size, page_number, opts)
 
+      @spec get_webhook_endpoint(binary, keyword) :: WebhookEndpoint.t() | nil
       def get_webhook_endpoint(id, opts \\ []),
         do: unquote(__MODULE__).get_webhook_endpoint(id, opts)
 
+      @spec get_webhook_endpoint!(binary, keyword) :: WebhookEndpoint.t()
       def get_webhook_endpoint!(id, opts \\ []),
         do: unquote(__MODULE__).get_webhook_endpoint!(id, opts)
 
+      @spec create_webhook_endpoint(map()) ::
+              {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
       def create_webhook_endpoint(attrs), do: unquote(__MODULE__).create_webhook_endpoint(attrs)
 
+      @spec update_webhook_endpoint(WebhookEndpoint.t(), map()) ::
+              {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
       def update_webhook_endpoint(webhook_endpoint, attrs),
         do: unquote(__MODULE__).update_webhook_endpoint(webhook_endpoint, attrs)
 
+      @spec delete_webhook_endpoint(WebhookEndpoint.t()) ::
+              {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
       def delete_webhook_endpoint(webhook_endpoint),
         do: unquote(__MODULE__).delete_webhook_endpoint(webhook_endpoint)
 
+      @spec roll_webhook_endpoint_secret(WebhookEndpoint.t(), DateTime.t()) ::
+              {:ok, Secrets.WebhookEndpointSecret.t()} | {:error, Ecto.Changeset.t()}
       def roll_webhook_endpoint_secret(webhook_endpoint, expires_at \\ DateTime.utc_now()),
         do: unquote(__MODULE__).roll_webhook_endpoint_secret(webhook_endpoint, expires_at)
 
+      @spec enable_event_type(WebhookEndpoint.t(), binary | [binary]) ::
+              {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
       def enable_notification_type(webhook_endpoint, notification_type),
         do: unquote(__MODULE__).enable_notification_type(webhook_endpoint, notification_type)
 
+      @spec disable_event_type(WebhookEndpoint.t(), binary | [binary]) ::
+              {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
       def disable_notification_type(webhook_endpoint, notification_type),
         do: unquote(__MODULE__).disable_notification_type(webhook_endpoint, notification_type)
 
-      def list_webhook_notifications(opts \\ []),
-        do: unquote(__MODULE__).list_webhook_notifications(opts)
+      @spec paginate_webhook_notifications(non_neg_integer, non_neg_integer, keyword) :: %{
+              data: [WebhookNotification.t()],
+              page_number: non_neg_integer,
+              page_size: non_neg_integer,
+              total: integer
+            }
+      def paginate_webhook_notifications(page_size, page_number, opts \\ []),
+        do: unquote(__MODULE__).list_webhook_notifications(page_size, page_number, opts)
 
+      @spec get_webhook_notification(binary, keyword) :: WebhookNotification.t() | nil
       def get_webhook_notification(id, opts \\ []),
         do: unquote(__MODULE__).get_webhook_notification(id, opts)
 
+      @spec get_webhook_notification!(binary, keyword) :: WebhookNotification.t()
       def get_webhook_notification!(id, opts \\ []),
         do: unquote(__MODULE__).get_webhook_notification!(id, opts)
 
-      def list_webhook_conversations(opts \\ []),
-        do: unquote(__MODULE__).list_webhook_conversations(opts)
+      @spec paginate_webhook_conversations(non_neg_integer, non_neg_integer, keyword) :: %{
+              data: [WebhookConversation.t()],
+              page_number: non_neg_integer,
+              page_size: non_neg_integer,
+              total: integer
+            }
+      def paginate_webhook_conversations(page_size, page_number, opts \\ []),
+        do: unquote(__MODULE__).paginate_webhook_conversations(page_size, page_number, opts)
 
+      @spec get_webhook_conversation(binary, keyword) :: WebhookConversation.t() | nil
       def get_webhook_conversation(id, opts \\ []),
         do: unquote(__MODULE__).get_webhook_conversation(id, opts)
 
@@ -69,11 +101,12 @@ defmodule CaptainHook do
 
   @spec notify(binary | [binary], boolean, binary, map, keyword) ::
           {:ok, [WebhookNotification.t()]} | {:error, Ecto.Changeset.t()}
-  defdelegate notify(topic, livemode?, notification_type, data, opts \\ []), to: Notifier
+  defdelegate notify(owner_id, livemode?, notification_type, data, opts \\ []), to: Notifier
 
   @spec async_notify(binary | [binary], boolean, binary, map, keyword) ::
           {:ok, [WebhookNotification.t()]} | {:error, Ecto.Changeset.t()}
-  defdelegate async_notify(topic, livemode?, notification_type, data, opts \\ []), to: Notifier
+  defdelegate async_notify(owner_id, livemode?, notification_type, data, opts \\ []),
+    to: Notifier
 
   @spec send_webhook_notification!(WebhookNotification.t()) ::
           %{
@@ -82,8 +115,13 @@ defmodule CaptainHook do
           }
   defdelegate send_webhook_notification!(webhook_notification), to: Notifier
 
-  @spec list_webhook_endpoints(keyword) :: %{data: [WebhookEndpoint.t()], total: integer}
-  defdelegate list_webhook_endpoints(opts \\ []), to: WebhookEndpoints
+  @spec paginate_webhook_endpoints(non_neg_integer, non_neg_integer, keyword) :: %{
+          data: [WebhookEndpoint.t()],
+          page_number: non_neg_integer,
+          page_size: non_neg_integer,
+          total: integer
+        }
+  defdelegate paginate_webhook_endpoints(page_size, page_number, opts \\ []), to: WebhookEndpoints
 
   @spec get_webhook_endpoint(binary, keyword) :: WebhookEndpoint.t() | nil
   defdelegate get_webhook_endpoint(id, opts \\ []), to: WebhookEndpoints
@@ -119,8 +157,14 @@ defmodule CaptainHook do
           {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
   defdelegate disable_notification_type(webhook_endpoint, notification_type), to: WebhookEndpoints
 
-  @spec list_webhook_notifications(keyword) :: %{data: [WebhookNotification.t()], total: integer}
-  defdelegate list_webhook_notifications(opts \\ []), to: WebhookNotifications
+  @spec paginate_webhook_notifications(non_neg_integer, non_neg_integer, keyword) :: %{
+          data: [WebhookNotification.t()],
+          page_number: non_neg_integer,
+          page_size: non_neg_integer,
+          total: integer
+        }
+  defdelegate paginate_webhook_notifications(page_size, page_number, opts \\ []),
+    to: WebhookNotifications
 
   @spec get_webhook_notification(binary, keyword) :: WebhookNotification.t() | nil
   defdelegate get_webhook_notification(id, opts \\ []), to: WebhookNotifications
@@ -128,8 +172,14 @@ defmodule CaptainHook do
   @spec get_webhook_notification!(binary, keyword) :: WebhookNotification.t()
   defdelegate get_webhook_notification!(id, opts \\ []), to: WebhookNotifications
 
-  @spec list_webhook_conversations(keyword) :: %{data: [WebhookConversation.t()], total: integer}
-  defdelegate list_webhook_conversations(opts \\ []), to: WebhookConversations
+  @spec paginate_webhook_conversations(non_neg_integer, non_neg_integer, keyword) :: %{
+          data: [WebhookConversation.t()],
+          page_number: non_neg_integer,
+          page_size: non_neg_integer,
+          total: integer
+        }
+  defdelegate paginate_webhook_conversations(page_size, page_number, opts \\ []),
+    to: WebhookConversations
 
   @spec get_webhook_conversation(binary, keyword) :: WebhookConversation.t() | nil
   defdelegate get_webhook_conversation(id, opts \\ []), to: WebhookConversations
@@ -150,5 +200,18 @@ defmodule CaptainHook do
   @spec notification_type_wildcard :: binary
   def notification_type_wildcard() do
     Application.fetch_env!(:captain_hook, :notification_type_wildcard)
+  end
+
+  @spec owner_id_field(atom) :: tuple
+  def owner_id_field(:migration) do
+    Application.get_env(:captain_hook, :owner_id_field, migration: {:owner_id, :binary_id})[
+      :migration
+    ]
+  end
+
+  def owner_id_field(:schema) do
+    Application.get_env(:captain_hook, :owner_id_field, schema: {:owner_id, :binary_id, []})[
+      :schema
+    ]
   end
 end

@@ -1,6 +1,9 @@
 defmodule CaptainHook.Test.Assertions do
   import ExUnit.Assertions
 
+  alias CaptainHook.WebhookEndpoints
+  alias CaptainHook.WebhookNotifications
+
   @doc """
   Asserts the notifications has just been created
 
@@ -15,12 +18,12 @@ defmodule CaptainHook.Test.Assertions do
   """
   def assert_webhook_notifications_created(resource_id, resource_object)
       when is_binary(resource_id) and is_binary(resource_object) do
-    %{total: total, data: _} =
-      CaptainHook.list_webhook_notifications(
+    webhook_notifications =
+      WebhookNotifications.list_webhook_notifications(
         filters: [resource_id: resource_id, resource_object: resource_object]
       )
 
-    assert total != 0, "Expected a webhook_notification, got none"
+    assert length(webhook_notifications) != 0, "Expected a webhook_notification, got none"
   end
 
   def assert_webhook_notifications_created(
@@ -29,12 +32,12 @@ defmodule CaptainHook.Test.Assertions do
         data
       )
       when is_binary(resource_id) and is_binary(resource_object) and is_map(data) do
-    %{total: total, data: webhook_notifications} =
-      CaptainHook.list_webhook_notifications(
+    webhook_notifications =
+      WebhookNotifications.list_webhook_notifications(
         filters: [resource_id: resource_id, resource_object: resource_object]
       )
 
-    assert total != 0, "Expected a webhook_notification, got none"
+    assert length(webhook_notifications) != 0, "Expected a webhook_notification, got none"
     assert_notifications_created_with_data(webhook_notifications, data)
   end
 
@@ -44,12 +47,12 @@ defmodule CaptainHook.Test.Assertions do
         webhook_endpoint_ids
       )
       when is_binary(resource_id) and is_binary(resource_object) and is_list(webhook_endpoint_ids) do
-    %{total: total, data: webhook_notifications} =
-      CaptainHook.list_webhook_notifications(
+    webhook_notifications =
+      WebhookNotifications.list_webhook_notifications(
         filters: [resource_id: resource_id, resource_object: resource_object]
       )
 
-    assert total != 0, "Expected a webhook_notification, got none"
+    assert length(webhook_notifications) != 0, "Expected a webhook_notification, got none"
 
     assert_webhook_notifications_created_for_endpoints(
       webhook_notifications,
@@ -65,12 +68,12 @@ defmodule CaptainHook.Test.Assertions do
       )
       when is_binary(resource_id) and is_binary(resource_object) and is_list(webhook_endpoint_ids) and
              is_map(data) do
-    %{total: total, data: webhook_notifications} =
-      CaptainHook.list_webhook_notifications(
+    webhook_notifications =
+      WebhookNotifications.list_webhook_notifications(
         filters: [resource_id: resource_id, resource_object: resource_object]
       )
 
-    assert total != 0, "Expected a webhook_notification, got none"
+    assert length(webhook_notifications) != 0, "Expected a webhook_notification, got none"
 
     assert_notifications_created_with_data(webhook_notifications, data)
 
@@ -117,16 +120,19 @@ defmodule CaptainHook.Test.Assertions do
       assert_webhook_endpoint_created("topic", %{attr_1: "a", enabled_notification_types: ["*"]})
   """
 
-  def assert_webhook_endpoints_created(topic, attrs \\ %{})
-      when is_binary(topic) and is_map(attrs) do
-    %{total: total, data: webhook_endpoints} =
-      CaptainHook.list_webhook_endpoints(
+  def assert_webhook_endpoints_created(owner_id, attrs \\ %{})
+      when is_binary(owner_id) and is_map(attrs) do
+    owner_id_field = elem(CaptainHook.owner_id_field(:schema), 0)
+
+    webhook_endpoints =
+      WebhookEndpoints.list_webhook_endpoints(
         filters:
-          [topic: topic] ++ (attrs |> Map.delete(:enabled_notification_types) |> Enum.to_list()),
+          Keyword.new([{owner_id_field, owner_id}]) ++
+            (attrs |> Map.delete(:enabled_notification_types) |> Enum.to_list()),
         includes: [:enabled_notification_types]
       )
 
-    assert total > 0,
+    assert length(webhook_endpoints) > 0,
            "Expected a webhook endpoint with the attributes #{inspect(attrs)}, got none"
 
     case attrs do

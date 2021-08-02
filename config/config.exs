@@ -15,5 +15,11 @@ if(Mix.env() == :test) do
     notification_type_separator: ".",
     notification_type_wildcard: "*"
 
+  config :padlock,
+    repo: CaptainHook.TestRepo
+
+  config :captain_hook,
+    owner_id_field: [migration: {:owner_id, :binary_id}, schema: {:owner_id, :binary_id, []}]
+
   config :captain_hook, CaptainHook.Queuetopia, disable?: true
 end
