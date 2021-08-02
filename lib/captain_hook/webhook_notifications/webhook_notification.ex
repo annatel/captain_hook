@@ -59,9 +59,9 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
     |> validate_required([:created_at, :data, :sequence, :type, :webhook_endpoint_id])
     |> validate_format(
       :type,
-      AntlUtilsElixir.Wildcard.valid_expr_regex!(
-        Application.get_env(:captain_hook, :default_separator),
-        Application.get_env(:captain_hook, :default_wildcard_char)
+      AntlUtilsElixir.Wildcard.expr_regex!(
+        CaptainHook.notification_type_separator(),
+        CaptainHook.notification_type_wildcard()
       )
     )
     |> assoc_constraint(:webhook_endpoint)

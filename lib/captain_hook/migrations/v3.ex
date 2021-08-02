@@ -26,6 +26,7 @@ defmodule CaptainHook.Migrations.V3 do
 
     alter_table_webhook_conversations_remove_webhook_endpoint_id()
     alter_table_webhook_conversations_add_object()
+    alter_table_webhook_conversations_add_responded_at()
   end
 
   def down do
@@ -50,6 +51,7 @@ defmodule CaptainHook.Migrations.V3 do
 
     alter_table_webhook_conversations_add_webhook_endpoint_id()
     alter_table_webhook_conversations_remove_object()
+    alter_table_webhook_conversations_remove_responded_at()
   end
 
   defp rename_sequences_to_old_sequences() do
@@ -220,6 +222,12 @@ defmodule CaptainHook.Migrations.V3 do
     end
   end
 
+  defp alter_table_webhook_conversations_add_responded_at() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_conversations ADD COLUMN responded_at DATETIME NULL AFTER response_body"
+    )
+  end
+
   defp drop_sequences_table() do
     drop(table(:captain_hook_sequences))
   end
@@ -329,6 +337,12 @@ defmodule CaptainHook.Migrations.V3 do
   defp alter_table_webhook_conversations_remove_object() do
     alter table(:captain_hook_webhook_conversations) do
       remove(:object)
+    end
+  end
+
+  defp alter_table_webhook_conversations_remove_responded_at() do
+    alter table(:captain_hook_webhook_conversations) do
+      remove(:responded_at)
     end
   end
 end

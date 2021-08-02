@@ -152,17 +152,12 @@ defmodule CaptainHook.WebhookEndpoints do
         notification_type
       )
       when is_list(enabled_notification_types) and is_binary(notification_type) do
-    enabled_notification_type_names = enabled_notification_types |> Enum.map(& &1.name)
+    enabled_notification_type_patterns = enabled_notification_types |> Enum.map(& &1.name)
 
-    Enum.member?(enabled_notification_type_names, @all_events_wildcard) ||
-      Enum.member?(enabled_notification_type_names, notification_type) ||
-      wildcard_member?(
-        enabled_notification_type_names,
-        notification_type
-      )
+    wildcard_match?(enabled_notification_type_patterns, notification_type)
   end
 
-  defp wildcard_member?(
+  defp wildcard_match?(
          enabled_notification_type_names,
          notification_type
        ) do
@@ -171,8 +166,8 @@ defmodule CaptainHook.WebhookEndpoints do
       &AntlUtilsElixir.Wildcard.match?(
         &1,
         notification_type,
-        Application.get_env(:captain_hook, :default_separator),
-        Application.get_env(:captain_hook, :default_wildcard_char)
+        CaptainHook.notification_type_separator(),
+        CaptainHook.notification_type_wildcard()
       )
     )
     |> Enum.any?()

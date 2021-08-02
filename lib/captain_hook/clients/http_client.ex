@@ -5,6 +5,9 @@ defmodule CaptainHook.Clients.HttpClient do
 
   alias CaptainHook.Clients.Response
 
+  @content_type "application/json"
+  @user_agent "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)"
+
   @pool_timeout 5_000
   @receive_timeout 15_000
 
@@ -14,90 +17,77 @@ defmodule CaptainHook.Clients.HttpClient do
     secrets = Keyword.get(opts, :secrets)
     is_insecure_allowed = Keyword.get(opts, :is_insecure_allowed)
 
-    encoded_body = Jason.encode!(body)
-
-    now = DateTime.utc_now()
-
     headers =
       headers
       |> Recase.Enumerable.convert_keys(&Recase.to_kebab/1)
-      |> Map.put("content-type", "application/json")
-      |> Map.put_new("user-agent", "CaptainHook/1.0; +(https://github.com/annatel/captain_hook)")
+      |> Map.put("content-type", @content_type)
+      |> Map.put_new("user-agent", @user_agent)
 
-    headers =
-      if secrets,
-        do:
-          headers
-          |> Map.put(
-            "signature",
-            CaptainHookSignature.sign(encoded_body, DateTime.to_unix(now), secrets)
-          ),
-        else: headers
+    request =
+      %{
+        request_body: Jason.encode!(body),
+        request_headers: headers,
+        request_method: "POST",
+        request_url: url,
+        requested_at: DateTime.utc_now()
+      }
+      |> maybe_add_signature_header(secrets)
 
+    response = send_request(request, is_insecure_allowed: is_insecure_allowed)
+
+    Response
+    |> struct!(Map.merge(request, response))
+  end
+
+  defp send_request(request, opts) do
+    request
+    |> tap(&Logger.debug("CaptainHook request:, #{inspect(&1)}"))
+    |> do_send_request(opts)
+    |> tap(&Logger.debug("CaptainHook response, #{inspect(&1)}"))
+  end
+
+  defp do_send_request(request, is_insecure_allowed: is_insecure_allowed) do
     finch_instance_name =
       unless is_insecure_allowed, do: CaptainHookFinch, else: CaptainHookFinchInsecure
 
-    response =
-      Finch.build(:post, url, Map.to_list(headers), encoded_body)
-      |> Finch.request(finch_instance_name,
-        pool_timeout: @pool_timeout,
-        receive_timeout: @receive_timeout
+    Finch.build(
+      :post,
+      request.request_url,
+      Map.to_list(request.request_headers),
+      request.request_body
+    )
+    |> Finch.request(finch_instance_name,
+      pool_timeout: @pool_timeout,
+      receive_timeout: @receive_timeout
+    )
+    |> case do
+      {:ok, %Finch.Response{body: response_body, status: status}} ->
+        %{
+          response_body: response_body,
+          response_http_status: status,
+          responded_at: DateTime.utc_now(),
+          success?: status in 200..299
+        }
+
+      {:error, error} ->
+        %{client_error_message: Exception.message(error), success?: false}
+    end
+  end
+
+  defp maybe_add_signature_header(request, nil), do: request
+
+  defp maybe_add_signature_header(request, secrets) do
+    headers =
+      request.request_headers
+      |> Map.put(
+        "signature",
+        CaptainHookSignature.sign(
+          request.request_body,
+          DateTime.to_unix(request.requested_at),
+          secrets
+        )
       )
 
-    Logger.debug("#{inspect(response)}")
-
-    response
-    |> process_response(url, Enum.into(headers, %{}), encoded_body, now)
-  end
-
-  defp process_response(
-         {:ok, %Finch.Response{status: status, body: response_body}},
-         request_url,
-         request_headers,
-         encoded_request_body,
-         %DateTime{} = requested_at
-       )
-       when status in 200..299 do
-    %Response{
-      request_url: request_url,
-      request_headers: request_headers,
-      request_body: encoded_request_body,
-      requested_at: requested_at,
-      status: status,
-      response_body: response_body
-    }
-  end
-
-  defp process_response(
-         {:ok, %Finch.Response{status: status, body: response_body}},
-         request_url,
-         request_headers,
-         encoded_request_body,
-         %DateTime{} = requested_at
-       ) do
-    %Response{
-      request_url: request_url,
-      request_headers: request_headers,
-      request_body: encoded_request_body,
-      requested_at: requested_at,
-      status: status,
-      response_body: response_body
-    }
-  end
-
-  defp process_response(
-         {:error, error},
-         url,
-         request_headers,
-         request_body,
-         %DateTime{} = requested_at
-       ) do
-    %Response{
-      request_url: url,
-      request_headers: request_headers,
-      request_body: request_body,
-      requested_at: requested_at,
-      client_error_message: Exception.message(error)
-    }
+    %{request | request_headers: headers}
   end
 end

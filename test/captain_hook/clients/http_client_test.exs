@@ -26,8 +26,8 @@ defmodule CaptainHook.Clients.HttpClientTest do
              request_url: ^url,
              request_headers: headers,
              request_body: ^encoded_body,
-             status: 200,
-             response_body: ""
+             response_body: "",
+             response_http_status: 200
            } = HttpClient.call(url, body, headers)
 
     assert Map.get(headers, "content-type") == "application/json"
@@ -86,7 +86,7 @@ defmodule CaptainHook.Clients.HttpClientTest do
     assert %Response{
              request_url: ^url,
              request_body: ^encoded_body,
-             status: 429,
+             response_http_status: 429,
              response_body: "{\"errors\": [{\"code\": 88, \"message\": \"Rate limit exceeded\"}]}"
            } = HttpClient.call(url, body, headers)
   end
@@ -101,8 +101,8 @@ defmodule CaptainHook.Clients.HttpClientTest do
     assert %Response{
              request_url: "http://url",
              request_body: ^encoded_body,
-             status: nil,
              response_body: nil,
+             response_http_status: nil,
              client_error_message: "non-existing domain"
            } = HttpClient.call("http://url", body, headers)
   end
@@ -117,8 +117,8 @@ defmodule CaptainHook.Clients.HttpClientTest do
     assert %Response{
              request_url: "https://expired.badssl.com/",
              request_body: ^encoded_body,
-             status: nil,
              response_body: nil,
+             response_http_status: nil,
              client_error_message: client_error_message
            } = HttpClient.call("https://expired.badssl.com/", body, headers)
 
@@ -135,9 +135,9 @@ defmodule CaptainHook.Clients.HttpClientTest do
     assert %Response{
              request_url: "https://expired.badssl.com/",
              request_body: ^encoded_body,
-             status: 405,
              response_body:
-               "<html>\r\n<head><title>405 Not Allowed</title></head>\r\n<body bgcolor=\"white\">\r\n<center><h1>405 Not Allowed</h1></center>\r\n<hr><center>nginx/1.10.3 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n"
+               "<html>\r\n<head><title>405 Not Allowed</title></head>\r\n<body bgcolor=\"white\">\r\n<center><h1>405 Not Allowed</h1></center>\r\n<hr><center>nginx/1.10.3 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+             response_http_status: 405
            } =
              HttpClient.call("https://expired.badssl.com/", body, headers,
                is_insecure_allowed: true

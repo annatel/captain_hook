@@ -139,4 +139,16 @@ defmodule CaptainHook do
   def repo() do
     Application.fetch_env!(:captain_hook, :repo)
   end
+
+  @doc false
+  @spec notification_type_separator :: binary
+  def notification_type_separator() do
+    Application.fetch_env!(:captain_hook, :notification_type_separator)
+  end
+
+  @doc false
+  @spec notification_type_wildcard :: binary
+  def notification_type_wildcard() do
+    Application.fetch_env!(:captain_hook, :notification_type_wildcard)
+  end
 end
