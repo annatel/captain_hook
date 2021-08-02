@@ -2,6 +2,7 @@ defmodule CaptainHook.NotifierTest do
   use ExUnit.Case, async: false
   use CaptainHook.DataCase
 
+  alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.WebhookNotifications.WebhookNotification
   alias CaptainHook.WebhookConversations
   alias CaptainHook.WebhookConversations.WebhookConversation
@@ -463,9 +464,13 @@ defmodule CaptainHook.NotifierTest do
         )
 
       CaptainHook.WebhookResultHandlerMock
-      |> expect(:handle_failure, 0, fn %WebhookNotification{}, %WebhookConversation{} ->
-        :ok
-      end)
+      |> expect(
+        :handle_failure,
+        0,
+        fn
+          %WebhookEndpoint{}, %WebhookNotification{}, %WebhookConversation{} -> :ok
+        end
+      )
 
       next_retry_at = utc_now() |> add(1200, :second)
 
@@ -495,9 +500,13 @@ defmodule CaptainHook.NotifierTest do
         )
 
       CaptainHook.WebhookResultHandlerMock
-      |> expect(:handle_failure, 1, fn %WebhookNotification{}, %WebhookConversation{} ->
-        :ok
-      end)
+      |> expect(
+        :handle_failure,
+        1,
+        fn %WebhookEndpoint{}, %WebhookNotification{}, %WebhookConversation{} ->
+          :ok
+        end
+      )
 
       next_retry_at = utc_now() |> add(1200, :second)
 

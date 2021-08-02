@@ -1,5 +1,6 @@
 defmodule CaptainHook.WebhookResultHandler do
   @callback handle_failure(
+              CaptainHook.WebhookEndpoints.WebhookEndpoint.t(),
               CaptainHook.WebhookNotifications.WebhookNotification.t(),
               CaptainHook.WebhookConversations.WebhookConversation.t()
             ) ::
@@ -11,6 +12,7 @@ defmodule CaptainHook.WebhookResultHandler do
 
       @impl true
       def handle_failure(
+            %CaptainHook.WebhookEndpoints.WebhookEndpoint{} = _webhook_endpoint,
             %CaptainHook.WebhookNotifications.WebhookNotification{} = _webhook_notification,
             %CaptainHook.WebhookConversations.WebhookConversation{} = _webhook_conversation
           ) do

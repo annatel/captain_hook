@@ -263,12 +263,17 @@ defmodule CaptainHook.Notifier do
       ) do
     webhook_conversation = WebhookConversation.new!(Jason.decode!(error))
 
-    webhook_notification = WebhookNotifications.get_webhook_notification!(webhook_notification_id)
+    %{webhook_endpoint: webhook_endpoint} =
+      webhook_notification =
+      WebhookNotifications.get_webhook_notification!(webhook_notification_id,
+        includes: [:webhook_endpoint]
+      )
 
     update_webhook_notification_attempt!(webhook_notification, attempt, next_retry_at)
 
     call_webhook_result_handler(
       webhook_result_handler,
+      webhook_endpoint,
       webhook_notification,
       webhook_conversation
     )
@@ -340,11 +345,13 @@ defmodule CaptainHook.Notifier do
 
   defp call_webhook_result_handler(
          webhook_result_handler,
+         %WebhookEndpoint{} = webhook_endpoint,
          %WebhookNotification{} = webhook_notification,
          %WebhookConversation{} = webhook_conversation
        ) do
     if webhook_result_handler do
       handler_module(webhook_result_handler).handle_failure(
+        webhook_endpoint,
         webhook_notification,
         webhook_conversation
       )
