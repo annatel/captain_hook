@@ -55,7 +55,7 @@ defmodule CaptainHook do
       def roll_webhook_endpoint_secret(webhook_endpoint, expires_at \\ DateTime.utc_now()),
         do: unquote(__MODULE__).roll_webhook_endpoint_secret(webhook_endpoint, expires_at)
 
-      @spec enable_event_type(WebhookEndpoint.t(), binary | [binary]) ::
+      @spec enable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
               {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
       def enable_notification_type(webhook_endpoint, notification_type),
         do: unquote(__MODULE__).enable_notification_type(webhook_endpoint, notification_type)
