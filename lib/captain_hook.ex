@@ -60,7 +60,7 @@ defmodule CaptainHook do
       def enable_notification_type(webhook_endpoint, notification_type),
         do: unquote(__MODULE__).enable_notification_type(webhook_endpoint, notification_type)
 
-      @spec disable_event_type(WebhookEndpoint.t(), binary | [binary]) ::
+      @spec disable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
               {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
       def disable_notification_type(webhook_endpoint, notification_type),
         do: unquote(__MODULE__).disable_notification_type(webhook_endpoint, notification_type)
