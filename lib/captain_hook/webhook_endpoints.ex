@@ -6,7 +6,6 @@ defmodule CaptainHook.WebhookEndpoints do
   alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, WebhookEndpointQueryable}
   alias CaptainHook.WebhookEndpoints.Secrets
 
-  @all_events_wildcard "*"
   @default_page_number 1
   @default_page_size 100
 
@@ -198,6 +197,7 @@ defmodule CaptainHook.WebhookEndpoints do
     |> Enum.any?()
   end
 
+  @spec webhook_endpoint_queryable(keyword) :: Ecto.Queryable.t()
   def webhook_endpoint_queryable(opts \\ []) do
     filters = Keyword.get(opts, :filters, [])
 

@@ -2,12 +2,12 @@ defmodule CaptainHook.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/annatel/captain_hook"
-  @version "2.0.0"
+  @version "2.1.0"
 
   def project do
     [
       app: :captain_hook,
-      version: @version,
+      version: version(),
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -15,6 +15,7 @@ defmodule CaptainHook.MixProject do
       deps: deps(),
       docs: docs(),
       elixirc_paths: elixirc_paths(Mix.env()),
+      test_coverage: test_coverage(),
       aliases: aliases()
     ]
   end
@@ -47,8 +48,20 @@ defmodule CaptainHook.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
+  defp test_coverage() do
+    [
+      ignore_modules: [
+        CaptainHook.Migrations,
+        CaptainHook.Migrations.V1,
+        CaptainHook.Migrations.V2,
+        CaptainHook.Migrations.V3
+      ]
+    ]
+  end
+
   defp aliases do
     [
+      "app.version": &display_app_version/1,
       test: ["ecto.setup", "test"],
       "ecto.setup": [
         "ecto.create --quiet -r CaptainHook.TestRepo",
@@ -78,4 +91,7 @@ defmodule CaptainHook.MixProject do
       ]
     ]
   end
+
+  defp version(), do: @version
+  defp display_app_version(_), do: Mix.shell().info(version())
 end
