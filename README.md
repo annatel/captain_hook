@@ -12,7 +12,7 @@ The package can be installed by adding `captain_hook` to your list of dependenci
 ```elixir
 def deps do
   [
-    {:captain_hook, "~> 2.0.0"}
+    {:captain_hook, "~> 2.1.0"}
   ]
 end
 ```
@@ -25,11 +25,13 @@ defmodule CaptainHook.TestRepo.Migrations.CreateCaptainHookTables do
 
   def up do
     Queuetopia.Migrations.up()
+    Padlock.Mutexes.Migrations.V1.up()
     CaptainHook.Migrations.up()
   end
 
   def down do
     Queuetopia.Migrations.down()
+    Padlock.Mutexes.Migrations.V1.down()
     CaptainHook.Migrations.down()
   end
 end
