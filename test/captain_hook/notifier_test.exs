@@ -293,7 +293,7 @@ defmodule CaptainHook.NotifierTest do
         webhook_notification =
         insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
 
-      assert {:ok, nil} =
+      assert {:ok, :webhook_endpoint_is_disabled} =
                Notifier.send_webhook_notification(%{
                  "webhook_notification_id" => webhook_notification.id,
                  "webhook_result_handler" => nil
@@ -416,7 +416,7 @@ defmodule CaptainHook.NotifierTest do
       end
     end
 
-    test "when the conversation failed and a webhook_result_handler is not set, returns an error named tuple with the conversation and do not call the webhook_result_handler",
+    test "when the conversation failed, returns an error named tuple with the conversation json_encoded",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
 
@@ -425,16 +425,11 @@ defmodule CaptainHook.NotifierTest do
       %{id: webhook_notification_id} =
         insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
 
-      CaptainHook.WebhookResultHandlerMock
-      |> expect(:handle_failure, 0, fn %WebhookNotification{}, %WebhookConversation{} ->
-        :ok
-      end)
-
       Bypass.expect_once(bypass, "POST", "/", fn conn ->
         Plug.Conn.resp(conn, 401, "Unauthorized")
       end)
 
-      assert {:error, _webhook_conversation_as_string} =
+      assert {:error, json_encoded_webhook_conversation} =
                Notifier.send_webhook_notification(%{
                  "webhook_notification_id" => webhook_notification_id,
                  "webhook_result_handler" => nil
@@ -447,6 +442,42 @@ defmodule CaptainHook.NotifierTest do
 
       assert webhook_conversation.status ==
                WebhookConversations.WebhookConversation.statuses().failed
+
+      assert Jason.encode!(webhook_conversation) == json_encoded_webhook_conversation
+    end
+  end
+
+  describe "handle_failure!/4" do
+    test "when the webhook_result_handler is not set, update the webhook_notification attempt and next_retry_at and do not call the webhook_result_handler",
+         %{bypass: bypass} do
+      start_supervised(CaptainHook.Supervisor)
+
+      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
+
+      %{id: webhook_notification_id} =
+        insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
+
+      webhook_conversation =
+        insert!(:webhook_conversation,
+          webhook_notification_id: webhook_notification_id
+        )
+
+      CaptainHook.WebhookResultHandlerMock
+      |> expect(:handle_failure, 0, fn %WebhookNotification{}, %WebhookConversation{} ->
+        :ok
+      end)
+
+      next_retry_at = utc_now() |> add(1200, :second)
+
+      assert Notifier.handle_failure!(
+               %{
+                 "webhook_notification_id" => webhook_notification_id,
+                 "webhook_result_handler" => nil
+               },
+               1,
+               next_retry_at,
+               Jason.encode!(webhook_conversation)
+             ) == :ok
     end
 
     test "when the conversation failed and a webhook_result_handler is set, call the handle_failure callback",
@@ -455,23 +486,30 @@ defmodule CaptainHook.NotifierTest do
 
       webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
 
-      webhook_notification =
+      %{id: webhook_notification_id} =
         insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
+
+      webhook_conversation =
+        insert!(:webhook_conversation,
+          webhook_notification_id: webhook_notification_id
+        )
 
       CaptainHook.WebhookResultHandlerMock
       |> expect(:handle_failure, 1, fn %WebhookNotification{}, %WebhookConversation{} ->
         :ok
       end)
 
-      Bypass.expect_once(bypass, "POST", "/", fn conn ->
-        Plug.Conn.resp(conn, 401, "Unauthorized")
-      end)
+      next_retry_at = utc_now() |> add(1200, :second)
 
-      assert {:error, _webhook_conversation_as_string} =
-               Notifier.send_webhook_notification(%{
-                 "webhook_notification_id" => webhook_notification.id,
+      assert Notifier.handle_failure!(
+               %{
+                 "webhook_notification_id" => webhook_notification_id,
                  "webhook_result_handler" => CaptainHook.WebhookResultHandlerMock |> to_string()
-               })
+               },
+               1,
+               next_retry_at,
+               Jason.encode!(webhook_conversation)
+             ) == :ok
     end
   end
 

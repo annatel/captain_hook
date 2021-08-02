@@ -12,7 +12,7 @@ defmodule CaptainHook.Factory.WebhookConversation do
           request_body: "request_body_#{System.unique_integer()}",
           http_status: 200,
           response_body: "response_body_#{System.unique_integer()}",
-          client_error_message: "response_body_#{System.unique_integer()}",
+          client_error_message: "client_error_message_#{System.unique_integer()}",
           status: WebhookConversation.statuses().succeeded
         }
         |> struct!(attrs)

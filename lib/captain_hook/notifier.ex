@@ -188,15 +188,8 @@ defmodule CaptainHook.Notifier do
     |> Enum.reject(&is_nil/1)
   end
 
-  @spec send_webhook_notification(map, keyword) ::
-          {:ok, WebhookNotification.t()} | {:error, binary}
-  def send_webhook_notification(
-        %{
-          "webhook_notification_id" => webhook_notification_id,
-          "webhook_result_handler" => webhook_result_handler
-        },
-        opts \\ []
-      ) do
+  @spec send_webhook_notification(map) :: {:ok, WebhookNotification.t()} | {:error, binary}
+  def send_webhook_notification(%{"webhook_notification_id" => webhook_notification_id}) do
     %{webhook_endpoint: webhook_endpoint} =
       webhook_notification =
       webhook_notification_id
@@ -204,29 +197,23 @@ defmodule CaptainHook.Notifier do
 
     if WebhookEndpoints.webhook_endpoint_enabled?(webhook_endpoint) do
       %{webhook_notification: webhook_notification, webhook_conversation: webhook_conversation} =
-        webhook_notification |> send_webhook_notification!(opts)
+        webhook_notification |> send_webhook_notification!()
 
       if WebhookNotifications.notification_succeeded?(webhook_notification) do
         {:ok, webhook_notification}
       else
-        handle_failure(webhook_result_handler, webhook_notification, webhook_conversation)
-        {:error, inspect(webhook_conversation)}
+        {:error, Jason.encode!(webhook_conversation)}
       end
     else
-      {:ok, nil}
+      {:ok, :webhook_endpoint_is_disabled}
     end
   end
 
-  @spec send_webhook_notification!(WebhookNotification.t(), keyword) :: %{
+  @spec send_webhook_notification!(WebhookNotification.t()) :: %{
           webhook_conversation: WebhookConversation.t() | nil,
           webhook_notification: WebhookNotification.t()
         }
-  def send_webhook_notification!(webhook_notification, opts \\ [])
-
-  def send_webhook_notification!(
-        %WebhookNotification{succeeded_at: nil} = webhook_notification,
-        opts
-      ) do
+  def send_webhook_notification!(%WebhookNotification{succeeded_at: nil} = webhook_notification) do
     %{webhook_endpoint: webhook_endpoint} =
       WebhookNotifications.get_webhook_notification!(webhook_notification.id,
         includes: [:webhook_endpoint]
@@ -254,14 +241,39 @@ defmodule CaptainHook.Notifier do
       }
     else
       %{
-        webhook_notification: update_webhook_notification_attempt!(webhook_notification, opts),
+        webhook_notification: webhook_notification,
         webhook_conversation: webhook_conversation
       }
     end
   end
 
-  def send_webhook_notification!(%WebhookNotification{} = webhook_notification, _) do
+  def send_webhook_notification!(%WebhookNotification{} = webhook_notification) do
     %{webhook_notification: webhook_notification, webhook_conversation: nil}
+  end
+
+  @spec handle_failure!(map, integer, %DateTime{}, binary) :: :ok
+  def handle_failure!(
+        %{
+          "webhook_notification_id" => webhook_notification_id,
+          "webhook_result_handler" => webhook_result_handler
+        },
+        attempt,
+        next_retry_at,
+        error
+      ) do
+    webhook_conversation = WebhookConversation.new!(Jason.decode!(error))
+
+    webhook_notification = WebhookNotifications.get_webhook_notification!(webhook_notification_id)
+
+    update_webhook_notification_attempt!(webhook_notification, attempt, next_retry_at)
+
+    call_webhook_result_handler(
+      webhook_result_handler,
+      webhook_notification,
+      webhook_conversation
+    )
+
+    :ok
   end
 
   defp save_webhook_conversation!(
@@ -313,23 +325,20 @@ defmodule CaptainHook.Notifier do
     webhook_notification
   end
 
-  defp update_webhook_notification_attempt!(%WebhookNotification{} = webhook_notification, opts) do
-    attrs = %{}
-
-    attrs = if opts[:job], do: Map.put(attrs, :attempt, opts[:job].attempts), else: attrs
-
-    attrs =
-      if opts[:performer],
-        do: Map.put(attrs, :next_retry_at, opts[:performer].backoff(opts[:job])),
-        else: attrs
-
-    {:ok, webhook_notification} =
-      WebhookNotifications.update_webhook_notification(webhook_notification, attrs)
+  defp update_webhook_notification_attempt!(
+         %WebhookNotification{} = webhook_notification,
+         attempt,
+         next_retry_at
+       ) do
+    WebhookNotifications.update_webhook_notification(webhook_notification, %{
+      attempt: attempt,
+      next_retry_at: next_retry_at
+    })
 
     webhook_notification
   end
 
-  defp handle_failure(
+  defp call_webhook_result_handler(
          webhook_result_handler,
          %WebhookNotification{} = webhook_notification,
          %WebhookConversation{} = webhook_conversation

@@ -95,6 +95,33 @@ defmodule CaptainHook do
       def get_webhook_conversation(id, opts \\ []),
         do: unquote(__MODULE__).get_webhook_conversation(id, opts)
 
+      @spec failure_report_email_subject(WebhookNotification.t(), WebhookConversation.t()) ::
+              binary
+      def failure_report_email_subject(webhook_notification, webhook_conversation),
+        do:
+          unquote(__MODULE__).failure_report_email_subject(
+            webhook_notification,
+            webhook_conversation
+          )
+
+      @spec failure_report_email_html_body(
+              WebhookNotification.t(),
+              WebhookConversation.t(),
+              binary
+            ) ::
+              binary
+      def failure_report_email_html_body(
+            webhook_notification,
+            webhook_conversation,
+            webhook_conversations_url \\ nil
+          ),
+          do:
+            unquote(__MODULE__).failure_report_email_html_body(
+              webhook_notification,
+              webhook_conversation,
+              webhook_conversations_url
+            )
+
       defoverridable CaptainHook.Behaviour
     end
   end
@@ -183,6 +210,68 @@ defmodule CaptainHook do
 
   @spec get_webhook_conversation(binary, keyword) :: WebhookConversation.t() | nil
   defdelegate get_webhook_conversation(id, opts \\ []), to: WebhookConversations
+
+  @doc false
+  @spec failure_report_email_subject(WebhookNotification.t()) :: binary
+  def failure_report_email_subject(%WebhookNotification{webhook_endpoint_id: webhook_endpoint_id}) do
+    "A failure happens on the webhook endpoint #{webhook_endpoint_id}."
+  end
+
+  @spec failure_report_email_html_body(
+          CaptainHook.WebhookNotifications.WebhookNotification.t(),
+          CaptainHook.WebhookConversations.WebhookConversation.t(),
+          binary
+        ) :: binary
+  @doc false
+  def failure_report_email_html_body(
+        %WebhookNotification{webhook_endpoint_id: webhook_endpoint_id},
+        %WebhookConversation{
+          client_error_message: client_error_message,
+          http_status: http_status,
+          request_url: request_url,
+          request_body: request_body,
+          response_body: response_body
+        },
+        webhook_conversations_url \\ nil
+      ) do
+    request_body = Jason.decode!(request_body) |> Jason.encode!(pretty: true)
+
+    """
+    Hi,<br/>
+    <br/>
+    Here is a report about a webhook failure about the webhook endpoint #{maybe_add_link(webhook_conversations_url, webhook_endpoint_id)}<br/>
+    <br/>
+    <b>Request url:</b> #{request_url}<br/>
+    <b>HTTP status:</b> #{http_status}<br/>#{client_error_message_text(client_error_message)}
+    <br/>
+    <br/>
+    <b>Response:</b> #{response_body}<br/>
+    <b>Request:</b>
+    <pre>
+    #{request_body}
+    </pre>
+    <br/>
+    <b>Please, fix the failure in order to unlock the flow of the reports.</b>
+    <br/>
+    """
+  end
+
+  defp maybe_add_link(nil, webhook_endpoint_id), do: webhook_endpoint_id
+
+  defp maybe_add_link(webhook_conversations_url, webhook_endpoint_id)
+       when is_binary(webhook_conversations_url) do
+    "<a href='#{webhook_conversations_url}'>#{webhook_endpoint_id}</a>"
+  end
+
+  defp client_error_message_text(nil), do: ""
+
+  defp client_error_message_text(client_error_message) when is_binary(client_error_message),
+    do: "<b>Client error message (if any):</b> #{client_error_message}"
+
+  @spec webhook_conversations_url(binary) :: nil | binary
+  def webhook_conversations_url(webhook_endpoint_id) when is_binary(webhook_endpoint_id) do
+    nil
+  end
 
   @doc false
   @spec repo :: module

@@ -26,6 +26,7 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wc"}
   @foreign_key_type :binary_id
+  @derive {Jason.Encoder, except: [:__meta__, :webhook_notification]}
   schema "captain_hook_webhook_conversations" do
     belongs_to(:webhook_notification, WebhookNotification, type: Shortcode.Ecto.UUID, prefix: "wn")
 
@@ -42,6 +43,17 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
 
     timestamps(updated_at: false)
     field(:object, :string, default: "webhook_conversation")
+  end
+
+  @doc false
+  @spec new!(map) :: WebhookConversation.t()
+  def new!(fields \\ %{})
+  def new!(fields) when is_struct(fields), do: fields |> Map.from_struct() |> new!()
+
+  def new!(fields) when is_map(fields) do
+    %__MODULE__{}
+    |> changeset(fields)
+    |> Ecto.Changeset.apply_action!(:insert)
   end
 
   @doc false
