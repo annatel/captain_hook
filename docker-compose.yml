@@ -1,0 +1,25 @@
+version: '3'
+services:
+    mysql:
+        image: mysql:5.7
+        ports:
+            - '${FORWARD_DB_PORT:-3306}:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_INITDB_SKIP_TZINFO: '1'
+        volumes:
+            - 'captain_hook_mysql:/var/lib/mysql'
+        networks:
+            - captain_hook
+        healthcheck:
+          test: ["CMD", "mysqladmin", "ping", "-p${DB_PASSWORD}"]
+          retries: 3
+          timeout: 5s
+
+networks:
+  captain_hook:
+      driver: bridge
+
+volumes:
+    captain_hook_mysql:
+        driver: local
