@@ -83,271 +83,236 @@ defmodule CaptainHook.Test.AssertionsTest do
     end
   end
 
-  describe "assert_webhook_notifications_created/2" do
-    test "when the notification is found" do
-      %{resource_id: resource_id, resource_object: resource_object} =
-        insert!(:webhook_notification)
-
-      assert_webhook_notifications_created(resource_id, resource_object)
+  describe "assert_webhook_notification_created/0" do
+    test "when the webhook_notification is found" do
+      insert!(:webhook_notification)
+      assert_webhook_notification_created()
     end
 
-    test "when the notification is not found" do
+    test "count option" do
+      insert!(:webhook_notification)
+
       message =
         %ExUnit.AssertionError{
-          message: "Expected a webhook_notification, got none"
+          message: "Expected 2 webhook_notifications, got 1"
         }
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_notifications_created("resource_id", "resource_object")
+        assert_webhook_notification_created(2)
+      end
+    end
+
+    test "when the webhook_notification is not found" do
+      message =
+        %ExUnit.AssertionError{message: "Expected 1 webhook_notification, got 0"}
+        |> ExUnit.AssertionError.message()
+
+      assert_raise ExUnit.AssertionError, message, fn ->
+        assert_webhook_notification_created()
       end
     end
   end
 
-  describe "assert_webhook_notifications_created/3 - with data" do
-    test "when the notification is found" do
-      data = %{"a" => "A"}
+  describe "assert_webhook_notification_created/1" do
+    test "when the webhook_conversation is found" do
+      %{resource_id: resource_id} = insert!(:webhook_notification)
+      insert!(:webhook_notification)
 
-      %{resource_id: resource_id, resource_object: resource_object} =
-        insert!(:webhook_notification, data: data)
-
-      assert_webhook_notifications_created(resource_id, resource_object, data)
+      assert_webhook_notification_created(%{resource_id: resource_id})
     end
 
-    test "when no notification is found for the resource_id and the resource_object" do
+    test "when the webhook_notification is not found" do
       message =
         %ExUnit.AssertionError{
-          message: "Expected a webhook_notification, got none"
+          message:
+            "Expected 1 webhook_notification with attributes %{resource_id: \"resource_id\"}, got 0"
         }
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_notifications_created(
-          "resource_id",
-          "resource_object",
-          %{"a" => "B"}
-        )
+        assert_webhook_notification_created(%{resource_id: "resource_id"})
       end
     end
 
-    test "when the notifications found doesn't contain the expected data" do
-      %{resource_id: resource_id, resource_object: resource_object} =
-        insert!(:webhook_notification, data: %{"a" => "A"})
+    test "count option" do
+      %{resource_id: resource_id} = insert!(:webhook_notification)
+
+      insert!(:webhook_notification, resource_id: resource_id)
 
       message =
         %ExUnit.AssertionError{
-          message: """
-          Expected a webhook_notification with data:
-          %{"a" => "B"}
-          Found webhook_notification with data: %{"a" => "A"}
-          """
+          message:
+            "Expected 1 webhook_notification with attributes %{resource_id: \"#{resource_id}\"}, got 2"
         }
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_notifications_created(
-          resource_id,
-          resource_object,
-          %{"a" => "B"}
-        )
+        assert_webhook_notification_created(1, %{resource_id: resource_id})
+      end
+    end
+
+    test "when data is specified" do
+      %{resource_id: resource_id, data: data} = insert!(:webhook_notification)
+      insert!(:webhook_notification)
+
+      assert_webhook_notification_created(%{
+        resource_id: resource_id,
+        data: data |> Recase.Enumerable.stringify_keys()
+      })
+    end
+
+    test "when data is specified but not match" do
+      %{data: %{key: "value"}} = insert!(:webhook_notification, data: %{key: "value"})
+
+      message =
+        %ExUnit.AssertionError{
+          message:
+            "Expected 1 webhook_notification with attributes %{data: %{\"key\" => \"wrong_value\"}}, got 0"
+        }
+        |> ExUnit.AssertionError.message()
+
+      assert_raise ExUnit.AssertionError, message, fn ->
+        assert_webhook_notification_created(%{data: %{"key" => "wrong_value"}})
+      end
+    end
+
+    test "with data, count option" do
+      %{data: %{key: "value"}} = insert!(:webhook_notification, data: %{key: "value"})
+      insert!(:webhook_notification, data: %{key: "value"})
+
+      message =
+        %ExUnit.AssertionError{
+          message:
+            "Expected 1 webhook_notification with attributes %{data: %{\"key\" => \"value\"}}, got 2"
+        }
+        |> ExUnit.AssertionError.message()
+
+      assert_raise ExUnit.AssertionError, message, fn ->
+        assert_webhook_notification_created(1, %{data: %{"key" => "value"}})
       end
     end
   end
 
-  describe "assert_webhook_notifications_created/3 - with webhook_endpoint_ids" do
-    test "when the notification is found" do
-      %{
-        webhook_endpoint_id: webhook_endpoint_id,
-        resource_id: resource_id,
-        resource_object: resource_object
-      } = insert!(:webhook_notification)
-
-      assert_webhook_notifications_created(resource_id, resource_object, [webhook_endpoint_id])
+  describe "assert_webhook_endpoint_created/0" do
+    test "when the webhook_endpoint is found" do
+      insert!(:webhook_endpoint)
+      assert_webhook_endpoint_created()
     end
 
-    test "when no notification is found for the resource_id and the resource_object" do
+    test "count option" do
+      insert!(:webhook_endpoint)
+
       message =
         %ExUnit.AssertionError{
-          message: "Expected a webhook_notification, got none"
+          message: "Expected 2 webhook_endpoints, got 1"
         }
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_notifications_created(
-          "resource_id",
-          "resource_object",
-          [shortcode_uuid("we")]
-        )
+        assert_webhook_endpoint_created(2)
       end
     end
 
-    test "when the notifications are not created to the expected webhook_enpoint_ids" do
-      webhook_endpoint_id = shortcode_uuid("we")
-
-      %{
-        resource_id: resource_id,
-        resource_object: resource_object
-      } = insert!(:webhook_notification)
-
+    test "when the webhook_endpoint is not found" do
       message =
-        %ExUnit.AssertionError{
-          message: """
-          Expected a webhook_notification for the webhook_endpoint_id #{webhook_endpoint_id}, got none.
-          """
-        }
+        %ExUnit.AssertionError{message: "Expected 1 webhook_endpoint, got 0"}
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_notifications_created(
-          resource_id,
-          resource_object,
-          [webhook_endpoint_id]
-        )
+        assert_webhook_endpoint_created()
       end
     end
   end
 
-  describe "assert_webhook_notifications_created/4 - with webhook_endpoint_ids and data" do
-    test "when the notification is found" do
-      data = %{"a" => "A"}
+  describe "assert_webhook_endpoint_created/1" do
+    test "when the webhook_endpoint is found" do
+      %{url: url} = insert!(:webhook_endpoint)
+      insert!(:webhook_endpoint)
 
-      %{
-        webhook_endpoint_id: webhook_endpoint_id,
-        resource_id: resource_id,
-        resource_object: resource_object
-      } = insert!(:webhook_notification, data: data)
+      assert_webhook_endpoint_created(%{url: url})
+    end
 
-      assert_webhook_notifications_created(
-        resource_id,
-        resource_object,
-        [webhook_endpoint_id],
-        data
+    test "when the webhook_endpoint is not found" do
+      message =
+        %ExUnit.AssertionError{
+          message: "Expected 1 webhook_endpoint with attributes %{url: \"url\"}, got 0"
+        }
+        |> ExUnit.AssertionError.message()
+
+      assert_raise ExUnit.AssertionError, message, fn ->
+        assert_webhook_endpoint_created(%{url: "url"})
+      end
+    end
+
+    test "count option" do
+      %{url: url} = insert!(:webhook_endpoint)
+
+      insert!(:webhook_endpoint, url: url)
+
+      message =
+        %ExUnit.AssertionError{
+          message: "Expected 1 webhook_endpoint with attributes %{url: \"#{url}\"}, got 2"
+        }
+        |> ExUnit.AssertionError.message()
+
+      assert_raise ExUnit.AssertionError, message, fn ->
+        assert_webhook_endpoint_created(1, %{url: url})
+      end
+    end
+
+    test "when enabled_notification_types is specified" do
+      %{url: url, enabled_notification_types: enabled_notification_types} =
+        insert!(:webhook_endpoint)
+
+      insert!(:webhook_endpoint)
+
+      assert_webhook_endpoint_created(%{
+        url: url,
+        enabled_notification_types:
+          enabled_notification_types
+          |> Enum.map(&Map.from_struct/1)
+          |> Recase.Enumerable.stringify_keys()
+      })
+    end
+
+    test "when enabled_notification_type is specified but not match" do
+      insert!(:webhook_endpoint,
+        enabled_notification_types: [build(:enabled_notification_type, name: "*")]
       )
-    end
 
-    test "when no notification is found for the resource_id and the resource_object" do
       message =
         %ExUnit.AssertionError{
-          message: "Expected a webhook_notification, got none"
+          message:
+            "Expected 1 webhook_endpoint with attributes %{enabled_notification_types: [%{\"name\" => \"wrong_value\"}]}, got 0"
         }
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_notifications_created(
-          "resource_id",
-          "resource_object",
-          [shortcode_uuid("we")],
-          %{"a" => "A"}
-        )
-      end
-    end
-
-    test "when the notifications are not created to the expected webhook_enpoint_ids" do
-      data = %{"a" => "A"}
-      webhook_endpoint_id = shortcode_uuid("we")
-
-      %{
-        resource_id: resource_id,
-        resource_object: resource_object
-      } = insert!(:webhook_notification, data: data)
-
-      message =
-        %ExUnit.AssertionError{
-          message: """
-          Expected a webhook_notification for the webhook_endpoint_id #{webhook_endpoint_id}, got none.
-          """
-        }
-        |> ExUnit.AssertionError.message()
-
-      assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_notifications_created(
-          resource_id,
-          resource_object,
-          [webhook_endpoint_id],
-          %{"a" => "A"}
-        )
-      end
-    end
-
-    test "when the notifications are not created with the expected data" do
-      data = %{"a" => "A"}
-
-      %{
-        resource_id: resource_id,
-        resource_object: resource_object
-      } = insert!(:webhook_notification, data: data)
-
-      message =
-        %ExUnit.AssertionError{
-          message: """
-          Expected a webhook_notification with data:
-          %{"a" => "B"}
-          Found webhook_notification with data: %{"a" => "A"}
-          """
-        }
-        |> ExUnit.AssertionError.message()
-
-      assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_notifications_created(
-          resource_id,
-          resource_object,
-          [shortcode_uuid("we")],
-          %{"a" => "B"}
-        )
-      end
-    end
-  end
-
-  describe "assert_webhook_endpoints_created/2" do
-    test "when the webhoook_endpoint is created" do
-      %{owner_id: owner_id} = insert!(:webhook_endpoint)
-      assert_webhook_endpoints_created(owner_id, %{enabled_notification_types: ["*"]})
-    end
-
-    test "when no webhoook_endpoint exist for the owner_id" do
-      message =
-        %ExUnit.AssertionError{
-          message: "Expected a webhook endpoint with the attributes %{}, got none"
-        }
-        |> ExUnit.AssertionError.message()
-
-      assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_endpoints_created("owner_id")
-      end
-    end
-
-    test "when attributes don't match" do
-      %{owner_id: owner_id} = insert!(:webhook_endpoint)
-
-      message =
-        %ExUnit.AssertionError{
-          message: "Expected a webhook endpoint with the attributes %{url: \"url\"}, got none"
-        }
-        |> ExUnit.AssertionError.message()
-
-      assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_endpoints_created(owner_id, %{
-          url: "url"
+        assert_webhook_endpoint_created(%{
+          enabled_notification_types: [%{"name" => "wrong_value"}]
         })
       end
     end
 
-    test "when some expected enabled_notification_types are missing" do
-      %{owner_id: owner_id} = insert!(:webhook_endpoint)
+    test "with data, count option" do
+      insert!(:webhook_endpoint,
+        enabled_notification_types: [build(:enabled_notification_type, name: "*")]
+      )
+
+      insert!(:webhook_endpoint,
+        enabled_notification_types: [build(:enabled_notification_type, name: "*")]
+      )
 
       message =
         %ExUnit.AssertionError{
-          message: """
-            Expected enabled_notification_types [\"url\"],
-            got: [\"*\"]
-          """
+          message:
+            "Expected 1 webhook_endpoint with attributes %{enabled_notification_types: [%{\"name\" => \"*\"}]}, got 2"
         }
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_endpoints_created(owner_id, %{
-          enabled_notification_types: ["url"]
-        })
+        assert_webhook_endpoint_created(1, %{enabled_notification_types: [%{"name" => "*"}]})
       end
     end
   end

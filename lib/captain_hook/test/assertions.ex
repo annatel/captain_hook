@@ -13,7 +13,9 @@ defmodule CaptainHook.Test.Assertions do
   # Examples:
 
       assert_webhook_conversation_created()
+      assert_webhook_conversation_created(1)
       assert_webhook_conversation_created(%{webhook_notification_id: "id")
+      assert_webhook_conversation_created(2, %{webhook_notification_id: "id")
   """
   def assert_webhook_conversation_created(attrs \\ %{})
 
@@ -40,102 +42,42 @@ defmodule CaptainHook.Test.Assertions do
 
   # Examples:
 
-      assert_webhook_notifications_created("id", "object")
-      assert_webhook_notifications_created("id", "object", %{"param" => "b"})
-      assert_webhook_notifications_created("id", "object", [endpoint_id,...])
-      assert_webhook_notifications_created("id", "object",  %{"param" => "b"}, [endpoint_id,...])
+      assert_webhook_notification_created()
+      assert_webhook_notification_created(1)
+      assert_webhook_notification_created(%{webhook_endpoint_id: "id")
+      assert_webhook_notification_created(2, %{resource_id: "id", "resource_object": "resource_object")
   """
-  def assert_webhook_notifications_created(resource_id, resource_object)
-      when is_binary(resource_id) and is_binary(resource_object) do
+  def assert_webhook_notification_created(attrs \\ %{})
+
+  def assert_webhook_notification_created(%{} = attrs),
+    do: assert_webhook_notification_created(1, attrs)
+
+  def assert_webhook_notification_created(expected_count) when is_integer(expected_count),
+    do: assert_webhook_notification_created(expected_count, %{})
+
+  def assert_webhook_notification_created(expected_count, %{data: data} = attrs)
+      when is_integer(expected_count) do
     webhook_notifications =
       WebhookNotifications.list_webhook_notifications(
-        filters: [resource_id: resource_id, resource_object: resource_object]
+        filters: attrs |> Map.delete(:data) |> Enum.to_list()
       )
 
-    assert length(webhook_notifications) != 0, "Expected a webhook_notification, got none"
+    count =
+      webhook_notifications
+      |> Enum.filter(fn webhook_notification -> subset?(data, webhook_notification.data) end)
+      |> length()
+
+    assert count == expected_count, message("webhook_notification", attrs, expected_count, count)
   end
 
-  def assert_webhook_notifications_created(
-        resource_id,
-        resource_object,
-        data
-      )
-      when is_binary(resource_id) and is_binary(resource_object) and is_map(data) do
+  def assert_webhook_notification_created(expected_count, attrs)
+      when is_integer(expected_count) do
     webhook_notifications =
-      WebhookNotifications.list_webhook_notifications(
-        filters: [resource_id: resource_id, resource_object: resource_object]
-      )
+      WebhookNotifications.list_webhook_notifications(filters: attrs |> Enum.to_list())
 
-    assert length(webhook_notifications) != 0, "Expected a webhook_notification, got none"
-    assert_notifications_created_with_data(webhook_notifications, data)
-  end
+    count = length(webhook_notifications)
 
-  def assert_webhook_notifications_created(
-        resource_id,
-        resource_object,
-        webhook_endpoint_ids
-      )
-      when is_binary(resource_id) and is_binary(resource_object) and is_list(webhook_endpoint_ids) do
-    webhook_notifications =
-      WebhookNotifications.list_webhook_notifications(
-        filters: [resource_id: resource_id, resource_object: resource_object]
-      )
-
-    assert length(webhook_notifications) != 0, "Expected a webhook_notification, got none"
-
-    assert_webhook_notifications_created_for_endpoints(
-      webhook_notifications,
-      webhook_endpoint_ids
-    )
-  end
-
-  def assert_webhook_notifications_created(
-        resource_id,
-        resource_object,
-        webhook_endpoint_ids,
-        data
-      )
-      when is_binary(resource_id) and is_binary(resource_object) and is_list(webhook_endpoint_ids) and
-             is_map(data) do
-    webhook_notifications =
-      WebhookNotifications.list_webhook_notifications(
-        filters: [resource_id: resource_id, resource_object: resource_object]
-      )
-
-    assert length(webhook_notifications) != 0, "Expected a webhook_notification, got none"
-
-    assert_notifications_created_with_data(webhook_notifications, data)
-
-    assert_webhook_notifications_created_for_endpoints(
-      webhook_notifications,
-      webhook_endpoint_ids
-    )
-  end
-
-  defp assert_notifications_created_with_data(webhook_notifications, data)
-       when is_list(webhook_notifications) and is_map(data) do
-    Enum.each(webhook_notifications, fn webhook_notification ->
-      assert subset?(data, webhook_notification.data),
-             """
-             Expected a webhook_notification with data:
-             #{inspect(data, pretty: true)}
-             Found webhook_notification with data: #{inspect(webhook_notification.data, pretty: true)}
-             """
-    end)
-  end
-
-  defp assert_webhook_notifications_created_for_endpoints(
-         webhook_notifications,
-         expected_webhook_endpoint_ids
-       )
-       when is_list(webhook_notifications) and is_list(expected_webhook_endpoint_ids) do
-    webhook_endpoint_ids = webhook_notifications |> Enum.map(& &1.webhook_endpoint_id)
-
-    Enum.each(expected_webhook_endpoint_ids, fn expected_webhook_endpoint_id ->
-      assert expected_webhook_endpoint_id in webhook_endpoint_ids, """
-      Expected a webhook_notification for the webhook_endpoint_id #{expected_webhook_endpoint_id}, got none.
-      """
-    end)
+    assert count == expected_count, message("webhook_notification", attrs, expected_count, count)
   end
 
   @doc """
@@ -145,44 +87,59 @@ defmodule CaptainHook.Test.Assertions do
 
   # Examples:
 
-      assert_webhook_endpoint_created("owner_id", %{attr_1: "a"})
-      assert_webhook_endpoint_created("owner_id", %{attr_1: "a", enabled_notification_types: ["*"]})
+      assert_webhook_endpoint_created()
+      assert_webhook_endpoint_created(1)
+      assert_webhook_endpoint_created(%{onwer_id: "id")
+      assert_webhook_endpoint_created(2, %{onwer_id: "id")
   """
 
-  def assert_webhook_endpoints_created(owner_id, attrs \\ %{})
-      when is_binary(owner_id) and is_map(attrs) do
-    owner_id_field = elem(CaptainHook.owner_id_field(:schema), 0)
+  def assert_webhook_endpoint_created(attrs \\ %{})
 
+  def assert_webhook_endpoint_created(%{} = attrs),
+    do: assert_webhook_endpoint_created(1, attrs)
+
+  def assert_webhook_endpoint_created(expected_count) when is_integer(expected_count),
+    do: assert_webhook_endpoint_created(expected_count, %{})
+
+  def assert_webhook_endpoint_created(
+        expected_count,
+        %{enabled_notification_types: enabled_notification_types} = attrs
+      )
+      when is_integer(expected_count) do
     webhook_endpoints =
       WebhookEndpoints.list_webhook_endpoints(
-        filters:
-          Keyword.new([{owner_id_field, owner_id}]) ++
-            (attrs |> Map.delete(:enabled_notification_types) |> Enum.to_list()),
-        includes: [:enabled_notification_types]
+        filters: attrs |> Map.delete(:enabled_notification_types) |> Enum.to_list()
       )
 
-    assert length(webhook_endpoints) > 0,
-           "Expected a webhook endpoint with the attributes #{inspect(attrs)}, got none"
+    count =
+      webhook_endpoints
+      |> Enum.filter(fn webhook_endpoint ->
+        webhook_endpoint_enabled_notification_types =
+          webhook_endpoint.enabled_notification_types
+          |> Enum.map(&Map.from_struct/1)
+          |> Recase.Enumerable.stringify_keys()
 
-    case attrs do
-      %{enabled_notification_types: expected_enabled_notification_types} ->
-        Enum.each(webhook_endpoints, fn webhook_endpoint ->
-          enabled_notification_type_names =
-            webhook_endpoint.enabled_notification_types |> Enum.map(& &1.name)
+        subset?(enabled_notification_types, webhook_endpoint_enabled_notification_types)
+      end)
+      |> length()
 
-          assert subset?(
-                   expected_enabled_notification_types,
-                   enabled_notification_type_names
-                 ),
-                 """
-                   Expected enabled_notification_types #{inspect(expected_enabled_notification_types, pretty: true)},
-                   got: #{inspect(enabled_notification_type_names, pretty: true)}
-                 """
-        end)
+    assert count == expected_count, message("webhook_endpoint", attrs, expected_count, count)
+  end
 
-      _ ->
-        :noop
-    end
+  def assert_webhook_endpoint_created(expected_count, attrs)
+      when is_integer(expected_count) do
+    webhook_endpoints = WebhookEndpoints.list_webhook_endpoints(filters: attrs |> Enum.to_list())
+
+    count = length(webhook_endpoints)
+
+    assert count == expected_count, message("webhook_endpoint", attrs, expected_count, count)
+  end
+
+  defp subset?(list_a, list_b) when is_list(list_a) and is_list(list_b) do
+    list_a
+    |> Enum.all?(fn a_item ->
+      list_b |> Enum.any?(fn b_item -> subset?(a_item, b_item) end)
+    end)
   end
 
   defp subset?(a, b) do
@@ -194,7 +151,7 @@ defmodule CaptainHook.Test.Assertions do
       do:
         "Expected #{expected_count} #{maybe_pluralized_item(resource_name, expected_count)}, got #{count}",
       else:
-        "Expected #{expected_count} #{maybe_pluralized_item(resource_name, expected_count)} with attributes #{inspect(attrs)}, got #{count}"
+        "Expected #{expected_count} #{maybe_pluralized_item(resource_name, expected_count)} with attributes #{inspect(attrs, pretty: true)}, got #{count}"
   end
 
   defp maybe_pluralized_item(resource_name, count) when count > 1, do: resource_name <> "s"
