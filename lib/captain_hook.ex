@@ -72,7 +72,7 @@ defmodule CaptainHook do
               total: integer
             }
       def paginate_webhook_notifications(page_size, page_number, opts \\ []),
-        do: unquote(__MODULE__).list_webhook_notifications(page_size, page_number, opts)
+        do: unquote(__MODULE__).paginate_webhook_notifications(page_size, page_number, opts)
 
       @spec get_webhook_notification(binary, keyword) :: WebhookNotification.t() | nil
       def get_webhook_notification(id, opts \\ []),
