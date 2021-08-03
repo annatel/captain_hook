@@ -238,7 +238,7 @@ defmodule CaptainHook.Migrations.V3 do
     )
 
     execute(
-      "ALTER TABLE captain_hook_webhook_notifications ADD UNIQUE INDEX captain_hook_webhook_notifications_idempotency_key_index (idempotency_key);"
+      "ALTER TABLE captain_hook_webhook_notifications ADD UNIQUE INDEX captain_hook_webhook_notifications_idempotency_key_index (idempotency_key, webhook_endpoint_id);"
     )
   end
 

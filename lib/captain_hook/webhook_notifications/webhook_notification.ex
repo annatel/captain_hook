@@ -2,7 +2,13 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
   use Ecto.Schema
 
   import Ecto.Changeset,
-    only: [assoc_constraint: 2, cast: 3, validate_required: 2, validate_format: 3]
+    only: [
+      assoc_constraint: 2,
+      cast: 3,
+      unique_constraint: 2,
+      validate_required: 2,
+      validate_format: 3
+    ]
 
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
 
@@ -50,6 +56,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
     |> cast(attrs, [
       :created_at,
       :data,
+      :idempotency_key,
       :resource_id,
       :resource_object,
       :sequence,
@@ -65,6 +72,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
       )
     )
     |> assoc_constraint(:webhook_endpoint)
+    |> unique_constraint([:idempotency_key, :webhook_endpoint_id])
   end
 
   @spec update_changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()

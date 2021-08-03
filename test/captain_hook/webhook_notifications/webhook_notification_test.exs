@@ -6,7 +6,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
 
   describe "create_changeset/2" do
     test "only permitted_keys are casted" do
-      webhook_notification_params = params_for(:webhook_notification)
+      webhook_notification_params = params_for(:webhook_notification, idempotency_key: uuid())
 
       changeset =
         WebhookNotification.create_changeset(
@@ -19,6 +19,7 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
       assert :webhook_endpoint_id in changes_keys
       assert :created_at in changes_keys
       assert :data in changes_keys
+      assert :idempotency_key in changes_keys
       assert :resource_id in changes_keys
       assert :resource_object in changes_keys
       assert :sequence in changes_keys
