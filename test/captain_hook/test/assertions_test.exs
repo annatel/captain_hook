@@ -1,7 +1,87 @@
 defmodule CaptainHook.Test.AssertionsTest do
   use ExUnit.Case, async: true
   use CaptainHook.DataCase
+
   import CaptainHook.Test.Assertions
+
+  describe "assert_webhook_conversation_created/0" do
+    test "when the webhook_conversation is found" do
+      webhook_notification = insert!(:webhook_notification)
+
+      insert!(:webhook_conversation, webhook_notification_id: webhook_notification.id)
+
+      assert_webhook_conversation_created()
+    end
+
+    test "count option" do
+      webhook_notification = insert!(:webhook_notification)
+      insert!(:webhook_conversation, webhook_notification_id: webhook_notification.id)
+
+      message =
+        %ExUnit.AssertionError{
+          message: "Expected 2 webhook_conversations, got 1"
+        }
+        |> ExUnit.AssertionError.message()
+
+      assert_raise ExUnit.AssertionError, message, fn ->
+        assert_webhook_conversation_created(2)
+      end
+    end
+
+    test "when the webhook_conversation is not found" do
+      message =
+        %ExUnit.AssertionError{message: "Expected 1 webhook_conversation, got 0"}
+        |> ExUnit.AssertionError.message()
+
+      assert_raise ExUnit.AssertionError, message, fn ->
+        assert_webhook_conversation_created()
+      end
+    end
+  end
+
+  describe "assert_webhook_conversation_created/1" do
+    test "when the webhook_conversation is found" do
+      webhook_notification = insert!(:webhook_notification)
+
+      %{request_url: request_url} =
+        insert!(:webhook_conversation, webhook_notification_id: webhook_notification.id)
+
+      insert!(:webhook_conversation, webhook_notification_id: webhook_notification.id)
+
+      assert_webhook_conversation_created(%{request_url: request_url})
+    end
+
+    test "when the webhook_conversation is not found" do
+      message =
+        %ExUnit.AssertionError{
+          message:
+            "Expected 1 webhook_conversation with attributes %{webhook_notification_id: \"webhook_notification_id\"}, got 0"
+        }
+        |> ExUnit.AssertionError.message()
+
+      assert_raise ExUnit.AssertionError, message, fn ->
+        assert_webhook_conversation_created(%{webhook_notification_id: "webhook_notification_id"})
+      end
+    end
+
+    test "count option" do
+      webhook_notification = insert!(:webhook_notification)
+
+      insert!(:webhook_conversation, webhook_notification_id: webhook_notification.id)
+      insert!(:webhook_conversation, webhook_notification_id: webhook_notification.id)
+
+      message =
+        %ExUnit.AssertionError{
+          message:
+            "Expected 1 webhook_conversation with attributes %{webhook_notification_id: \"#{webhook_notification.id}\"}, got 2"
+        }
+        |> ExUnit.AssertionError.message()
+
+      assert_raise ExUnit.AssertionError, message, fn ->
+        assert_webhook_conversation_created(1, %{webhook_notification_id: webhook_notification.id})
+      end
+    end
+  end
 
   describe "assert_webhook_notifications_created/2" do
     test "when the notification is found" do

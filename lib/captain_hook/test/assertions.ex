@@ -3,6 +3,35 @@ defmodule CaptainHook.Test.Assertions do
 
   alias CaptainHook.WebhookEndpoints
   alias CaptainHook.WebhookNotifications
+  alias CaptainHook.WebhookConversations
+
+  @doc """
+  Asserts an event is created
+
+  It can be used as below:
+
+  # Examples:
+
+      assert_webhook_conversation_created()
+      assert_webhook_conversation_created(%{webhook_notification_id: "id")
+  """
+  def assert_webhook_conversation_created(attrs \\ %{})
+
+  def assert_webhook_conversation_created(%{} = attrs),
+    do: assert_webhook_conversation_created(1, attrs)
+
+  def assert_webhook_conversation_created(expected_count) when is_integer(expected_count),
+    do: assert_webhook_conversation_created(expected_count, %{})
+
+  def assert_webhook_conversation_created(expected_count, attrs)
+      when is_integer(expected_count) do
+    webhook_conversations =
+      WebhookConversations.list_webhook_conversations(filters: attrs |> Enum.to_list())
+
+    count = length(webhook_conversations)
+
+    assert count == expected_count, message("webhook_conversation", attrs, expected_count, count)
+  end
 
   @doc """
   Asserts the notifications has just been created
@@ -116,8 +145,8 @@ defmodule CaptainHook.Test.Assertions do
 
   # Examples:
 
-      assert_webhook_endpoint_created("topic", %{attr_1: "a"})
-      assert_webhook_endpoint_created("topic", %{attr_1: "a", enabled_notification_types: ["*"]})
+      assert_webhook_endpoint_created("owner_id", %{attr_1: "a"})
+      assert_webhook_endpoint_created("owner_id", %{attr_1: "a", enabled_notification_types: ["*"]})
   """
 
   def assert_webhook_endpoints_created(owner_id, attrs \\ %{})
@@ -159,4 +188,15 @@ defmodule CaptainHook.Test.Assertions do
   defp subset?(a, b) do
     MapSet.subset?(a |> MapSet.new(), b |> MapSet.new())
   end
+
+  defp message(resource_name, %{} = attrs, expected_count, count) do
+    if Enum.empty?(attrs),
+      do:
+        "Expected #{expected_count} #{maybe_pluralized_item(resource_name, expected_count)}, got #{count}",
+      else:
+        "Expected #{expected_count} #{maybe_pluralized_item(resource_name, expected_count)} with attributes #{inspect(attrs)}, got #{count}"
+  end
+
+  defp maybe_pluralized_item(resource_name, count) when count > 1, do: resource_name <> "s"
+  defp maybe_pluralized_item(resource_name, _), do: resource_name
 end
