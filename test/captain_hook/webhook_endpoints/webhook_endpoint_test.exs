@@ -22,7 +22,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       assert :owner_id in changes_keys
       assert :created_at in changes_keys
       refute :deleted_at in changes_keys
-      assert :enabled_notification_types in changes_keys
+      assert :enabled_notification_patterns in changes_keys
       assert :headers in changes_keys
       assert :is_enabled in changes_keys
       assert :is_insecure_allowed in changes_keys
@@ -41,7 +41,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
     end
 
     test "when params are valid, return a valid changeset" do
-      %{enabled_notification_types: [enabled_notification_type]} =
+      %{enabled_notification_patterns: [enabled_notification_pattern]} =
         webhook_endpoint_params = params_for(:webhook_endpoint, is_insecure_allowed: true)
 
       changeset = WebhookEndpoint.create_changeset(%WebhookEndpoint{}, webhook_endpoint_params)
@@ -50,8 +50,8 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointTest do
       assert get_field(changeset, :owner_id) == webhook_endpoint_params.owner_id
       assert get_field(changeset, :created_at) == webhook_endpoint_params.created_at
 
-      assert Map.get(hd(get_field(changeset, :enabled_notification_types)), :name) ==
-               Map.get(enabled_notification_type, :name)
+      assert Map.get(hd(get_field(changeset, :enabled_notification_patterns)), :name) ==
+               Map.get(enabled_notification_pattern, :name)
 
       assert get_field(changeset, :headers) == webhook_endpoint_params.headers
 

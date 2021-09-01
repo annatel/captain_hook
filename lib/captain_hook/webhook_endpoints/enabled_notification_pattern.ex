@@ -1,4 +1,4 @@
-defmodule CaptainHook.WebhookEndpoints.EnabledNotificationType do
+defmodule CaptainHook.WebhookEndpoints.EnabledNotificationPattern do
   use Ecto.Schema
 
   import Ecto.Changeset, only: [cast: 3, validate_required: 2, validate_format: 3]
@@ -9,37 +9,37 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationType do
           id: integer,
           webhook_endpoint: WebhookEndpoint.t(),
           webhook_endpoint_id: binary,
-          name: binary,
+          pattern: binary,
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
 
-  schema "captain_hook_webhook_endpoint_enabled_notification_types" do
+  schema "captain_hook_webhook_endpoint_enabled_notification_patterns" do
     belongs_to(:webhook_endpoint, WebhookEndpoint, type: Shortcode.Ecto.UUID, prefix: "we")
 
-    field(:name, :string)
+    field(:pattern, :string)
 
     timestamps()
   end
 
   @doc false
   @spec changeset(%__MODULE__{}, map()) :: Ecto.Changeset.t()
-  def changeset(%__MODULE__{} = enabled_notification_type, attrs) when is_struct(attrs) do
+  def changeset(%__MODULE__{} = enabled_notification_pattern, attrs) when is_struct(attrs) do
     attrs = Map.from_struct(attrs)
 
-    enabled_notification_type
+    enabled_notification_pattern
     |> changeset(attrs)
   end
 
-  def changeset(%__MODULE__{} = enabled_notification_type, attrs) when is_map(attrs) do
-    enabled_notification_type
-    |> cast(attrs, [:webhook_endpoint_id, :name])
-    |> validate_required([:name])
+  def changeset(%__MODULE__{} = enabled_notification_pattern, attrs) when is_map(attrs) do
+    enabled_notification_pattern
+    |> cast(attrs, [:webhook_endpoint_id, :pattern])
+    |> validate_required([:pattern])
     |> validate_format(
-      :name,
+      :pattern,
       AntlUtilsElixir.Wildcard.pattern_regex!(
-        CaptainHook.notification_type_separator(),
-        CaptainHook.notification_type_wildcard()
+        CaptainHook.notification_pattern_separator(),
+        CaptainHook.notification_pattern_wildcard()
       )
     )
   end

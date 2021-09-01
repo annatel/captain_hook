@@ -1,12 +1,14 @@
 defmodule CaptainHook.Factory.WebhookEndpoint do
-  alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, EnabledNotificationType}
+  alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, EnabledNotificationPattern}
 
   defmacro __using__(_opts) do
     quote do
       def build(:webhook_endpoint, attrs) do
         %WebhookEndpoint{
           created_at: utc_now(),
-          enabled_notification_types: [build(:enabled_notification_type) |> catch_all_events()],
+          enabled_notification_patterns: [
+            build(:enabled_notification_pattern) |> catch_all_events()
+          ],
           headers: %{},
           livemode: true,
           url: "url_#{System.unique_integer()}"
@@ -33,15 +35,15 @@ defmodule CaptainHook.Factory.WebhookEndpoint do
       def make_deleted(%WebhookEndpoint{} = webhook_endpoint),
         do: %{webhook_endpoint | deleted_at: utc_now()}
 
-      def build(:enabled_notification_type, attrs) do
-        %EnabledNotificationType{
-          name: "name_#{System.unique_integer()}"
+      def build(:enabled_notification_pattern, attrs) do
+        %EnabledNotificationPattern{
+          pattern: "pattern_#{System.unique_integer()}"
         }
         |> struct!(attrs)
       end
 
-      def catch_all_events(%EnabledNotificationType{} = enabled_notification_type) do
-        %{enabled_notification_type | name: "*"}
+      def catch_all_events(%EnabledNotificationPattern{} = enabled_notification_pattern) do
+        %{enabled_notification_pattern | pattern: "*"}
       end
     end
   end

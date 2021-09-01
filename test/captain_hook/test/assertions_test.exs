@@ -261,58 +261,58 @@ defmodule CaptainHook.Test.AssertionsTest do
       end
     end
 
-    test "when enabled_notification_types is specified" do
-      %{url: url, enabled_notification_types: enabled_notification_types} =
+    test "when enabled_notification_patterns is specified" do
+      %{url: url, enabled_notification_patterns: enabled_notification_patterns} =
         insert!(:webhook_endpoint)
 
       insert!(:webhook_endpoint)
 
       assert_webhook_endpoint_created(%{
         url: url,
-        enabled_notification_types:
-          enabled_notification_types
+        enabled_notification_patterns:
+          enabled_notification_patterns
           |> Enum.map(&Map.from_struct/1)
           |> Recase.Enumerable.stringify_keys()
       })
     end
 
-    test "when enabled_notification_type is specified but not match" do
+    test "when enabled_notification_pattern is specified but not match" do
       insert!(:webhook_endpoint,
-        enabled_notification_types: [build(:enabled_notification_type, name: "*")]
+        enabled_notification_patterns: [build(:enabled_notification_pattern, pattern: "*")]
       )
 
       message =
         %ExUnit.AssertionError{
           message:
-            "Expected 1 webhook_endpoint with attributes %{enabled_notification_types: [%{\"name\" => \"wrong_value\"}]}, got 0"
+            "Expected 1 webhook_endpoint with attributes %{enabled_notification_patterns: [%{\"pattern\" => \"wrong_value\"}]}, got 0"
         }
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
         assert_webhook_endpoint_created(%{
-          enabled_notification_types: [%{"name" => "wrong_value"}]
+          enabled_notification_patterns: [%{"pattern" => "wrong_value"}]
         })
       end
     end
 
     test "with data, count option" do
       insert!(:webhook_endpoint,
-        enabled_notification_types: [build(:enabled_notification_type, name: "*")]
+        enabled_notification_patterns: [build(:enabled_notification_pattern, pattern: "*")]
       )
 
       insert!(:webhook_endpoint,
-        enabled_notification_types: [build(:enabled_notification_type, name: "*")]
+        enabled_notification_patterns: [build(:enabled_notification_pattern, pattern: "*")]
       )
 
       message =
         %ExUnit.AssertionError{
           message:
-            "Expected 1 webhook_endpoint with attributes %{enabled_notification_types: [%{\"name\" => \"*\"}]}, got 2"
+            "Expected 1 webhook_endpoint with attributes %{enabled_notification_patterns: [%{\"pattern\" => \"*\"}]}, got 2"
         }
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_endpoint_created(1, %{enabled_notification_types: [%{"name" => "*"}]})
+        assert_webhook_endpoint_created(1, %{enabled_notification_patterns: [%{"pattern" => "*"}]})
       end
     end
   end

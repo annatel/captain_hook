@@ -17,7 +17,7 @@ defmodule CaptainHook.Test.Factories do
   def build(:webhook_endpoint, attrs) do
     %WebhookEndpoint{
       created_at: utc_now(),
-      enabled_notification_types: [%{name: "*"}],
+      enabled_notification_patterns: [%{pattern: "*"}],
       headers: %{},
       livemode: true,
       url: "url_#{System.unique_integer()}"
@@ -39,10 +39,10 @@ defmodule CaptainHook.Test.Factories do
     %WebhookNotification{
       created_at: utc_now(),
       data: %{},
+      ref: "ref_#{System.unique_integer()}",
       resource_id: "resource_id",
       resource_object: "resource_object",
-      sequence: System.unique_integer([:positive]),
-      type: "type_#{System.unique_integer()}"
+      sequence: System.unique_integer([:positive])
     }
     |> struct!(attrs)
   end

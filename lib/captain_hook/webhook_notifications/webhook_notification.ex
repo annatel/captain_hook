@@ -21,11 +21,11 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
           inserted_at: DateTime.t(),
           next_retry_at: DateTime.t() | nil,
           object: binary,
+          ref: binary,
           resource_id: binary | nil,
           resource_object: binary | nil,
           sequence: integer,
           succeeded_at: DateTime.t() | nil,
-          type: binary,
           webhook_endpoint_id: binary
         }
 
@@ -39,11 +39,11 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
     field(:data, :map)
     field(:idempotency_key, :string)
     field(:next_retry_at, :utc_datetime)
+    field(:ref, :string)
     field(:resource_id, :string)
     field(:resource_object, :string)
     field(:sequence, :integer)
     field(:succeeded_at, :utc_datetime)
-    field(:type, :string)
 
     timestamps()
     field(:object, :string, default: "webhook_notification")
@@ -57,18 +57,18 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
       :created_at,
       :data,
       :idempotency_key,
+      :ref,
       :resource_id,
       :resource_object,
       :sequence,
-      :type,
       :webhook_endpoint_id
     ])
-    |> validate_required([:created_at, :data, :sequence, :type, :webhook_endpoint_id])
+    |> validate_required([:created_at, :data, :sequence, :ref, :webhook_endpoint_id])
     |> validate_format(
-      :type,
+      :ref,
       AntlUtilsElixir.Wildcard.expr_regex!(
-        CaptainHook.notification_type_separator(),
-        CaptainHook.notification_type_wildcard()
+        CaptainHook.notification_pattern_separator(),
+        CaptainHook.notification_pattern_wildcard()
       )
     )
     |> assoc_constraint(:webhook_endpoint)

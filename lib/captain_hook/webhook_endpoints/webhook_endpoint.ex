@@ -3,13 +3,13 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
 
   import Ecto.Changeset, only: [cast: 3, cast_assoc: 3, put_change: 3, validate_required: 2]
 
-  alias CaptainHook.WebhookEndpoints.EnabledNotificationType
+  alias CaptainHook.WebhookEndpoints.EnabledNotificationPattern
 
   @type t :: %__MODULE__{
           api_version: binary | nil,
           created_at: DateTime.t(),
           deleted_at: DateTime.t() | nil,
-          enabled_notification_types: [EnabledNotificationType.t()],
+          enabled_notification_patterns: [EnabledNotificationPattern.t()],
           headers: map | nil,
           id: binary,
           inserted_at: DateTime.t(),
@@ -29,7 +29,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
 
     field(:api_version, :string, default: "2021-01-01")
     field(:created_at, :utc_datetime)
-    has_many(:enabled_notification_types, EnabledNotificationType, on_replace: :delete)
+    has_many(:enabled_notification_patterns, EnabledNotificationPattern, on_replace: :delete)
     field(:headers, :map)
     field(:is_enabled, :boolean, default: true)
     field(:is_insecure_allowed, :boolean, default: false)
@@ -56,7 +56,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
     ])
     |> put_change_created_at_now()
     |> validate_required([:livemode, :url])
-    |> cast_assoc(:enabled_notification_types, required: true)
+    |> cast_assoc(:enabled_notification_patterns, required: true)
     |> validate_configurable_fields(attrs)
   end
 
@@ -65,7 +65,7 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
   def update_changeset(%__MODULE__{} = webhook_endpoint, attrs) when is_map(attrs) do
     webhook_endpoint
     |> cast(attrs, [:headers, :is_enabled, :is_insecure_allowed, :url])
-    |> cast_assoc(:enabled_notification_types, required: true)
+    |> cast_assoc(:enabled_notification_patterns, required: true)
   end
 
   @doc false

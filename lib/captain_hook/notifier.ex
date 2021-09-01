@@ -16,10 +16,10 @@ defmodule CaptainHook.Notifier do
 
   @spec notify(binary, boolean, binary, map, keyword) ::
           {:ok, [WebhookNotification.t()]} | {:error, Ecto.Changeset.t()}
-  def notify(owner_id, livemode?, notification_type, data, opts \\ [])
-      when is_boolean(livemode?) and is_binary(notification_type) and
+  def notify(owner_id, livemode?, notification_ref, data, opts \\ [])
+      when is_boolean(livemode?) and is_binary(notification_ref) and
              is_map(data) and is_list(opts) do
-    create_webhook_notifications(owner_id, livemode?, notification_type, data, opts)
+    create_webhook_notifications(owner_id, livemode?, notification_ref, data, opts)
     |> case do
       {:ok, webhook_notifications} ->
         {:ok,
@@ -34,12 +34,12 @@ defmodule CaptainHook.Notifier do
 
   @spec async_notify(binary, boolean, binary, map, keyword) ::
           {:ok, [WebhookNotification.t()]} | {:error, Ecto.Changeset.t()}
-  def async_notify(owner_id, livemode?, notification_type, data, opts \\ [])
-      when is_boolean(livemode?) and is_binary(notification_type) and
+  def async_notify(owner_id, livemode?, notification_ref, data, opts \\ [])
+      when is_boolean(livemode?) and is_binary(notification_ref) and
              is_map(data) and is_list(opts) do
     Multi.new()
     |> Multi.run(:webhook_notifications, fn _, %{} ->
-      create_webhook_notifications(owner_id, livemode?, notification_type, data, opts)
+      create_webhook_notifications(owner_id, livemode?, notification_ref, data, opts)
     end)
     |> Multi.merge(fn
       %{webhook_notifications: []} ->
@@ -70,8 +70,8 @@ defmodule CaptainHook.Notifier do
     end
   end
 
-  defp create_webhook_notifications(owner_id, livemode?, notification_type, data, opts)
-       when is_boolean(livemode?) and is_binary(notification_type) and
+  defp create_webhook_notifications(owner_id, livemode?, notification_ref, data, opts)
+       when is_boolean(livemode?) and is_binary(notification_ref) and
               is_map(data) and is_list(opts) do
     utc_now = DateTime.utc_now()
 
@@ -84,17 +84,17 @@ defmodule CaptainHook.Notifier do
     webhook_endpoints =
       WebhookEndpoints.list_webhook_endpoints(
         filters: filters,
-        includes: [:enabled_notification_types]
+        includes: [:enabled_notification_patterns]
       )
 
     webhook_endpoints
     |> Enum.reduce(Multi.new(), fn webhook_endpoint, acc ->
-      if should_be_notified?(webhook_endpoint, notification_type) do
+      if should_be_notified?(webhook_endpoint, notification_ref) do
         acc
         |> Multi.run(
           :"webhook_notification_for_#{webhook_endpoint.id}",
           fn _, %{} ->
-            create_webhook_notification(webhook_endpoint, notification_type, data, utc_now, opts)
+            create_webhook_notification(webhook_endpoint, notification_ref, data, utc_now, opts)
           end
         )
       else
@@ -108,14 +108,14 @@ defmodule CaptainHook.Notifier do
     end
   end
 
-  defp should_be_notified?(%WebhookEndpoint{} = webhook_endpoint, notification_type),
+  defp should_be_notified?(%WebhookEndpoint{} = webhook_endpoint, notification_ref),
     do:
       WebhookEndpoints.webhook_endpoint_enabled?(webhook_endpoint) &&
-        WebhookEndpoints.notification_type_enabled?(webhook_endpoint, notification_type)
+        WebhookEndpoints.notification_ref_enabled?(webhook_endpoint, notification_ref)
 
   defp create_webhook_notification(
          %WebhookEndpoint{} = webhook_endpoint,
-         notification_type,
+         notification_ref,
          data,
          %DateTime{} = created_at,
          opts
@@ -149,9 +149,9 @@ defmodule CaptainHook.Notifier do
           created_at: created_at,
           data: data,
           idempotency_key: idempotency_key,
+          ref: notification_ref,
           resource_id: Keyword.get(opts, :resource_id) |> stringify(),
           resource_object: Keyword.get(opts, :resource_object) |> stringify(),
-          type: notification_type,
           webhook_endpoint_id: webhook_endpoint.id
         })
     end)

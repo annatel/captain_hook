@@ -9,11 +9,11 @@ defmodule CaptainHook do
 
   defmacro __using__(_opts) do
     quote do
-      def notify(owner_id, livemode?, notification_type, data, opts \\ []),
-        do: unquote(__MODULE__).notify(owner_id, livemode?, notification_type, data, opts)
+      def notify(owner_id, livemode?, notification_ref, data, opts \\ []),
+        do: unquote(__MODULE__).notify(owner_id, livemode?, notification_ref, data, opts)
 
-      def async_notify(owner_id, livemode?, notification_type, data, opts \\ []),
-        do: unquote(__MODULE__).async_notify(owner_id, livemode?, notification_type, data, opts)
+      def async_notify(owner_id, livemode?, notification_ref, data, opts \\ []),
+        do: unquote(__MODULE__).async_notify(owner_id, livemode?, notification_ref, data, opts)
 
       @spec send_webhook_notification!(WebhookNotification.t()) :: map
       def send_webhook_notification!(webhook_notification),
@@ -55,15 +55,17 @@ defmodule CaptainHook do
       def roll_webhook_endpoint_secret(webhook_endpoint, expires_at \\ DateTime.utc_now()),
         do: unquote(__MODULE__).roll_webhook_endpoint_secret(webhook_endpoint, expires_at)
 
-      @spec enable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+      @spec enable_notification_pattern(WebhookEndpoint.t(), binary | [binary]) ::
               {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
-      def enable_notification_type(webhook_endpoint, notification_type),
-        do: unquote(__MODULE__).enable_notification_type(webhook_endpoint, notification_type)
+      def enable_notification_pattern(webhook_endpoint, notification_pattern),
+        do:
+          unquote(__MODULE__).enable_notification_pattern(webhook_endpoint, notification_pattern)
 
-      @spec disable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+      @spec disable_notification_pattern(WebhookEndpoint.t(), binary | [binary]) ::
               {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
-      def disable_notification_type(webhook_endpoint, notification_type),
-        do: unquote(__MODULE__).disable_notification_type(webhook_endpoint, notification_type)
+      def disable_notification_pattern(webhook_endpoint, notification_pattern),
+        do:
+          unquote(__MODULE__).disable_notification_pattern(webhook_endpoint, notification_pattern)
 
       @spec paginate_webhook_notifications(non_neg_integer, non_neg_integer, keyword) :: %{
               data: [WebhookNotification.t()],
@@ -121,11 +123,11 @@ defmodule CaptainHook do
 
   @spec notify(binary | [binary], boolean, binary, map, keyword) ::
           {:ok, [WebhookNotification.t()]} | {:error, Ecto.Changeset.t()}
-  defdelegate notify(owner_id, livemode?, notification_type, data, opts \\ []), to: Notifier
+  defdelegate notify(owner_id, livemode?, notification_ref, data, opts \\ []), to: Notifier
 
   @spec async_notify(binary | [binary], boolean, binary, map, keyword) ::
           {:ok, [WebhookNotification.t()]} | {:error, Ecto.Changeset.t()}
-  defdelegate async_notify(owner_id, livemode?, notification_type, data, opts \\ []),
+  defdelegate async_notify(owner_id, livemode?, notification_ref, data, opts \\ []),
     to: Notifier
 
   @spec send_webhook_notification!(WebhookNotification.t()) ::
@@ -169,13 +171,15 @@ defmodule CaptainHook do
   defdelegate roll_webhook_endpoint_secret(webhook_endpoint, expires_at \\ DateTime.utc_now()),
     to: WebhookEndpoints
 
-  @spec enable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+  @spec enable_notification_pattern(WebhookEndpoint.t(), binary | [binary]) ::
           {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
-  defdelegate enable_notification_type(webhook_endpoint, notification_type), to: WebhookEndpoints
+  defdelegate enable_notification_pattern(webhook_endpoint, notification_pattern),
+    to: WebhookEndpoints
 
-  @spec disable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+  @spec disable_notification_pattern(WebhookEndpoint.t(), binary | [binary]) ::
           {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
-  defdelegate disable_notification_type(webhook_endpoint, notification_type), to: WebhookEndpoints
+  defdelegate disable_notification_pattern(webhook_endpoint, notification_pattern),
+    to: WebhookEndpoints
 
   @spec paginate_webhook_notifications(non_neg_integer, non_neg_integer, keyword) :: %{
           data: [WebhookNotification.t()],
@@ -273,15 +277,15 @@ defmodule CaptainHook do
   end
 
   @doc false
-  @spec notification_type_separator :: binary
-  def notification_type_separator() do
-    Application.fetch_env!(:captain_hook, :notification_type_separator)
+  @spec notification_pattern_separator :: binary
+  def notification_pattern_separator() do
+    Application.fetch_env!(:captain_hook, :notification_pattern_separator)
   end
 
   @doc false
-  @spec notification_type_wildcard :: binary
-  def notification_type_wildcard() do
-    Application.fetch_env!(:captain_hook, :notification_type_wildcard)
+  @spec notification_pattern_wildcard :: binary
+  def notification_pattern_wildcard() do
+    Application.fetch_env!(:captain_hook, :notification_pattern_wildcard)
   end
 
   @spec owner_id_field(atom) :: tuple

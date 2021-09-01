@@ -18,6 +18,12 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_notifications_remove_webhook()
     alter_table_webhook_notifications_remove_livemode()
 
+    rename(table(:captain_hook_webhook_endpoint_enabled_notification_types),
+      to: table(:captain_hook_webhook_endpoint_enabled_notification_patterns)
+    )
+
+    alter_table_webhook_endpoint_enabled_notification_types_rename_name_to_pattern()
+
     alter_table_webhook_notifications_add_webhook_endpoint_id()
     alter_table_webhook_notifications_add_succeeded_at()
     alter_table_webhook_notifications_add_idempotency_key()
@@ -25,6 +31,7 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_notifications_next_retry_at()
     alter_table_webhook_notifications_add_updated_at()
     alter_table_webhook_notifications_rename_resource_type_to_resource_object()
+    alter_table_webhook_notifications_rename_type_to_ref()
     alter_table_webhook_notifications_add_object()
 
     alter_table_webhook_conversations_remove_webhook_endpoint_id()
@@ -44,6 +51,12 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_endpoints_rename_created_at_to_started_at()
     alter_table_webhook_endpoints_rename_deleted_at_to_ended_at()
 
+    rename(table(:captain_hook_webhook_endpoint_enabled_notification_patterns),
+      to: table(:captain_hook_webhook_endpoint_enabled_notification_types)
+    )
+
+    alter_table_webhook_endpoint_enabled_notification_types_rename_pattern_to_name()
+
     alter_table_webhook_notifications_remove_webhook_endpoint()
     alter_table_webhook_notifications_add_webhook()
     alter_table_webhook_notifications_add_livemode()
@@ -53,6 +66,7 @@ defmodule CaptainHook.Migrations.V3 do
     alter_table_webhook_notifications_remove_attempt()
     alter_table_webhook_notifications_remove_next_retry_at()
     alter_table_webhook_notifications_rename_resource_object_to_resource_type()
+    alter_table_webhook_notifications_rename_ref_to_type()
     alter_table_webhook_notifications_remove_object()
 
     alter_table_webhook_conversations_add_webhook_endpoint_id()
@@ -174,6 +188,12 @@ defmodule CaptainHook.Migrations.V3 do
     )
   end
 
+  defp alter_table_webhook_endpoint_enabled_notification_types_rename_name_to_pattern() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoint_enabled_notification_patterns CHANGE name pattern VARCHAR(255) NOT NULL;"
+    )
+  end
+
   defp alter_table_webhook_notifications_remove_webhook() do
     execute(
       "ALTER TABLE captain_hook_webhook_notifications DROP INDEX captain_hook_webhook_notifications_webhook_index;"
@@ -223,6 +243,12 @@ defmodule CaptainHook.Migrations.V3 do
   defp alter_table_webhook_notifications_rename_resource_type_to_resource_object() do
     execute(
       "ALTER TABLE captain_hook_webhook_notifications CHANGE resource_type resource_object VARCHAR(255) NULL;"
+    )
+  end
+
+  defp alter_table_webhook_notifications_rename_type_to_ref() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_notifications CHANGE type ref VARCHAR(255) NOT NULL;"
     )
   end
 
@@ -370,6 +396,12 @@ defmodule CaptainHook.Migrations.V3 do
     execute("SET FOREIGN_KEY_CHECKS=1;")
   end
 
+  defp alter_table_webhook_endpoint_enabled_notification_types_rename_pattern_to_name() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_endpoint_enabled_notification_types CHANGE pattern name VARCHAR(255) NOT NULL;"
+    )
+  end
+
   defp alter_table_webhook_notifications_add_webhook() do
     alter table(:captain_hook_webhook_notifications) do
       add(:webhook, :string)
@@ -421,6 +453,12 @@ defmodule CaptainHook.Migrations.V3 do
   defp alter_table_webhook_notifications_rename_resource_object_to_resource_type() do
     execute(
       "ALTER TABLE captain_hook_webhook_notifications CHANGE resource_object resource_type VARCHAR(255) NULL;"
+    )
+  end
+
+  defp alter_table_webhook_notifications_rename_ref_to_type() do
+    execute(
+      "ALTER TABLE captain_hook_webhook_notifications CHANGE ref type VARCHAR(255) NOT NULL;"
     )
   end
 

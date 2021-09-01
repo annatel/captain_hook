@@ -137,64 +137,61 @@ defmodule CaptainHook.WebhookEndpoints do
   defdelegate roll_webhook_endpoint_secret(webhook_endpoint, expires_at \\ DateTime.utc_now()),
     to: Secrets
 
-  @spec enable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+  @spec enable_notification_pattern(WebhookEndpoint.t(), binary | [binary]) ::
           {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
-  def enable_notification_type(%WebhookEndpoint{} = webhook_endpoint, notification_types) do
-    %{enabled_notification_types: enabled_notification_types} =
-      webhook_endpoint |> CaptainHook.repo().preload(:enabled_notification_types, force: true)
+  def enable_notification_pattern(%WebhookEndpoint{} = webhook_endpoint, notification_patterns) do
+    %{enabled_notification_patterns: enabled_notification_patterns} =
+      webhook_endpoint |> CaptainHook.repo().preload(:enabled_notification_patterns, force: true)
 
-    notification_types = notification_types |> List.wrap() |> Enum.map(&%{name: &1})
+    notification_patterns = notification_patterns |> List.wrap() |> Enum.map(&%{pattern: &1})
 
-    enabled_notification_types =
-      enabled_notification_types
-      |> Enum.concat(notification_types)
-      |> Enum.uniq_by(& &1.name)
+    enabled_notification_patterns =
+      enabled_notification_patterns
+      |> Enum.concat(notification_patterns)
+      |> Enum.uniq_by(& &1.pattern)
 
     webhook_endpoint
-    |> update_webhook_endpoint(%{enabled_notification_types: enabled_notification_types})
+    |> update_webhook_endpoint(%{enabled_notification_patterns: enabled_notification_patterns})
   end
 
-  @spec disable_notification_type(WebhookEndpoint.t(), binary | [binary]) ::
+  @spec disable_notification_pattern(WebhookEndpoint.t(), binary | [binary]) ::
           {:ok, WebhookEndpoint.t()} | {:error, Ecto.Changeset.t()}
-  def disable_notification_type(%WebhookEndpoint{} = webhook_endpoint, notification_type) do
-    notification_types = notification_type |> List.wrap()
+  def disable_notification_pattern(%WebhookEndpoint{} = webhook_endpoint, notification_patterns) do
+    notification_patterns = notification_patterns |> List.wrap()
 
-    %{enabled_notification_types: enabled_notification_types} =
-      webhook_endpoint |> CaptainHook.repo().preload(:enabled_notification_types, force: true)
+    %{enabled_notification_patterns: enabled_notification_patterns} =
+      webhook_endpoint |> CaptainHook.repo().preload(:enabled_notification_patterns, force: true)
 
-    enabled_notification_types =
-      enabled_notification_types
-      |> Enum.reject(&(&1.name in notification_types))
+    enabled_notification_patterns =
+      enabled_notification_patterns
+      |> Enum.reject(&(&1.pattern in notification_patterns))
 
     webhook_endpoint
-    |> update_webhook_endpoint(%{enabled_notification_types: enabled_notification_types})
+    |> update_webhook_endpoint(%{enabled_notification_patterns: enabled_notification_patterns})
   end
 
   @spec webhook_endpoint_enabled?(WebhookEndpoint.t()) :: boolean
   def webhook_endpoint_enabled?(%WebhookEndpoint{is_enabled: is_enabled}), do: is_enabled
 
-  @spec notification_type_enabled?(WebhookEndpoint.t(), binary) :: boolean
-  def notification_type_enabled?(
-        %WebhookEndpoint{enabled_notification_types: enabled_notification_types},
-        notification_type
+  @spec notification_ref_enabled?(WebhookEndpoint.t(), binary) :: boolean
+  def notification_ref_enabled?(
+        %WebhookEndpoint{enabled_notification_patterns: enabled_notification_patterns},
+        notification_ref
       )
-      when is_list(enabled_notification_types) and is_binary(notification_type) do
-    enabled_notification_type_patterns = enabled_notification_types |> Enum.map(& &1.name)
+      when is_list(enabled_notification_patterns) and is_binary(notification_ref) do
+    patterns = enabled_notification_patterns |> Enum.map(& &1.pattern)
 
-    wildcard_match?(enabled_notification_type_patterns, notification_type)
+    wildcard_match?(patterns, notification_ref)
   end
 
-  defp wildcard_match?(
-         enabled_notification_type_names,
-         notification_type
-       ) do
-    enabled_notification_type_names
+  defp wildcard_match?(patterns, notification_ref) do
+    patterns
     |> Enum.map(
       &AntlUtilsElixir.Wildcard.match?(
         &1,
-        notification_type,
-        CaptainHook.notification_type_separator(),
-        CaptainHook.notification_type_wildcard()
+        notification_ref,
+        CaptainHook.notification_pattern_separator(),
+        CaptainHook.notification_pattern_wildcard()
       )
     )
     |> Enum.any?()
@@ -206,7 +203,7 @@ defmodule CaptainHook.WebhookEndpoints do
 
     includes =
       Keyword.get(opts, :includes, [])
-      |> Enum.concat([:enabled_notification_types])
+      |> Enum.concat([:enabled_notification_patterns])
       |> Enum.uniq()
 
     WebhookEndpointQueryable.queryable()

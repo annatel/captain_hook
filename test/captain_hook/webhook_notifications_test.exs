@@ -39,9 +39,9 @@ defmodule CaptainHook.WebhookNotificationsTest do
       [
         [id: webhook_notification.id],
         [has_succeeded: false],
+        [ref: webhook_notification.ref],
         [resource_id: webhook_notification.resource_id],
         [resource_object: webhook_notification.resource_object],
-        [type: webhook_notification.type],
         [webhook_endpoint_id: webhook_notification.webhook_endpoint_id]
       ]
       |> Enum.each(fn filter ->
@@ -52,9 +52,9 @@ defmodule CaptainHook.WebhookNotificationsTest do
       [
         [id: shortcode_uuid("wn")],
         [has_succeeded: true],
+        [ref: "ref"],
         [resource_id: "resource_id"],
         [resource_object: "resource_object"],
-        [type: "type"],
         [webhook_endpoint_id: shortcode_uuid("we")]
       ]
       |> Enum.each(fn filter ->
@@ -132,7 +132,7 @@ defmodule CaptainHook.WebhookNotificationsTest do
 
       assert webhook_notification.resource_id == webhook_notification_params.resource_id
       assert webhook_notification.resource_object == webhook_notification_params.resource_object
-      assert webhook_notification.type == webhook_notification_params.type
+      assert webhook_notification.ref == webhook_notification_params.ref
 
       assert webhook_notification.webhook_endpoint_id ==
                webhook_notification_params.webhook_endpoint_id

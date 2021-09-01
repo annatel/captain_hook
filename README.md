@@ -52,7 +52,7 @@ webhook_endpoint = CaptainHook.create_webhook_endpoint(%{
   webhook: "my_webhook_name", 
   url: "https://webhook.site/538bb308-4dd8-4008-a19b-4e4a5758ef29",
   livemode: true,
-  enabled_notification_types: [%{name: "*"}]
+  enabled_notification_patterns: [%{pattern: "*"}]
 })
 
 # Get the webhook_endpoint secret in order to verify the webhook signature
@@ -64,7 +64,7 @@ webhook_endpoint = CaptainHook.create_webhook_endpoint(%{
   CaptainHook.notify(
     "my_webhook_name", 
     true, 
-    "notification_type", 
+    "notification_ref", 
     %{"my" => "data", "to" => "report"}
   )
 ```

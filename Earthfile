@@ -28,26 +28,34 @@ test:
     WORKDIR /test
     RUN apk add --no-progress --update mysql-client
     
-    RUN echo 'DB_USERNAME=root' >> .env
-    RUN echo 'DB_PASSWORD=123456' >> .env
-    
-    COPY docker-compose.yml .
     COPY --dir config lib priv test .
     
-    WITH DOCKER --compose docker-compose.yml --service mysql --load elixir:latest=+deps --build-arg MIX_ENV="test"
-        RUN while ! mysqladmin ping --host=127.0.0.1 --port=3306 --protocol=TCP --silent; do sleep 1; done; \
-            source .env; \
-            docker run \
-                --rm \
-                -e DATABASE_TEST_URL="ecto://${DB_USERNAME}:${DB_PASSWORD}@127.0.0.1:3306/captain_hook" \
-                -e MIX_ENV=test \
-                -e EX_LOG_LEVEL=warn \
-                --network host \
-                -v "$PWD/config:/app/config" \
-                -v "$PWD/lib:/app/lib" \
-                -v "$PWD/priv:/app/priv" \
-                -v "$PWD/test:/app/test" \
-                -w /app elixir:latest mix test --cover;
+    ARG MYSQL_IMG="mysql:5.7"
+
+    WITH DOCKER --pull "$MYSQL_IMG" --load elixir:latest=+deps --build-arg MIX_ENV="test"
+        RUN timeout=$(expr $(date +%s) + 60); \
+
+        docker run --name mysql --network=host -d -e MYSQL_ROOT_PASSWORD=root "$MYSQL_IMG"; \
+
+        while ! mysqladmin ping --host=127.0.0.1 --port=3306 --protocol=TCP --silent; do \
+            test "$(date +%s)" -le "$timeout" || (echo "timed out waiting for mysql"; exit 1); \
+            echo "waiting for mysql"; \
+            sleep 1; \
+        done; \
+            
+        docker run \
+            --rm \
+            -e DATABASE_TEST_URL="ecto://root:root@127.0.0.1:3306/captain_hook" \
+            -e MIX_ENV=test \
+            -e EX_LOG_LEVEL=warn \
+            --network host \
+            -v "$PWD/config:/app/config" \
+            -v "$PWD/lib:/app/lib" \
+            -v "$PWD/priv:/app/priv" \
+            -v "$PWD/test:/app/test" \
+            -w /app \
+            --name captain_hook \
+            elixir:latest mix test --cover;
     END
 
 check-tag:

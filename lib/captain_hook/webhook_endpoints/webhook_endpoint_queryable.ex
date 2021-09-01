@@ -15,12 +15,12 @@ defmodule CaptainHook.WebhookEndpoints.WebhookEndpointQueryable do
     queryable |> preload_secret()
   end
 
-  defp include_assoc(queryable, :enabled_notification_types) do
-    queryable |> preload_enabled_notification_types()
+  defp include_assoc(queryable, :enabled_notification_patterns) do
+    queryable |> preload_enabled_notification_patterns()
   end
 
-  defp preload_enabled_notification_types(queryable) do
-    queryable |> preload(:enabled_notification_types)
+  defp preload_enabled_notification_patterns(queryable) do
+    queryable |> preload(:enabled_notification_patterns)
   end
 
   defp preload_secret(queryable) do

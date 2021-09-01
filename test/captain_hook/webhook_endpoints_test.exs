@@ -72,13 +72,13 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
       assert %{data: [webhook_endpoint]} = WebhookEndpoints.paginate_webhook_endpoints()
       assert is_nil(Map.get(webhook_endpoint, :secret))
-      assert Ecto.assoc_loaded?(webhook_endpoint.enabled_notification_types)
+      assert Ecto.assoc_loaded?(webhook_endpoint.enabled_notification_patterns)
 
       assert %{data: [webhook_endpoint]} =
                WebhookEndpoints.paginate_webhook_endpoints(100, 1, includes: [:secret])
 
       refute is_nil(webhook_endpoint.secret)
-      assert Ecto.assoc_loaded?(webhook_endpoint.enabled_notification_types)
+      assert Ecto.assoc_loaded?(webhook_endpoint.enabled_notification_patterns)
     end
   end
 
@@ -101,13 +101,13 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
       webhook_endpoint =
         WebhookEndpoints.get_webhook_endpoint(webhook_endpoint_factory.id,
-          includes: [:enabled_notification_types, :secret]
+          includes: [:enabled_notification_patterns, :secret]
         )
 
       assert webhook_endpoint.owner_id == webhook_endpoint_factory.owner_id
       assert webhook_endpoint.id == webhook_endpoint_factory.id
       assert webhook_endpoint.secret == webhook_secret.secret
-      assert Ecto.assoc_loaded?(webhook_endpoint.enabled_notification_types)
+      assert Ecto.assoc_loaded?(webhook_endpoint.enabled_notification_patterns)
     end
 
     test "when the webhook_endpoint does not exist, returns nil" do
@@ -151,10 +151,10 @@ defmodule CaptainHook.WebhookEndpointsTest do
       assert webhook_endpoint.url == webhook_endpoint_params.url
       assert is_nil(webhook_endpoint.deleted_at)
 
-      assert [enabled_notification_type] = webhook_endpoint.enabled_notification_types
+      assert [enabled_notification_pattern] = webhook_endpoint.enabled_notification_patterns
 
-      assert enabled_notification_type.name ==
-               Map.get(hd(webhook_endpoint_params.enabled_notification_types), :name)
+      assert enabled_notification_pattern.pattern ==
+               Map.get(hd(webhook_endpoint_params.enabled_notification_patterns), :pattern)
 
       assert [webhook_secret] = WebhookEndpoints.list_webhook_endpoint_secrets(webhook_endpoint)
 
@@ -222,132 +222,142 @@ defmodule CaptainHook.WebhookEndpointsTest do
     end
   end
 
-  describe "enable_notification_type/2" do
+  describe "enable_notification_pattern/2" do
     test "enable a type of notification, returns the updated webhook_endpoint" do
-      %{enabled_notification_types: [notification_type_1_factory]} =
+      %{enabled_notification_patterns: [notification_ref_1_factory]} =
         webhook_endpoint =
         insert!(:webhook_endpoint,
-          enabled_notification_types: [
-            build(:enabled_notification_type, name: "notification_type_1")
+          enabled_notification_patterns: [
+            build(:enabled_notification_pattern, pattern: "notification_ref_1")
           ]
         )
 
-      assert {:ok, %{enabled_notification_types: enabled_notification_types}} =
-               WebhookEndpoints.enable_notification_type(webhook_endpoint, "notification_type_2")
+      assert {:ok, %{enabled_notification_patterns: enabled_notification_patterns}} =
+               WebhookEndpoints.enable_notification_pattern(
+                 webhook_endpoint,
+                 "notification_ref_2"
+               )
 
-      notification_type_1 =
-        enabled_notification_types
-        |> Enum.filter(&(&1.name == "notification_type_1"))
+      notification_ref_1 =
+        enabled_notification_patterns
+        |> Enum.filter(&(&1.pattern == "notification_ref_1"))
         |> List.first()
 
-      assert notification_type_1_factory.id == notification_type_1.id
+      assert notification_ref_1_factory.id == notification_ref_1.id
 
-      assert [_notification_type_2] =
-               enabled_notification_types |> Enum.filter(&(&1.name == "notification_type_2"))
+      assert [_notification_ref_2] =
+               enabled_notification_patterns
+               |> Enum.filter(&(&1.pattern == "notification_ref_2"))
     end
 
     test "enable a list of type of notification, returns the updated webhook_endpoint" do
-      webhook_endpoint = insert!(:webhook_endpoint, enabled_notification_types: [])
+      webhook_endpoint = insert!(:webhook_endpoint, enabled_notification_patterns: [])
 
-      assert {:ok, %{enabled_notification_types: enabled_notification_types}} =
-               WebhookEndpoints.enable_notification_type(webhook_endpoint, [
-                 "notification_type_1",
-                 "notification_type_2"
+      assert {:ok, %{enabled_notification_patterns: enabled_notification_patterns}} =
+               WebhookEndpoints.enable_notification_pattern(webhook_endpoint, [
+                 "notification_ref_1",
+                 "notification_ref_2"
                ])
 
-      assert enabled_notification_types
-             |> Enum.map(& &1.name)
-             |> Enum.member?("notification_type_1")
+      assert enabled_notification_patterns
+             |> Enum.map(& &1.pattern)
+             |> Enum.member?("notification_ref_1")
 
-      assert enabled_notification_types
-             |> Enum.map(& &1.name)
-             |> Enum.member?("notification_type_2")
+      assert enabled_notification_patterns
+             |> Enum.map(& &1.pattern)
+             |> Enum.member?("notification_ref_2")
     end
 
     test "enable an already enabled type of notification, ignore it and returns the webhook_endpoint" do
-      %{enabled_notification_types: [enabled_notification_type]} =
+      %{enabled_notification_patterns: [enabled_notification_pattern]} =
         webhook_endpoint =
-        insert!(:webhook_endpoint, enabled_notification_types: [build(:enabled_notification_type)])
+        insert!(:webhook_endpoint,
+          enabled_notification_patterns: [build(:enabled_notification_pattern)]
+        )
 
-      assert {:ok, %{enabled_notification_types: enabled_notification_types}} =
-               WebhookEndpoints.enable_notification_type(
+      assert {:ok, %{enabled_notification_patterns: enabled_notification_patterns}} =
+               WebhookEndpoints.enable_notification_pattern(
                  webhook_endpoint,
-                 enabled_notification_type.name
+                 enabled_notification_pattern.pattern
                )
 
-      assert Map.get(hd(enabled_notification_types), :name) == enabled_notification_type.name
+      assert Map.get(hd(enabled_notification_patterns), :pattern) ==
+               enabled_notification_pattern.pattern
     end
   end
 
-  describe "disable_notification_type/2" do
+  describe "disable_notification_pattern/2" do
     test "disable an enabled notification type, return the updated webhook_endpoint" do
       %{
-        enabled_notification_types: [
-          enabled_notification_type_1,
-          %{id: id2} = _enabled_notification_type_2
+        enabled_notification_patterns: [
+          enabled_notification_pattern_1,
+          %{id: id2} = _enabled_notification_pattern_2
         ]
       } =
         webhook_endpoint =
         insert!(:webhook_endpoint,
-          enabled_notification_types: [
-            build(:enabled_notification_type),
-            build(:enabled_notification_type)
+          enabled_notification_patterns: [
+            build(:enabled_notification_pattern),
+            build(:enabled_notification_pattern)
           ]
         )
 
-      assert {:ok, %{enabled_notification_types: [%{id: ^id2} = _enabled_notification_type_2]}} =
-               WebhookEndpoints.disable_notification_type(
+      assert {:ok,
+              %{enabled_notification_patterns: [%{id: ^id2} = _enabled_notification_pattern_2]}} =
+               WebhookEndpoints.disable_notification_pattern(
                  webhook_endpoint,
-                 enabled_notification_type_1.name
+                 enabled_notification_pattern_1.pattern
                )
 
-      assert [_enabled_notification_type] =
-               WebhookEndpoints.EnabledNotificationType |> CaptainHook.repo().all()
+      assert [_enabled_notification_pattern] =
+               WebhookEndpoints.EnabledNotificationPattern |> CaptainHook.repo().all()
     end
 
     test "disable a disabled notification type, ignore it and return the webhook_endpoint" do
-      enabled_notification_type = build(:enabled_notification_type)
+      enabled_notification_pattern = build(:enabled_notification_pattern)
 
-      %{enabled_notification_types: [_]} =
+      %{enabled_notification_patterns: [_]} =
         webhook_endpoint =
         insert!(:webhook_endpoint,
-          enabled_notification_types: [build(:enabled_notification_type)]
+          enabled_notification_patterns: [build(:enabled_notification_pattern)]
         )
 
-      assert {:ok, %{enabled_notification_types: [_]}} =
-               WebhookEndpoints.disable_notification_type(
+      assert {:ok, %{enabled_notification_patterns: [_]}} =
+               WebhookEndpoints.disable_notification_pattern(
                  webhook_endpoint,
-                 enabled_notification_type.name
+                 enabled_notification_pattern.pattern
                )
     end
   end
 
-  describe "notification_type_enabled?/2" do
+  describe "notification_ref_enabled?/2" do
     test "when the notification type is enabled, return true" do
-      %{enabled_notification_types: [enabled_notification_type]} =
+      %{enabled_notification_patterns: [enabled_notification_pattern]} =
         webhook_endpoint =
-        insert!(:webhook_endpoint, enabled_notification_types: [build(:enabled_notification_type)])
+        insert!(:webhook_endpoint,
+          enabled_notification_patterns: [build(:enabled_notification_pattern)]
+        )
 
-      assert WebhookEndpoints.notification_type_enabled?(
+      assert WebhookEndpoints.notification_ref_enabled?(
                webhook_endpoint,
-               enabled_notification_type.name
+               enabled_notification_pattern.pattern
              )
     end
 
     test "when the notification type is enabled with wildcard matching, return true " do
       webhook_endpoint =
         insert!(:webhook_endpoint,
-          enabled_notification_types: [
-            build(:enabled_notification_type,
-              name: "a.b.*"
+          enabled_notification_patterns: [
+            build(:enabled_notification_pattern,
+              pattern: "a.b.*"
             ),
-            build(:enabled_notification_type,
-              name: "c.e"
+            build(:enabled_notification_pattern,
+              pattern: "c.e"
             )
           ]
         )
 
-      assert WebhookEndpoints.notification_type_enabled?(
+      assert WebhookEndpoints.notification_ref_enabled?(
                webhook_endpoint,
                "a.b.c"
              )
@@ -356,35 +366,37 @@ defmodule CaptainHook.WebhookEndpointsTest do
     test "when the notification type is not enabled, return false " do
       webhook_endpoint =
         insert!(:webhook_endpoint,
-          enabled_notification_types: [
-            build(:enabled_notification_type,
-              name: "a.b.*.d.*.f.*"
+          enabled_notification_patterns: [
+            build(:enabled_notification_pattern,
+              pattern: "a.b.*.d.*.f.*"
             ),
-            build(:enabled_notification_type,
-              name: "a.b"
+            build(:enabled_notification_pattern,
+              pattern: "a.b"
             )
           ]
         )
 
-      refute WebhookEndpoints.notification_type_enabled?(
+      refute WebhookEndpoints.notification_ref_enabled?(
                webhook_endpoint,
                "a.c"
              )
     end
 
-    test "when enabled_notification_types list is empty, return false" do
-      webhook_endpoint = insert!(:webhook_endpoint, enabled_notification_types: [])
+    test "when enabled_notification_patterns list is empty, return false" do
+      webhook_endpoint = insert!(:webhook_endpoint, enabled_notification_patterns: [])
 
-      refute WebhookEndpoints.notification_type_enabled?(webhook_endpoint, "notification_type")
+      refute WebhookEndpoints.notification_ref_enabled?(webhook_endpoint, "notification_type")
     end
 
     test "when the webhook_endpoint has the wildcard enabled, return true" do
       webhook_endpoint =
         insert!(:webhook_endpoint,
-          enabled_notification_types: [build(:enabled_notification_type) |> catch_all_events()]
+          enabled_notification_patterns: [
+            build(:enabled_notification_pattern) |> catch_all_events()
+          ]
         )
 
-      assert WebhookEndpoints.notification_type_enabled?(webhook_endpoint, "notification_type")
+      assert WebhookEndpoints.notification_ref_enabled?(webhook_endpoint, "notification_type")
     end
   end
 end

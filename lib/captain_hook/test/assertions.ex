@@ -103,23 +103,23 @@ defmodule CaptainHook.Test.Assertions do
 
   def assert_webhook_endpoint_created(
         expected_count,
-        %{enabled_notification_types: enabled_notification_types} = attrs
+        %{enabled_notification_patterns: enabled_notification_patterns} = attrs
       )
       when is_integer(expected_count) do
     webhook_endpoints =
       WebhookEndpoints.list_webhook_endpoints(
-        filters: attrs |> Map.delete(:enabled_notification_types) |> Enum.to_list()
+        filters: attrs |> Map.delete(:enabled_notification_patterns) |> Enum.to_list()
       )
 
     count =
       webhook_endpoints
       |> Enum.filter(fn webhook_endpoint ->
-        webhook_endpoint_enabled_notification_types =
-          webhook_endpoint.enabled_notification_types
+        webhook_endpoint_enabled_notification_patterns =
+          webhook_endpoint.enabled_notification_patterns
           |> Enum.map(&Map.from_struct/1)
           |> Recase.Enumerable.stringify_keys()
 
-        subset?(enabled_notification_types, webhook_endpoint_enabled_notification_types)
+        subset?(enabled_notification_patterns, webhook_endpoint_enabled_notification_patterns)
       end)
       |> length()
 
