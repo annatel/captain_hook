@@ -278,7 +278,7 @@ defmodule CaptainHook.Test.AssertionsTest do
 
     test "when enabled_notification_pattern is specified but not match" do
       insert!(:webhook_endpoint,
-        enabled_notification_patterns: [build(:enabled_notification_pattern, pattern: "*")]
+        enabled_notification_patterns: [build(:enabled_notification_pattern, pattern: "+")]
       )
 
       message =
@@ -297,22 +297,22 @@ defmodule CaptainHook.Test.AssertionsTest do
 
     test "with data, count option" do
       insert!(:webhook_endpoint,
-        enabled_notification_patterns: [build(:enabled_notification_pattern, pattern: "*")]
+        enabled_notification_patterns: [build(:enabled_notification_pattern, pattern: "+")]
       )
 
       insert!(:webhook_endpoint,
-        enabled_notification_patterns: [build(:enabled_notification_pattern, pattern: "*")]
+        enabled_notification_patterns: [build(:enabled_notification_pattern, pattern: "+")]
       )
 
       message =
         %ExUnit.AssertionError{
           message:
-            "Expected 1 webhook_endpoint with attributes %{enabled_notification_patterns: [%{\"pattern\" => \"*\"}]}, got 2"
+            "Expected 1 webhook_endpoint with attributes %{enabled_notification_patterns: [%{\"pattern\" => \"+\"}]}, got 2"
         }
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
-        assert_webhook_endpoint_created(1, %{enabled_notification_patterns: [%{"pattern" => "*"}]})
+        assert_webhook_endpoint_created(1, %{enabled_notification_patterns: [%{"pattern" => "+"}]})
       end
     end
   end

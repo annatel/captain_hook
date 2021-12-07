@@ -8,7 +8,6 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationPatternTest do
     test "when the name format is invalid, returns an invalid changeset " do
       Enum.each(
         [
-          params_for(:enabled_notification_pattern, pattern: "*.*"),
           params_for(:enabled_notification_pattern, pattern: ".."),
           params_for(:enabled_notification_pattern, pattern: ".a"),
           params_for(:enabled_notification_pattern, pattern: "a.")

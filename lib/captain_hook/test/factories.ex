@@ -17,7 +17,7 @@ defmodule CaptainHook.Test.Factories do
   def build(:webhook_endpoint, attrs) do
     %WebhookEndpoint{
       created_at: utc_now(),
-      enabled_notification_patterns: [%{pattern: "*"}],
+      enabled_notification_patterns: [%{pattern: "+"}],
       headers: %{},
       livemode: true,
       url: "url_#{System.unique_integer()}"

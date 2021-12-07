@@ -181,7 +181,9 @@ defmodule CaptainHook.WebhookEndpoints do
       when is_list(enabled_notification_patterns) and is_binary(notification_ref) do
     patterns = enabled_notification_patterns |> Enum.map(& &1.pattern)
 
-    wildcard_match?(patterns, notification_ref)
+    if "*" in patterns,
+      do: true,
+      else: wildcard_match?(patterns, notification_ref)
   end
 
   defp wildcard_match?(patterns, notification_ref) do
