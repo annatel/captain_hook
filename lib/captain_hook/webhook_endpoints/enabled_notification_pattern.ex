@@ -38,8 +38,7 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationPattern do
     |> validate_format(
       :pattern,
       AntlUtilsElixir.Wildcard.pattern_regex!(
-        CaptainHook.notification_pattern_separator(),
-        CaptainHook.notification_pattern_wildcard()
+        CaptainHook.notification_pattern_separator()
       )
     )
   end
