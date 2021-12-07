@@ -8,6 +8,11 @@ defmodule CaptainHook.Test.AssertionsTest do
                                    :captain_hook,
                                    :notification_pattern_wildcard
                                  )
+
+  @notification_pattern_match_all_wildcard Application.get_env(
+                                             :captain_hook,
+                                             :notification_pattern_match_all_wildcard
+                                           )
   describe "assert_webhook_conversation_created/0" do
     test "when the webhook_conversation is found" do
       webhook_notification = insert!(:webhook_notification)
@@ -304,26 +309,28 @@ defmodule CaptainHook.Test.AssertionsTest do
     test "with data, count option" do
       insert!(:webhook_endpoint,
         enabled_notification_patterns: [
-          build(:enabled_notification_pattern, pattern: @notification_pattern_wildcard)
+          build(:enabled_notification_pattern, pattern: @notification_pattern_match_all_wildcard)
         ]
       )
 
       insert!(:webhook_endpoint,
         enabled_notification_patterns: [
-          build(:enabled_notification_pattern, pattern: @notification_pattern_wildcard)
+          build(:enabled_notification_pattern, pattern: @notification_pattern_match_all_wildcard)
         ]
       )
 
       message =
         %ExUnit.AssertionError{
           message:
-            "Expected 1 webhook_endpoint with attributes %{enabled_notification_patterns: [%{\"pattern\" => \"#{@notification_pattern_wildcard}\"}]}, got 2"
+            "Expected 1 webhook_endpoint with attributes %{enabled_notification_patterns: [%{\"pattern\" => \"#{@notification_pattern_match_all_wildcard}\"}]}, got 2"
         }
         |> ExUnit.AssertionError.message()
 
       assert_raise ExUnit.AssertionError, message, fn ->
         assert_webhook_endpoint_created(1, %{
-          enabled_notification_patterns: [%{"pattern" => @notification_pattern_wildcard}]
+          enabled_notification_patterns: [
+            %{"pattern" => @notification_pattern_match_all_wildcard}
+          ]
         })
       end
     end
