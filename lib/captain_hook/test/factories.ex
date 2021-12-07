@@ -7,10 +7,10 @@ defmodule CaptainHook.Test.Factories do
   alias CaptainHook.WebhookNotifications.WebhookNotification
   alias CaptainHook.WebhookConversations.WebhookConversation
 
-  @notification_pattern_wildcard Application.get_env(
-                                   :captain_hook,
-                                   :notification_pattern_wildcard
-                                 )
+  @notification_pattern_match_all_wildcard Application.get_env(
+                                             :captain_hook,
+                                             :notification_pattern_match_all_wildcard
+                                           )
 
   @spec build(
           :webhook_conversation
@@ -22,7 +22,7 @@ defmodule CaptainHook.Test.Factories do
   def build(:webhook_endpoint, attrs) do
     %WebhookEndpoint{
       created_at: utc_now(),
-      enabled_notification_patterns: [%{pattern: @notification_pattern_wildcard}],
+      enabled_notification_patterns: [%{pattern: @notification_pattern_match_all_wildcard}],
       headers: %{},
       livemode: true,
       url: "url_#{System.unique_integer()}"
