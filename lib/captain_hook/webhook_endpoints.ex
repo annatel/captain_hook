@@ -8,7 +8,10 @@ defmodule CaptainHook.WebhookEndpoints do
 
   @default_page_number 1
   @default_page_size 100
-
+  @notification_pattern_match_all_wildcard Application.get_env(
+                                             :captain_hook,
+                                             :notification_pattern_match_all_wildcard
+                                           )
   @spec list_webhook_endpoints(keyword) :: [WebhookEndpoint.t()]
   def list_webhook_endpoints(opts \\ []) do
     try do
@@ -181,22 +184,23 @@ defmodule CaptainHook.WebhookEndpoints do
       when is_list(enabled_notification_patterns) and is_binary(notification_ref) do
     patterns = enabled_notification_patterns |> Enum.map(& &1.pattern)
 
-    if "*" in patterns,
-      do: true,
-      else: wildcard_match?(patterns, notification_ref)
+    wildcard_match?(patterns, notification_ref)
   end
 
-  defp wildcard_match?(patterns, notification_ref) do
+  defp wildcard_match?(patterns, notification_ref) when is_list(patterns) do
     patterns
-    |> Enum.map(
-      &AntlUtilsElixir.Wildcard.match?(
-        &1,
-        notification_ref,
-        CaptainHook.notification_pattern_separator(),
-        CaptainHook.notification_pattern_wildcard()
-      )
+    |> Enum.any?(&wildcard_match?(&1, notification_ref))
+  end
+
+  defp wildcard_match?(@notification_pattern_match_all_wildcard, _), do: true
+
+  defp wildcard_match?(pattern, notification_ref) when is_binary(pattern) do
+    AntlUtilsElixir.Wildcard.match?(
+      pattern,
+      notification_ref,
+      CaptainHook.notification_pattern_separator(),
+      CaptainHook.notification_pattern_wildcard()
     )
-    |> Enum.any?()
   end
 
   @spec webhook_endpoint_queryable(keyword) :: Ecto.Queryable.t()

@@ -42,7 +42,6 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotificationTest do
     test "when the ref format is invalid, returns an invalid changeset" do
       Enum.each(
         [
-          params_for(:webhook_notification, ref: "+"),
           params_for(:webhook_notification, ref: ".."),
           params_for(:webhook_notification, ref: ".a"),
           params_for(:webhook_notification, ref: "a.")

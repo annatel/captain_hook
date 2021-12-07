@@ -4,6 +4,10 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
   alias CaptainHook.WebhookEndpoints
 
+  @notification_pattern_wildcard Application.get_env(
+                                   :captain_hook,
+                                   :notification_pattern_wildcard
+                                 )
   describe "list_webhook_endpoints/1" do
     test "list_webhook_endpoints" do
       %{id: id_1} = insert!(:webhook_endpoint, created_at: utc_now())
@@ -349,7 +353,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
         insert!(:webhook_endpoint,
           enabled_notification_patterns: [
             build(:enabled_notification_pattern,
-              pattern: "a.b.+"
+              pattern: "a.b.#{@notification_pattern_wildcard}"
             ),
             build(:enabled_notification_pattern,
               pattern: "c.e"
@@ -368,7 +372,8 @@ defmodule CaptainHook.WebhookEndpointsTest do
         insert!(:webhook_endpoint,
           enabled_notification_patterns: [
             build(:enabled_notification_pattern,
-              pattern: "a.b.+.d.+.f.+"
+              pattern:
+                "a.b.#{@notification_pattern_wildcard}.d.#{@notification_pattern_wildcard}.f.#{@notification_pattern_wildcard}"
             ),
             build(:enabled_notification_pattern,
               pattern: "a.b"

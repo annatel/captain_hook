@@ -4,6 +4,10 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationPatternTest do
 
   alias CaptainHook.WebhookEndpoints.EnabledNotificationPattern
 
+  @notification_pattern_wildcard Application.get_env(
+                                   :captain_hook,
+                                   :notification_pattern_wildcard
+                                 )
   describe "changeset/2" do
     test "when the name format is invalid, returns an invalid changeset " do
       Enum.each(
@@ -22,7 +26,9 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationPatternTest do
 
     test "when params are valid, return a valid changeset" do
       enabled_notification_pattern_params =
-        params_for(:enabled_notification_pattern, pattern: "a.*")
+        params_for(:enabled_notification_pattern,
+          pattern: "a.#{@notification_pattern_wildcard}"
+        )
 
       enabled_notification_pattern =
         EnabledNotificationPattern.changeset(

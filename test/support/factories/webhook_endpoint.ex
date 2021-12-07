@@ -3,6 +3,10 @@ defmodule CaptainHook.Factory.WebhookEndpoint do
 
   defmacro __using__(_opts) do
     quote do
+      @notification_pattern_match_all_wildcard Application.get_env(
+                                                 :captain_hook,
+                                                 :notification_pattern_match_all_wildcard
+                                               )
       def build(:webhook_endpoint, attrs) do
         %WebhookEndpoint{
           created_at: utc_now(),
@@ -43,7 +47,7 @@ defmodule CaptainHook.Factory.WebhookEndpoint do
       end
 
       def catch_all_events(%EnabledNotificationPattern{} = enabled_notification_pattern) do
-        %{enabled_notification_pattern | pattern: "*"}
+        %{enabled_notification_pattern | pattern: @notification_pattern_match_all_wildcard}
       end
     end
   end
