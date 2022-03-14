@@ -6,6 +6,8 @@ defmodule CaptainHook.WebhookEndpoints do
   alias CaptainHook.WebhookEndpoints.{WebhookEndpoint, WebhookEndpointQueryable}
   alias CaptainHook.WebhookEndpoints.Secrets
 
+  @all_events_wildcard "*"
+
   @default_page_number 1
   @default_page_size 100
 
@@ -181,7 +183,8 @@ defmodule CaptainHook.WebhookEndpoints do
       when is_list(enabled_notification_patterns) and is_binary(notification_ref) do
     patterns = enabled_notification_patterns |> Enum.map(& &1.pattern)
 
-    wildcard_match?(patterns, notification_ref)
+    Enum.member?(patterns, @all_events_wildcard) ||
+      wildcard_match?(patterns, notification_ref)
   end
 
   defp wildcard_match?(patterns, notification_ref) do

@@ -19,16 +19,9 @@ defmodule CaptainHook.Notifier do
   def notify(owner_id, livemode?, notification_ref, data, opts \\ [])
       when is_boolean(livemode?) and is_binary(notification_ref) and
              is_map(data) and is_list(opts) do
-    create_webhook_notifications(owner_id, livemode?, notification_ref, data, opts)
-    |> case do
-      {:ok, webhook_notifications} ->
-        {:ok,
-         webhook_notifications
-         |> Enum.map(&send_webhook_notification!/1)
-         |> Enum.map(& &1.webhook_notification)}
-
-      {:error, changeset} ->
-        {:error, changeset}
+    with {:ok, webhook_notifications} <-
+           create_webhook_notifications(owner_id, livemode?, notification_ref, data, opts) do
+      send_webhook_notifications(webhook_notifications)
     end
   end
 
@@ -62,12 +55,12 @@ defmodule CaptainHook.Notifier do
     |> CaptainHook.repo().transaction()
     |> case do
       {:ok, %{webhook_notifications: webhook_notifications}} ->
-        CaptainHook.Queuetopia.handle_event(:new_incoming_job)
         {:ok, webhook_notifications}
 
       {:error, _, changeset, _} ->
         {:error, changeset}
     end
+    |> tap(fn _ -> CaptainHook.Queuetopia.handle_event(:new_incoming_job) end)
   end
 
   defp create_webhook_notifications(owner_id, livemode?, notification_ref, data, opts)
@@ -188,12 +181,30 @@ defmodule CaptainHook.Notifier do
     |> Enum.reject(&is_nil/1)
   end
 
+  defp send_webhook_notifications(webhook_notifications) do
+    results = webhook_notifications |> Enum.map(&send_webhook_notification/1)
+
+    with nil <- first_error(results) do
+      {:ok, results |> Enum.map(&elem(&1, 1))}
+    end
+  end
+
+  defp first_error(results) do
+    Enum.find(results, &match?({:error, _}, &1))
+  end
+
   @spec send_webhook_notification(map) :: {:ok, WebhookNotification.t()} | {:error, binary}
   def send_webhook_notification(%{"webhook_notification_id" => webhook_notification_id}) do
+    webhook_notification_id
+    |> WebhookNotifications.get_webhook_notification!(includes: [:webhook_endpoint])
+    |> send_webhook_notification()
+  end
+
+  @spec send_webhook_notification(WebhookNotification.t()) ::
+          {:ok, WebhookNotification.t()} | {:error, binary}
+  def send_webhook_notification(%WebhookNotification{} = webhook_notification) do
     %{webhook_endpoint: webhook_endpoint} =
-      webhook_notification =
-      webhook_notification_id
-      |> WebhookNotifications.get_webhook_notification!(includes: [:webhook_endpoint])
+      webhook_notification |> CaptainHook.repo().preload([:webhook_endpoint])
 
     if WebhookEndpoints.webhook_endpoint_enabled?(webhook_endpoint) do
       %{webhook_notification: webhook_notification, webhook_conversation: webhook_conversation} =
@@ -209,11 +220,7 @@ defmodule CaptainHook.Notifier do
     end
   end
 
-  @spec send_webhook_notification!(WebhookNotification.t()) :: %{
-          webhook_conversation: WebhookConversation.t() | nil,
-          webhook_notification: WebhookNotification.t()
-        }
-  def send_webhook_notification!(%WebhookNotification{succeeded_at: nil} = webhook_notification) do
+  defp send_webhook_notification!(%WebhookNotification{succeeded_at: nil} = webhook_notification) do
     %{webhook_endpoint: webhook_endpoint} =
       WebhookNotifications.get_webhook_notification!(webhook_notification.id,
         includes: [:webhook_endpoint]
@@ -247,7 +254,7 @@ defmodule CaptainHook.Notifier do
     end
   end
 
-  def send_webhook_notification!(%WebhookNotification{} = webhook_notification) do
+  defp send_webhook_notification!(%WebhookNotification{} = webhook_notification) do
     %{webhook_notification: webhook_notification, webhook_conversation: nil}
   end
 

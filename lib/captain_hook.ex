@@ -15,9 +15,10 @@ defmodule CaptainHook do
       def async_notify(owner_id, livemode?, notification_ref, data, opts \\ []),
         do: unquote(__MODULE__).async_notify(owner_id, livemode?, notification_ref, data, opts)
 
-      @spec send_webhook_notification!(WebhookNotification.t()) :: map
-      def send_webhook_notification!(webhook_notification),
-        do: unquote(__MODULE__).send_webhook_notification!(webhook_notification)
+      @spec send_webhook_notification(WebhookNotification.t()) ::
+              {:ok, WebhookNotification.t()} | {:error, binary}
+      def send_webhook_notification(webhook_notification),
+        do: unquote(__MODULE__).send_webhook_notification(webhook_notification)
 
       @spec paginate_webhook_endpoints(non_neg_integer, non_neg_integer, keyword) :: %{
               data: [WebhookEndpoint.t()],
@@ -130,12 +131,9 @@ defmodule CaptainHook do
   defdelegate async_notify(owner_id, livemode?, notification_ref, data, opts \\ []),
     to: Notifier
 
-  @spec send_webhook_notification!(WebhookNotification.t()) ::
-          %{
-            webhook_conversation: WebhookConversation.t(),
-            webhook_notification: WebhookNotification.t()
-          }
-  defdelegate send_webhook_notification!(webhook_notification), to: Notifier
+  @spec send_webhook_notification(WebhookNotification.t()) ::
+          {:ok, WebhookNotification.t()} | {:error, binary}
+  defdelegate send_webhook_notification(webhook_notification), to: Notifier
 
   @spec paginate_webhook_endpoints(non_neg_integer, non_neg_integer, keyword) :: %{
           data: [WebhookEndpoint.t()],
