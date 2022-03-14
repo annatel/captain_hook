@@ -349,7 +349,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
         insert!(:webhook_endpoint,
           enabled_notification_patterns: [
             build(:enabled_notification_pattern,
-              pattern: "a.b.*"
+              pattern: "a.b.+"
             ),
             build(:enabled_notification_pattern,
               pattern: "c.e"
@@ -368,7 +368,7 @@ defmodule CaptainHook.WebhookEndpointsTest do
         insert!(:webhook_endpoint,
           enabled_notification_patterns: [
             build(:enabled_notification_pattern,
-              pattern: "a.b.*.d.*.f.*"
+              pattern: "a.b.+.d.+.f.+"
             ),
             build(:enabled_notification_pattern,
               pattern: "a.b"

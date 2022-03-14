@@ -83,7 +83,7 @@ defmodule CaptainHook.NotifierTest do
                |> TestRepo.all()
     end
 
-    test "when the notification exists with an existing idempotency key for the webhook_endpoint and it is not succeeded, it does not create a new webhook_notification but send it",
+    test "when the notification exists with an existing idempotency key for the webhook_endpoint and it was not succeeded, it does not create a new webhook_notification but send it",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
 
@@ -111,7 +111,21 @@ defmodule CaptainHook.NotifierTest do
                |> TestRepo.all()
     end
 
-    test "when the notification exists with an existing idempotency key for the webhook_endpoint and it is not succeeded, it does not create a new webhook_notification and do not resent it",
+    test "when the notification exists with an existing idempotency key for the webhook_endpoint and it was succeeded, it does not create a new webhook_notification and do not resent it",
+         %{bypass: bypass} do
+      start_supervised(CaptainHook.Supervisor)
+
+      Bypass.expect_once(bypass, "POST", "/", fn conn ->
+        Plug.Conn.resp(conn, 500, "")
+      end)
+
+      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
+
+      assert {:error, _} =
+               Notifier.notify(webhook_endpoint.owner_id, true, "notification_ref", %{})
+    end
+
+    test "when the notification failed, returns an error tuple with the failed notifications",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
 
@@ -146,8 +160,8 @@ defmodule CaptainHook.NotifierTest do
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
-        "#{webhook_endpoint.id}",
         %{
+          queue: "#{webhook_endpoint.id}",
           params: %{
             "webhook_notification_id" => webhook_notification.id,
             "webhook_result_handler" => nil
@@ -158,6 +172,7 @@ defmodule CaptainHook.NotifierTest do
 
     test "when the owner has multiple webhook_endpoints, creates multiple webhook_notifications for each endpoint and enqueue them" do
       owner_id = uuid()
+
       webhook_endpoint_1 = insert!(:webhook_endpoint, owner_id: owner_id)
       webhook_endpoint_2 = insert!(:webhook_endpoint, owner_id: owner_id)
 
@@ -174,8 +189,8 @@ defmodule CaptainHook.NotifierTest do
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
-        "#{webhook_endpoint_1.id}",
         %{
+          queue: "#{webhook_endpoint_1.id}",
           params: %{
             "webhook_notification_id" => webhook_notification_1.id,
             "webhook_result_handler" => nil
@@ -185,8 +200,8 @@ defmodule CaptainHook.NotifierTest do
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
-        "#{webhook_endpoint_2.id}",
         %{
+          queue: "#{webhook_endpoint_2.id}",
           params: %{
             "webhook_notification_id" => webhook_notification_2.id,
             "webhook_result_handler" => nil
@@ -217,8 +232,8 @@ defmodule CaptainHook.NotifierTest do
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
-        "#{webhook_endpoint.id}",
         %{
+          queue: "#{webhook_endpoint.id}",
           params: %{
             "webhook_notification_id" => webhook_notification.id,
             "webhook_result_handler" => to_string(CaptainHook.WebhookResultHandlerMock)
@@ -244,8 +259,8 @@ defmodule CaptainHook.NotifierTest do
 
       Queuetopia.Test.Assertions.assert_job_created(
         CaptainHook.Queuetopia,
-        "#{webhook_endpoint.id}",
         %{
+          queue: "#{webhook_endpoint.id}",
           params: %{
             "webhook_notification_id" => webhook_notification_id,
             "webhook_result_handler" => nil

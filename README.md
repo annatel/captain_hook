@@ -12,7 +12,7 @@ The package can be installed by adding `captain_hook` to your list of dependenci
 ```elixir
 def deps do
   [
-    {:captain_hook, "~> 2.1.0"}
+    {:captain_hook, "~> 3.0"}
   ]
 end
 ```
@@ -49,22 +49,22 @@ mix ecto.migrate
 
 ```elixir
 webhook_endpoint = CaptainHook.create_webhook_endpoint(%{
-  webhook: "my_webhook_name", 
+  webhook: "my_webhook_name",
   url: "https://webhook.site/538bb308-4dd8-4008-a19b-4e4a5758ef29",
   livemode: true,
   enabled_notification_patterns: [%{pattern: "*"}]
 })
 
 # Get the webhook_endpoint secret in order to verify the webhook signature
-%CaptainHook.WebhookEndpoint{secret: secret} = 
+%CaptainHook.WebhookEndpoint{secret: secret} =
   CaptainHook.get_webhook_endpoint(webhook_endpoint.id, includes: [:secret])
 
 # Notify - it will enqueue the notification and send it in its turn
-{:ok, CaptainHook.WebhookNotification{} = webhook_notification} = 
+{:ok, CaptainHook.WebhookNotification{} = webhook_notification} =
   CaptainHook.notify(
-    "my_webhook_name", 
-    true, 
-    "notification_ref", 
+    "my_webhook_name",
+    true,
+    "notification_ref",
     %{"my" => "data", "to" => "report"}
   )
 ```

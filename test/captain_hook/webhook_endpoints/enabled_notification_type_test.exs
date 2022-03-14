@@ -8,7 +8,6 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationPatternTest do
     test "when the name format is invalid, returns an invalid changeset " do
       Enum.each(
         [
-          params_for(:enabled_notification_pattern, pattern: "*.*"),
           params_for(:enabled_notification_pattern, pattern: ".."),
           params_for(:enabled_notification_pattern, pattern: ".a"),
           params_for(:enabled_notification_pattern, pattern: "a.")
@@ -22,16 +21,19 @@ defmodule CaptainHook.WebhookEndpoints.EnabledNotificationPatternTest do
     end
 
     test "when params are valid, return a valid changeset" do
-      enabled_notification_pattern_params =
-        params_for(:enabled_notification_pattern, pattern: "a.*")
-
-      enabled_notification_pattern =
-        EnabledNotificationPattern.changeset(
-          %EnabledNotificationPattern{},
-          enabled_notification_pattern_params
+      Enum.each(
+        [
+          params_for(:enabled_notification_pattern, pattern: "++"),
+          params_for(:enabled_notification_pattern, pattern: "did.+972.registered"),
+          params_for(:enabled_notification_pattern, pattern: "did.+.registered"),
+          params_for(:enabled_notification_pattern, pattern: "+.a"),
+          params_for(:enabled_notification_pattern, pattern: "a.+")
+        ],
+        &assert(
+          EnabledNotificationPattern.changeset(%EnabledNotificationPattern{}, &1)
+          |> Map.fetch!(:valid?)
         )
-
-      assert enabled_notification_pattern.valid?
+      )
     end
   end
 end
