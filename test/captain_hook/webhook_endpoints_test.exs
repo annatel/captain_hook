@@ -344,12 +344,12 @@ defmodule CaptainHook.WebhookEndpointsTest do
              )
     end
 
-    test "when the notification type is enabled with wildcard matching, return true " do
+    test "when the notification type is enabled with wildcard matching, return true" do
       webhook_endpoint =
         insert!(:webhook_endpoint,
           enabled_notification_patterns: [
             build(:enabled_notification_pattern,
-              pattern: "a.b.+"
+              pattern: "aa.+.bb"
             ),
             build(:enabled_notification_pattern,
               pattern: "c.e"
@@ -359,11 +359,11 @@ defmodule CaptainHook.WebhookEndpointsTest do
 
       assert WebhookEndpoints.notification_ref_enabled?(
                webhook_endpoint,
-               "a.b.c"
+               "aa.+11.bb"
              )
     end
 
-    test "when the notification type is not enabled, return false " do
+    test "when the notification type is not enabled, return false" do
       webhook_endpoint =
         insert!(:webhook_endpoint,
           enabled_notification_patterns: [
