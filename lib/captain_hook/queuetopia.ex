@@ -3,6 +3,6 @@ defmodule CaptainHook.Queuetopia do
 
   use Queuetopia,
     otp_app: :captain_hook,
-    repo: Application.get_env(:captain_hook, :repo),
+    repo: Application.compile_env(:captain_hook, :repo),
     performer: CaptainHook.Queuetopia.Performer
 end

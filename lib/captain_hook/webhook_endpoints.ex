@@ -9,7 +9,7 @@ defmodule CaptainHook.WebhookEndpoints do
   @default_page_number 1
   @default_page_size 100
 
-  @notification_pattern_match_all_wildcard Application.get_env(
+  @notification_pattern_match_all_wildcard Application.compile_env(
                                              :captain_hook,
                                              :notification_pattern_match_all_wildcard
                                            )

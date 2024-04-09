@@ -2,7 +2,7 @@ defmodule CaptainHook.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/annatel/captain_hook"
-  @version "3.0.1"
+  @version "3.0.2"
 
   def project do
     [
@@ -36,7 +36,7 @@ defmodule CaptainHook.MixProject do
       {:captain_hook_signature, "~> 0.4.1"},
       {:antl_utils_elixir, "~> 1.1", override: true},
       {:antl_utils_ecto, "~> 2.8"},
-      {:queuetopia, "~> 2.3"},
+      {:queuetopia, "~> 2.5"},
       {:finch, "~> 0.7.0"},
       {:plug_crypto, "~> 1.0"},
       {:recase, "~> 0.7"},
