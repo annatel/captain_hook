@@ -47,7 +47,7 @@ test:
             --rm \
             -e DATABASE_TEST_URL="ecto://root:root@127.0.0.1:3306/captain_hook" \
             -e MIX_ENV=test \
-            -e EX_LOG_LEVEL=warn \
+            -e EX_LOG_LEVEL=warning \
             --network host \
             -v "$PWD/config:/app/config" \
             -v "$PWD/lib:/app/lib" \
