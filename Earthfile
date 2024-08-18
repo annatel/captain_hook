@@ -30,7 +30,7 @@ test:
     
     COPY --dir config lib priv test .
     
-    ARG MYSQL_IMG="mysql:5.7"
+    ARG MYSQL_IMG="mysql:8.0"
 
     WITH DOCKER --pull "$MYSQL_IMG" --load elixir:latest=+deps --build-arg MIX_ENV="test"
         RUN timeout=$(expr $(date +%s) + 60); \
