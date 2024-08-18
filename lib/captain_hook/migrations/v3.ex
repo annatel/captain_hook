@@ -83,7 +83,7 @@ defmodule CaptainHook.Migrations.V3 do
   end
 
   defp create_sequences_table() do
-    create table(:captain_hook_sequences, primary: false) do
+    create table(:captain_hook_sequences) do
       add(:name, :string, null: false)
       add(:value, :bigint, null: false, default: 0)
     end
