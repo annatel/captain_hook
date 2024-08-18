@@ -28,7 +28,10 @@ defmodule CaptainHook.WebhookConversations.WebhookConversation do
   @foreign_key_type :binary_id
   @derive {Jason.Encoder, except: [:__meta__, :webhook_notification]}
   schema "captain_hook_webhook_conversations" do
-    belongs_to(:webhook_notification, WebhookNotification, type: Shortcode.Ecto.UUID, prefix: "wn")
+    belongs_to(:webhook_notification, WebhookNotification,
+      type: Shortcode.Ecto.UUID,
+      prefix: "wn"
+    )
 
     field(:client_error_message, :string)
     field(:http_status, :integer)

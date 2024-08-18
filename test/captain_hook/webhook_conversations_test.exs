@@ -133,6 +133,7 @@ defmodule WebhookConversations.WebhookConversationsTest do
 
       assert webhook_conversation.webhook_notification_id ==
                webhook_conversation_params.webhook_notification_id
+
       assert webhook_conversation.response_body == webhook_conversation_params.response_body
 
       assert webhook_conversation.sequence > 0
