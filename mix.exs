@@ -41,7 +41,7 @@ defmodule CaptainHook.MixProject do
       {:plug_crypto, "~> 1.0"},
       {:recase, "~> 0.7"},
       {:shortcode, "~> 0.7.0"},
-      {:padlock, git: "https://github.com/annatel/padlock.git", tag: "0.2.0"},
+      {:padlock, "~> 0.2"},
       {:jason, "~> 1.2"}
     ]
   end
