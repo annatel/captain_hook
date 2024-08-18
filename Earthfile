@@ -1,4 +1,4 @@
-VERSION 0.5
+VERSION 0.6
 
 elixir-base:
     FROM elixir:1.12.2-alpine
