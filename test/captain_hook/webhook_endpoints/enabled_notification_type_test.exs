@@ -1,6 +1,5 @@
 defmodule CaptainHook.WebhookEndpoints.EnabledNotificationPatternTest do
-  use ExUnit.Case, async: true
-  use CaptainHook.DataCase
+  use CaptainHook.DataCase, async: true
 
   alias CaptainHook.WebhookEndpoints.EnabledNotificationPattern
 

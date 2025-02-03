@@ -1,6 +1,5 @@
 defmodule CaptainHook.Test.FactoriesTest do
-  use ExUnit.Case, async: true
-  use CaptainHook.DataCase
+  use CaptainHook.DataCase, async: true
 
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
   alias CaptainHook.WebhookNotifications.WebhookNotification

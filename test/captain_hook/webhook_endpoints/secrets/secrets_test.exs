@@ -1,6 +1,5 @@
 defmodule CaptainHook.WebhookEndpoint.SecretsTest do
-  use ExUnit.Case, async: true
-  use CaptainHook.DataCase
+  use CaptainHook.DataCase, async: true
 
   alias CaptainHook.WebhookEndpoints.Secrets
   alias CaptainHook.WebhookEndpoints.Secrets.WebhookEndpointSecret

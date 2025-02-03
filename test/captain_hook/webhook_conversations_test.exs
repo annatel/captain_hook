@@ -1,6 +1,5 @@
 defmodule WebhookConversations.WebhookConversationsTest do
-  use ExUnit.Case, async: true
-  use CaptainHook.DataCase
+  use CaptainHook.DataCase, async: true
 
   alias CaptainHook.WebhookConversations
 
