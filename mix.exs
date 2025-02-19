@@ -2,7 +2,7 @@ defmodule CaptainHook.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/annatel/captain_hook"
-  @version "3.1.0"
+  @version "3.2.0"
 
   def project do
     [
@@ -29,18 +29,18 @@ defmodule CaptainHook.MixProject do
   defp deps do
     [
       {:mox, "~> 0.4", only: :test},
-      {:bypass, "~> 2.1.0", only: :test},
+      {:bypass, "~> 2.1", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:myxql, ">= 0.0.0"},
       {:ecto_sql, "~> 3.6"},
-      {:captain_hook_signature, "~> 0.4.1"},
+      {:captain_hook_signature, "~> 0.4"},
       {:antl_utils_elixir, "~> 1.4"},
       {:antl_utils_ecto, "~> 2.8"},
       {:queuetopia, "~> 2.5"},
-      {:finch, "~> 0.7.0"},
+      {:finch, "~> 0.7"},
       {:plug_crypto, "~> 1.0"},
       {:recase, "~> 0.7"},
-      {:shortcode, "~> 0.7.0"},
+      {:shortcode, "~> 0.7"},
       {:padlock, "~> 0.2"},
       {:jason, "~> 1.2"}
     ]
