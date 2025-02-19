@@ -42,7 +42,8 @@ defmodule CaptainHook.MixProject do
       {:recase, "~> 0.7"},
       {:shortcode, "~> 0.7"},
       {:padlock, "~> 0.2"},
-      {:jason, "~> 1.2"}
+      {:jason, "~> 1.2"},
+      {:castore, "~> 1.0"}
     ]
   end
 
