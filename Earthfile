@@ -1,7 +1,7 @@
 VERSION 0.6
 
 elixir-base:
-    FROM elixir:1.12.2-alpine
+    FROM --platform=$BUILDPLATFORM elixir:1.18.4-otp-27-alpine
     WORKDIR /app
     RUN apk add --no-progress --update openssh-client git build-base
     RUN mix local.rebar --force && mix local.hex --force
@@ -27,9 +27,9 @@ test:
     FROM earthly/dind:alpine
     WORKDIR /test
     RUN apk add --no-progress --update mysql-client
-    
+
     COPY --dir config lib priv test .
-    
+
     ARG MYSQL_IMG="mysql:8.0"
 
     WITH DOCKER --pull "$MYSQL_IMG" --load elixir:latest=+deps --build-arg MIX_ENV="test"
@@ -42,7 +42,7 @@ test:
             echo "waiting for mysql"; \
             sleep 1; \
         done; \
-            
+
         docker run \
             --rm \
             -e DATABASE_TEST_URL="ecto://root:root@127.0.0.1:3306/captain_hook" \
@@ -55,7 +55,7 @@ test:
             -v "$PWD/test:/app/test" \
             -w /app \
             --name captain_hook \
-            elixir:latest mix test --cover;
+            elixir:latest mix test --warnings-as-errors;
     END
 
 check-tag:
