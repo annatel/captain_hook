@@ -14,7 +14,6 @@ defmodule CaptainHook.Clients.HttpClient do
   @spec call(binary, map(), map(), keyword) :: Response.t()
   def call(url, body, headers, opts \\ [])
       when is_binary(url) and is_map(body) and is_map(headers) do
-    secrets = Keyword.get(opts, :secrets)
     is_insecure_allowed = Keyword.get(opts, :is_insecure_allowed)
 
     headers =
@@ -31,7 +30,6 @@ defmodule CaptainHook.Clients.HttpClient do
         request_url: url,
         requested_at: DateTime.utc_now()
       }
-      |> maybe_add_signature_header(secrets)
 
     response = send_request(request, is_insecure_allowed: is_insecure_allowed)
 
@@ -72,22 +70,5 @@ defmodule CaptainHook.Clients.HttpClient do
       {:error, error} ->
         %{client_error_message: Exception.message(error), success?: false}
     end
-  end
-
-  defp maybe_add_signature_header(request, nil), do: request
-
-  defp maybe_add_signature_header(request, secrets) do
-    headers =
-      request.request_headers
-      |> Map.put(
-        "signature",
-        CaptainHookSignature.sign(
-          request.request_body,
-          DateTime.to_unix(request.requested_at),
-          secrets
-        )
-      )
-
-    %{request | request_headers: headers}
   end
 end

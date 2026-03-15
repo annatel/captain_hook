@@ -39,37 +39,6 @@ defmodule CaptainHook.Clients.HttpClientTest do
     assert Map.get(headers, "third-header") == "value"
   end
 
-  test "when secret is nil, do not add the signature header", %{bypass: bypass} do
-    start_supervised!(CaptainHook.Supervisor)
-
-    Bypass.expect_once(bypass, "POST", "/", fn conn ->
-      Plug.Conn.resp(conn, 200, "")
-    end)
-
-    assert %Response{request_headers: headers} =
-             HttpClient.call(endpoint_url(bypass.port), %{}, %{}, secrets: nil)
-
-    refute Map.has_key?(headers, "Signature")
-  end
-
-  test "when secret is not nil, add the signature header", %{bypass: bypass} do
-    start_supervised!(CaptainHook.Supervisor)
-    body = %{}
-    encoded_body = Jason.encode!(body)
-    secret = "secret"
-    signature = CaptainHookSignature.sign(encoded_body, System.system_time(:second), secret)
-
-    Bypass.expect_once(bypass, "POST", "/", fn conn ->
-      assert signature == conn.req_headers |> Enum.into(%{}) |> Map.get("signature")
-      Plug.Conn.resp(conn, 200, "")
-    end)
-
-    assert %Response{request_headers: headers} =
-             HttpClient.call(endpoint_url(bypass.port), body, %{}, secrets: secret)
-
-    assert Map.has_key?(headers, "signature")
-  end
-
   test "http call return an http error", %{bypass: bypass} do
     start_supervised!(CaptainHook.Supervisor)
 

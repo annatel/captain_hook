@@ -230,13 +230,8 @@ defmodule CaptainHook.Notifier do
 
     headers = webhook_endpoint |> build_headers()
     body = webhook_notification |> build_body()
-    secrets = webhook_endpoint |> build_secrets()
 
-    response =
-      HttpClient.call(url, body, headers,
-        secrets: secrets,
-        is_insecure_allowed: is_insecure_allowed
-      )
+    response = HttpClient.call(url, body, headers, is_insecure_allowed: is_insecure_allowed)
 
     webhook_conversation =
       save_webhook_conversation!(response, webhook_endpoint, webhook_notification)
@@ -378,20 +373,6 @@ defmodule CaptainHook.Notifier do
   defp build_body(%WebhookNotification{} = webhook_notification) do
     webhook_notification.data
     |> Map.merge(%{webhook_endpoint_id: webhook_notification.webhook_endpoint_id})
-  end
-
-  defp build_secrets(%WebhookEndpoint{} = webhook_endpoint) do
-    webhook_endpoint
-    |> WebhookEndpoints.Secrets.list_webhook_endpoint_secrets()
-    |> case do
-      [] ->
-        nil
-
-      webhook_secrets ->
-        webhook_secrets
-        |> Enum.sort_by(&{&1.is_main, &1.started_at})
-        |> Enum.map(& &1.secret)
-    end
   end
 
   defp stringify(nil), do: nil

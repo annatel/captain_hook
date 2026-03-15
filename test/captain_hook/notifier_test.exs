@@ -319,7 +319,7 @@ defmodule CaptainHook.NotifierTest do
                |> TestRepo.all()
     end
 
-    test "when the webhook_notification is not succeed, send the webhook_notification and returns a ok names tuple with the webhook_conversation",
+    test "when the webhook_notification does not succeed, send the webhook_notification and returns a ok names tuple with the webhook_conversation",
          %{bypass: bypass} do
       start_supervised(CaptainHook.Supervisor)
 
@@ -362,35 +362,7 @@ defmodule CaptainHook.NotifierTest do
                )
 
       assert webhook_conversation.status == WebhookConversation.statuses().succeeded
-      assert Map.has_key?(webhook_conversation.request_headers, "signature")
       assert Map.get(webhook_conversation.request_headers, "key") == "value"
-    end
-
-    test "when the webhook_endpoint does not have a webhook_endpoint_secret, http_client is called with secrets: nil",
-         %{bypass: bypass} do
-      start_supervised(CaptainHook.Supervisor)
-
-      Bypass.expect_once(bypass, "POST", "/", fn conn ->
-        Plug.Conn.resp(conn, 200, "")
-      end)
-
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
-
-      webhook_notification =
-        insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
-
-      assert {:ok, %WebhookNotification{id: webhook_notification_id}} =
-               Notifier.send_webhook_notification(%{
-                 "webhook_notification_id" => webhook_notification.id,
-                 "webhook_result_handler" => nil
-               })
-
-      assert [webhook_conversation] =
-               WebhookConversation
-               |> where(webhook_notification_id: ^webhook_notification_id)
-               |> TestRepo.all()
-
-      refute Map.has_key?(webhook_conversation.request_headers, "Signature")
     end
 
     test "when is_insecure_allowed is set for the webhook_endpoint, the http_client is called with is_insecure_allowed: true" do
