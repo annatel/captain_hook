@@ -1,1 +1,1 @@
-Mox.defmock(CaptainHook.WebhookResultHandlerMock, for: CaptainHook.WebhookResultHandler)
+Hammox.defmock(CaptainHook.WebhookResultHandlerMock, for: CaptainHook.WebhookResultHandler)

@@ -1,26 +1,11 @@
 defmodule CaptainHook.WebhookEndpoints.WebhookEndpoint do
+  @type t :: %__MODULE__{}
+
   use CaptainHook.WebhookEndpoints.WebhookEndpointSchema
 
   import Ecto.Changeset, only: [cast: 3, cast_assoc: 3, put_change: 3, validate_required: 2]
 
   alias CaptainHook.WebhookEndpoints.EnabledNotificationPattern
-
-  @type t :: %__MODULE__{
-          api_version: binary | nil,
-          created_at: DateTime.t(),
-          deleted_at: DateTime.t() | nil,
-          enabled_notification_patterns: [EnabledNotificationPattern.t()],
-          headers: map | nil,
-          id: binary,
-          inserted_at: DateTime.t(),
-          is_enabled: boolean,
-          is_insecure_allowed: boolean,
-          livemode: boolean,
-          object: binary,
-          secret: binary | nil,
-          updated_at: DateTime.t(),
-          url: binary
-        }
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "we"}
   @foreign_key_type :binary_id

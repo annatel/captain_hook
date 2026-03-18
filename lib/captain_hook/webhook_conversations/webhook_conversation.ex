@@ -1,28 +1,11 @@
 defmodule CaptainHook.WebhookConversations.WebhookConversation do
+  @type t :: %__MODULE__{}
   use Ecto.Schema
 
   import Ecto.Changeset,
     only: [assoc_constraint: 2, cast: 3, validate_inclusion: 3, validate_required: 2]
 
   alias CaptainHook.WebhookNotifications.WebhookNotification
-
-  @type t :: %__MODULE__{
-          client_error_message: binary,
-          http_status: integer,
-          id: binary,
-          inserted_at: DateTime.t(),
-          object: binary,
-          request_body: binary,
-          request_headers: map,
-          request_url: binary,
-          requested_at: DateTime.t(),
-          response_body: binary,
-          responded_at: DateTime.t(),
-          sequence: integer,
-          status: binary,
-          webhook_notification_id: binary,
-          webhook_notification: WebhookNotification.t()
-        }
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wc"}
   @foreign_key_type :binary_id

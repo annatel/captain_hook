@@ -23,7 +23,7 @@ defmodule CaptainHook.DataCase do
 
       import CaptainHook.Factory
 
-      import Mox
+      import Hammox
 
       setup :verify_on_exit!
     end

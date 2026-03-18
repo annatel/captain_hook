@@ -1,4 +1,5 @@
 defmodule CaptainHook.WebhookNotifications.WebhookNotification do
+  @type t :: %__MODULE__{}
   use Ecto.Schema
 
   import Ecto.Changeset,
@@ -11,23 +12,6 @@ defmodule CaptainHook.WebhookNotifications.WebhookNotification do
     ]
 
   alias CaptainHook.WebhookEndpoints.WebhookEndpoint
-
-  @type t :: %__MODULE__{
-          attempt: integer,
-          created_at: DateTime.t(),
-          data: map,
-          id: binary,
-          idempotency_key: binary,
-          inserted_at: DateTime.t(),
-          next_retry_at: DateTime.t() | nil,
-          object: binary,
-          ref: binary,
-          resource_id: binary | nil,
-          resource_object: binary | nil,
-          sequence: integer,
-          succeeded_at: DateTime.t() | nil,
-          webhook_endpoint_id: binary
-        }
 
   @primary_key {:id, Shortcode.Ecto.UUID, autogenerate: true, prefix: "wn"}
   @foreign_key_type :binary_id
