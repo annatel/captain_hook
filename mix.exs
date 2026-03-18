@@ -29,7 +29,7 @@ defmodule CaptainHook.MixProject do
   defp deps do
     [
       {:hammox, "~> 0.7", only: :test},
-      {:bypass, "~> 2.1", only: :test},
+      {:test_server, "~> 0.1", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:myxql, ">= 0.0.0"},
       {:ecto_sql, "~> 3.6"},
@@ -37,7 +37,6 @@ defmodule CaptainHook.MixProject do
       {:antl_utils_ecto, "~> 2.8"},
       {:queuetopia, "~> 2.5"},
       {:finch, "~> 0.7"},
-      {:plug_crypto, "~> 1.0"},
       {:recase, "~> 0.7"},
       {:shortcode, "~> 0.7"},
       {:padlock, "~> 0.2"},

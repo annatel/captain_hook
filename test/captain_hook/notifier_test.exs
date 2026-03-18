@@ -9,20 +9,18 @@ defmodule CaptainHook.NotifierTest do
   alias CaptainHook.Notifier
 
   setup do
-    bypass = Bypass.open()
-    {:ok, bypass: bypass}
+    TestServer.start()
+
+    :ok
   end
 
   describe "notify/5" do
-    test "when the owner has an ongoing webhook_endpoint, creates a webhook_notification and send it",
-         %{bypass: bypass} do
+    test "when the owner has an ongoing webhook_endpoint, creates a webhook_notification and send it" do
       start_supervised(CaptainHook.Supervisor)
 
-      Bypass.expect_once(bypass, "POST", "/", fn conn ->
-        Plug.Conn.resp(conn, 200, "")
-      end)
+      TestServer.add("/", via: :post, to: &Plug.Conn.resp(&1, 200, ""))
 
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
+      webhook_endpoint = insert!(:webhook_endpoint, url: TestServer.url())
 
       assert {:ok, [%WebhookNotification{id: webhook_notification_id}]} =
                Notifier.notify(webhook_endpoint.owner_id, true, "notification_ref", %{})
@@ -49,22 +47,19 @@ defmodule CaptainHook.NotifierTest do
       assert {:ok, []} = Notifier.notify(webhook_endpoint.owner_id, true, "notification_ref", %{})
     end
 
-    test "when the notification exists with an existing idempotency key from another webhook_endpoint, creates a webhook_notification and send it",
-         %{bypass: bypass} do
+    test "when the notification exists with an existing idempotency key from another webhook_endpoint, creates a webhook_notification and send it" do
       start_supervised(CaptainHook.Supervisor)
 
-      Bypass.expect_once(bypass, "POST", "/", fn conn ->
-        Plug.Conn.resp(conn, 200, "")
-      end)
+      TestServer.add("/", via: :post, to: &Plug.Conn.resp(&1, 200, ""))
 
       owner_id_1 = uuid()
       owner_id_2 = uuid()
 
       webhook_endpoint_1 =
-        insert!(:webhook_endpoint, owner_id: owner_id_1, url: endpoint_url(bypass.port))
+        insert!(:webhook_endpoint, owner_id: owner_id_1, url: TestServer.url())
 
       webhook_endpoint_2 =
-        insert!(:webhook_endpoint, owner_id: owner_id_2, url: endpoint_url(bypass.port))
+        insert!(:webhook_endpoint, owner_id: owner_id_2, url: TestServer.url())
 
       webhook_notification_2 =
         insert!(:webhook_notification,
@@ -83,15 +78,12 @@ defmodule CaptainHook.NotifierTest do
                |> TestRepo.all()
     end
 
-    test "when the notification exists with an existing idempotency key for the webhook_endpoint and it was not succeeded, it does not create a new webhook_notification but send it",
-         %{bypass: bypass} do
+    test "when the notification exists with an existing idempotency key for the webhook_endpoint and it was not succeeded, it does not create a new webhook_notification but send it" do
       start_supervised(CaptainHook.Supervisor)
 
-      Bypass.expect_once(bypass, "POST", "/", fn conn ->
-        Plug.Conn.resp(conn, 200, "")
-      end)
+      TestServer.add("/", via: :post, to: &Plug.Conn.resp(&1, 200, ""))
 
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
+      webhook_endpoint = insert!(:webhook_endpoint, url: TestServer.url())
 
       %{id: webhook_notification_id} =
         webhook_notification =
@@ -111,25 +103,21 @@ defmodule CaptainHook.NotifierTest do
                |> TestRepo.all()
     end
 
-    test "when the notification exists with an existing idempotency key for the webhook_endpoint and it was succeeded, it does not create a new webhook_notification and do not resent it",
-         %{bypass: bypass} do
+    test "when the notification exists with an existing idempotency key for the webhook_endpoint and it was succeeded, it does not create a new webhook_notification and do not resent it" do
       start_supervised(CaptainHook.Supervisor)
 
-      Bypass.expect_once(bypass, "POST", "/", fn conn ->
-        Plug.Conn.resp(conn, 500, "")
-      end)
+      TestServer.add("/", via: :post, to: &Plug.Conn.resp(&1, 500, ""))
 
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
+      webhook_endpoint = insert!(:webhook_endpoint, url: TestServer.url())
 
       assert {:error, _} =
                Notifier.notify(webhook_endpoint.owner_id, true, "notification_ref", %{})
     end
 
-    test "when the notification failed, returns an error tuple with the failed notifications",
-         %{bypass: bypass} do
+    test "when the notification failed, returns an error tuple with the failed notifications" do
       start_supervised(CaptainHook.Supervisor)
 
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
+      webhook_endpoint = insert!(:webhook_endpoint, url: TestServer.url())
 
       %{id: webhook_notification_id} =
         webhook_notification =
@@ -271,11 +259,10 @@ defmodule CaptainHook.NotifierTest do
   end
 
   describe "send_webhook_notification/2" do
-    test "when the webhook_notification is already succeed, returns the notification without sending it",
-         %{bypass: bypass} do
+    test "when the webhook_notification is already succeed, returns the notification without sending it" do
       start_supervised(CaptainHook.Supervisor)
 
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
+      webhook_endpoint = insert!(:webhook_endpoint, url: TestServer.url())
 
       %{id: webhook_notification_id} =
         webhook_notification =
@@ -296,12 +283,11 @@ defmodule CaptainHook.NotifierTest do
                |> TestRepo.all()
     end
 
-    test "when the webhook_endpoint is disabled, do not send the webhook_notification and returns an ok nil tuples",
-         %{bypass: bypass} do
+    test "when the webhook_endpoint is disabled, do not send the webhook_notification and returns an ok nil tuples" do
       start_supervised(CaptainHook.Supervisor)
 
       webhook_endpoint =
-        build(:webhook_endpoint, url: endpoint_url(bypass.port)) |> make_disable() |> insert!()
+        build(:webhook_endpoint, url: TestServer.url()) |> make_disable() |> insert!()
 
       %{id: webhook_notification_id} =
         webhook_notification =
@@ -319,16 +305,13 @@ defmodule CaptainHook.NotifierTest do
                |> TestRepo.all()
     end
 
-    test "when the webhook_notification does not succeed, send the webhook_notification and returns a ok names tuple with the webhook_conversation",
-         %{bypass: bypass} do
+    test "when the webhook_notification does not succeed, send the webhook_notification and returns a ok names tuple with the webhook_conversation" do
       start_supervised(CaptainHook.Supervisor)
 
-      Bypass.expect_once(bypass, "POST", "/", fn conn ->
-        Plug.Conn.resp(conn, 200, "")
-      end)
+      TestServer.add("/", via: :post, to: &Plug.Conn.resp(&1, 200, ""))
 
       webhook_endpoint =
-        insert!(:webhook_endpoint, url: endpoint_url(bypass.port), headers: %{key: "value"})
+        insert!(:webhook_endpoint, url: TestServer.url(), headers: %{key: "value"})
 
       insert!(:webhook_endpoint_secret, webhook_endpoint_id: webhook_endpoint.id)
 
@@ -402,18 +385,15 @@ defmodule CaptainHook.NotifierTest do
       end
     end
 
-    test "when the conversation failed, returns an error named tuple with the conversation json_encoded",
-         %{bypass: bypass} do
+    test "when the conversation failed, returns an error named tuple with the conversation json_encoded" do
       start_supervised(CaptainHook.Supervisor)
 
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
+      webhook_endpoint = insert!(:webhook_endpoint, url: TestServer.url())
 
       %{id: webhook_notification_id} =
         insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
 
-      Bypass.expect_once(bypass, "POST", "/", fn conn ->
-        Plug.Conn.resp(conn, 401, "Unauthorized")
-      end)
+      TestServer.add("/", via: :post, to: &Plug.Conn.resp(&1, 401, "Unauthorized"))
 
       assert {:error, json_encoded_webhook_conversation} =
                Notifier.send_webhook_notification(%{
@@ -434,11 +414,10 @@ defmodule CaptainHook.NotifierTest do
   end
 
   describe "handle_failure!/4" do
-    test "when the webhook_result_handler is not set, update the webhook_notification attempt and next_retry_at and do not call the webhook_result_handler",
-         %{bypass: bypass} do
+    test "when the webhook_result_handler is not set, update the webhook_notification attempt and next_retry_at and do not call the webhook_result_handler" do
       start_supervised(CaptainHook.Supervisor)
 
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
+      webhook_endpoint = insert!(:webhook_endpoint, url: TestServer.url())
 
       %{id: webhook_notification_id} =
         insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
@@ -470,11 +449,10 @@ defmodule CaptainHook.NotifierTest do
              ) == :ok
     end
 
-    test "when the conversation failed and a webhook_result_handler is set, call the handle_failure callback",
-         %{bypass: bypass} do
+    test "when the conversation failed and a webhook_result_handler is set, call the handle_failure callback" do
       start_supervised(CaptainHook.Supervisor)
 
-      webhook_endpoint = insert!(:webhook_endpoint, url: endpoint_url(bypass.port))
+      webhook_endpoint = insert!(:webhook_endpoint, url: TestServer.url())
 
       %{id: webhook_notification_id} =
         insert!(:webhook_notification, webhook_endpoint_id: webhook_endpoint.id)
@@ -506,6 +484,4 @@ defmodule CaptainHook.NotifierTest do
              ) == :ok
     end
   end
-
-  defp endpoint_url(port), do: "http://localhost:#{port}/"
 end

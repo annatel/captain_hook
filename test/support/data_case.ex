@@ -20,9 +20,7 @@ defmodule CaptainHook.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import CaptainHook.DataCase
-
       import CaptainHook.Factory
-
       import Hammox
 
       setup :verify_on_exit!

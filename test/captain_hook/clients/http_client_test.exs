@@ -4,22 +4,15 @@ defmodule CaptainHook.Clients.HttpClientTest do
   alias CaptainHook.Clients.HttpClient
   alias CaptainHook.Clients.Response
 
-  setup do
-    bypass = Bypass.open()
-    {:ok, bypass: bypass}
-  end
-
-  test "success call, returns a valid Response", %{bypass: bypass} do
+  test "success call, returns a valid Response" do
     start_supervised!(CaptainHook.Supervisor)
 
-    Bypass.expect_once(bypass, "POST", "/", fn conn ->
-      Plug.Conn.resp(conn, 200, "")
-    end)
+    TestServer.add("/", via: :post, to: &Plug.Conn.resp(&1, 200, ""))
 
     headers = %{"firstHeader" => "value", "second_header" => "value", "third-header" => "value"}
     body = %{}
     encoded_body = Jason.encode!(body)
-    url = endpoint_url(bypass.port)
+    url = TestServer.url()
 
     assert %Response{
              request_url: ^url,
@@ -39,17 +32,15 @@ defmodule CaptainHook.Clients.HttpClientTest do
     assert Map.get(headers, "third-header") == "value"
   end
 
-  test "http call return an http error", %{bypass: bypass} do
+  test "http call return an http error" do
     start_supervised!(CaptainHook.Supervisor)
 
-    Bypass.expect_once(bypass, "POST", "/", fn conn ->
-      Plug.Conn.resp(conn, 429, ~s<{"errors": [{"code": 88, "message": "Rate limit exceeded"}]}>)
-    end)
+    TestServer.add("/", via: :post, to: &Plug.Conn.resp(&1, 429, ~s<{"errors": [{"code": 88, "message": "Rate limit exceeded"}]}>))
 
     headers = %{}
     body = %{}
     encoded_body = Jason.encode!(body)
-    url = endpoint_url(bypass.port)
+    url = TestServer.url()
 
     assert %Response{
              request_url: ^url,
@@ -111,6 +102,4 @@ defmodule CaptainHook.Clients.HttpClientTest do
                is_insecure_allowed: true
              )
   end
-
-  defp endpoint_url(port), do: "http://localhost:#{port}/"
 end
